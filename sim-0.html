@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>开局 领取站长档案 · AI 新词站白话课</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<style>
+/* 模拟器开局：开场动画、站长档案、8 关路线图、规则 */
+.sim0-check { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.sim0-check li { display: grid; grid-template-columns: 24px 1fr; gap: 10px; align-items: center; font-size: 15.5px; }
+.sim0-check li > i { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--amber); display: grid; place-items: center; font-style: normal; font-size: 12px; font-weight: 700; color: var(--amber); }
+.sim0-check li.ok > i { background: var(--green); border-color: var(--green); color: var(--surface); }
+.sim0-check li.ok > i::before { content: "✓"; }
+.sim0-check li.ok span { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line); }
+
+/* 开场动画 */
+.sim0-stage { display: grid; grid-template-columns: 172px 1fr; gap: 14px; align-items: stretch; }
+.sim0-cal { position: relative; perspective: 700px; border-radius: 14px; background: var(--surface); border: 1.5px solid var(--line); display: grid; grid-template-rows: auto 1fr; min-height: 180px; }
+.sim0-cal-top { background: var(--amber); color: var(--surface); font-size: 12.5px; font-weight: 700; letter-spacing: .12em; text-align: center; padding: 6px; border-radius: 12px 12px 0 0; }
+.sim0-cal-page, .sim0-cal-leaf { display: grid; place-content: center; text-align: center; gap: 4px; padding: 10px; }
+.sim0-cal-page b, .sim0-cal-leaf b { font-family: var(--font-display); font-size: 38px; line-height: 1.1; white-space: nowrap; }
+.sim0-cal-page span, .sim0-cal-leaf span { font-size: 13px; color: var(--muted); }
+.sim0-cal-page.today b { color: var(--indigo); }
+.sim0-cal-leaf { position: absolute; left: 0; right: 0; bottom: 0; top: 33px; background: var(--surface); border-radius: 0 0 12px 12px; transform-origin: top center; opacity: 0; pointer-events: none; box-shadow: 0 6px 12px rgba(0, 0, 0, .08); }
+.sim0-cal-leaf.go { animation: sim0Flip .42s ease-in both; }
+@keyframes sim0Flip { 0% { opacity: 1; transform: rotateX(0); } 100% { opacity: 0; transform: rotateX(-105deg); } }
+.sim0-right { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-content: start; min-width: 0; }
+.sim0-you { grid-column: 1 / -1; }
+@media (max-width: 760px) { .sim0-right { grid-template-columns: 1fr; } }
+.sim0-news { display: grid; gap: 3px; padding: 14px 16px; border-radius: 14px; background: var(--surface); border: 1.5px solid var(--amber); box-shadow: var(--shadow); transition: opacity .35s, transform .35s; }
+.sim0-news .tag { font-size: 12px; font-weight: 700; color: var(--amber); letter-spacing: .06em; }
+.sim0-news b { font-size: 17px; line-height: 1.5; }
+.sim0-news span { font-size: 14px; color: var(--muted); line-height: 1.6; }
+.sim0-news.pop { animation: pop .45s both; }
+.sim0-off { opacity: 0 !important; transform: translateY(8px); }
+.sim0-trend { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px 6px; transition: opacity .35s; }
+.sim0-trend svg { display: block; width: 100%; height: auto; overflow: visible; }
+.sim0-trend text { font-family: var(--font-body); }
+.sim0-axis { stroke: var(--line); stroke-width: 1.5; }
+.sim0-line { fill: none; stroke: var(--indigo); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.sim0-mark { stroke: var(--amber); stroke-width: 1.5; stroke-dasharray: 4 4; }
+.sim0-mark-t { fill: var(--amber); font-size: 13.5px; font-weight: 700; }
+.sim0-cap { fill: var(--muted); font-size: 13.5px; font-weight: 600; }
+.sim0-you { display: flex; gap: 10px; align-items: center; transition: opacity .35s, transform .35s; }
+.sim0-you > i { flex: none; width: 40px; height: 40px; border-radius: 50%; background: var(--indigo); color: var(--on-indigo); display: grid; place-items: center; font-style: normal; font-weight: 700; }
+.sim0-bubble { position: relative; background: var(--indigo-soft); color: var(--indigo); padding: 8px 14px; border-radius: 12px; font-weight: 600; font-size: 15px; line-height: 1.6; }
+.sim0-bubble::before { content: ""; position: absolute; left: -6px; top: 50%; margin-top: -6px; border: 6px solid transparent; border-left: 0; border-right-color: var(--indigo-soft); }
+@media (max-width: 560px) {
+  .sim0-stage { grid-template-columns: 1fr; }
+  .sim0-cal { min-height: 140px; }
+}
+
+/* 站长档案 */
+.sim0-file { position: relative; display: grid; gap: 0; border-radius: 18px; background: var(--surface); border: 2px solid var(--indigo); overflow: hidden; }
+.sim0-file-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 18px; background: var(--indigo); color: var(--on-indigo); font-family: var(--font-mono); font-size: 13px; letter-spacing: .06em; }
+.sim0-file-body { display: grid; grid-template-columns: 76px 1fr; gap: 18px; padding: 18px; align-items: start; }
+.sim0-avatar { width: 76px; height: 92px; border-radius: 12px; background: var(--indigo-soft); border: 1.5px dashed var(--indigo); display: grid; place-items: center; font-family: var(--font-display); font-size: 30px; color: var(--indigo); }
+.sim0-file dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 8px 14px; font-size: 15.5px; line-height: 1.6; }
+.sim0-file dt { color: var(--muted); font-size: 13.5px; padding-top: 2px; white-space: nowrap; }
+.sim0-file dd { margin: 0; font-weight: 600; min-width: 0; }
+.sim0-file dd small { display: block; font-weight: 400; font-size: 13.5px; color: var(--muted); }
+.sim0-stamp {
+  position: absolute; right: 18px; bottom: 16px; padding: 6px 14px; border: 3px solid var(--green); color: var(--green);
+  border-radius: 10px; font-family: var(--font-display); font-weight: 900; font-size: 22px; letter-spacing: .12em;
+  transform: rotate(-12deg); background: color-mix(in srgb, var(--surface) 70%, transparent); pointer-events: none;
+}
+.sim0-stamp.pop { animation: sim0Stamp .5s cubic-bezier(.3, 1.6, .5, 1) both; }
+@keyframes sim0Stamp { from { transform: rotate(-12deg) scale(2.4); opacity: 0; } to { transform: rotate(-12deg) scale(1); opacity: 1; } }
+.sim0-take { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+@media (max-width: 480px) {
+  .sim0-file-body { grid-template-columns: 1fr; gap: 12px; }
+  .sim0-avatar { width: 60px; height: 60px; font-size: 24px; }
+  .sim0-file dl { grid-template-columns: 1fr; gap: 2px; }
+  .sim0-file dd { margin-bottom: 8px; }
+  .sim0-stamp { font-size: 18px; right: 12px; bottom: 10px; }
+}
+
+/* 8 关路线图 */
+.sim0-sum { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: baseline; }
+.sim0-sum .big-num { color: var(--indigo); }
+.sim0-route { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
+.sim0-lv {
+  position: relative; display: grid; gap: 6px; height: 100%; padding: 14px 16px; border-radius: 16px; text-decoration: none; color: var(--ink);
+  background: var(--surface); border: 1.5px solid var(--line); transition: border-color .2s, transform .2s;
+}
+.sim0-lv:hover { border-color: var(--amber); transform: translateY(-2px); }
+.sim0-lv .no { font-family: var(--font-mono); font-size: 12.5px; color: var(--amber); }
+.sim0-lv b { font-size: 17px; line-height: 1.4; }
+.sim0-lv .what { font-size: 14px; color: var(--muted); line-height: 1.6; }
+.sim0-lv .st-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; font-size: 12.5px; color: var(--muted); margin-top: auto; }
+.sim0-lv .st-row b { font-size: 13px; font-family: var(--font-mono); }
+.sim0-lv.passed { border-color: color-mix(in srgb, var(--green) 55%, var(--line)); }
+.sim0-lv.passed .st-row b { color: var(--green); }
+.sim0-lv.next { border-color: var(--amber); background: var(--amber-soft); animation: pulse 2.2s infinite; }
+.sim0-lv.next::after { content: "下一关"; position: absolute; top: 12px; right: 12px; font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: var(--amber); color: var(--surface); }
+.sim0-go { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.sim0-go a.btn { text-decoration: none; display: inline-block; }
+.btn.sim0-danger { color: var(--amber); border-color: var(--amber); background: var(--surface); }
+.btn.sim0-danger.armed { background: var(--amber); color: var(--surface); }
+
+/* 规则 */
+.sim0-rules { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.sim0-rules li { display: grid; gap: 4px; align-content: start; padding: 14px 16px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); }
+.sim0-rules li > b { font-size: 16.5px; }
+.sim0-rules li > span { font-size: 14.5px; color: var(--muted); line-height: 1.7; }
+.sim0-map { display: grid; gap: 6px; }
+.sim0-map-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; font-size: 14.5px; }
+.sim0-map-row a { overflow-wrap: anywhere; }
+.sim0-map-row a:last-child { text-align: right; }
+.sim0-map-row i { font-style: normal; color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body data-page="sim-0">
+<header id="topbar"></header>
+
+<div class="ph"><div class="wrap">
+  <span class="eyebrow">站长模拟器 · 开局 / 共 8 关</span>
+  <h1>你来当站长：拿 Lumibo 2 从 0 做一个站</h1>
+  <p class="lead">一个新的 AI 视频模型刚刚发布（虚构的）。你要抢在别人前面，做一个能收钱的工具站。8 关，每关做一件事：做对加分，做错马上告诉你为什么。</p>
+  <div class="gist"><span class="lab">这一局怎么算赢</span><p>3 个月后，你的站在谷歌里<b>有排名</b>，而且<b>有人付钱订阅</b>。</p></div>
+</div></div>
+
+<main class="wrap">
+
+  <section class="kp" id="sim0-top">
+    <div class="sim-hud"><span class="lv">开局</span><span>站：FramePop（示意）</span><span class="pts" id="sim0-pts">总分 0 / 800</span></div>
+    <div class="sim-task">
+      <span class="lab">本关任务</span>
+      <ul class="sim0-check" id="sim0-check">
+        <li data-k="play"><i></i><span>看开场动画：第 0 天发生了什么</span></li>
+        <li data-k="take"><i></i><span>领取你的站长档案</span></li>
+        <li data-k="go"><i></i><span>看一眼 8 关路线，开始第 1 关</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="kp" id="sim0-open">
+    <div class="kp-head"><span class="kp-no">开场动画</span><h2>第 0 天：一个新词出生了</h2></div>
+    <p class="kp-say">新模型发布那天，谷歌里几乎还没人搜它。这一天就是它的<button type="button" class="term" data-t="newword">新词</button>「出生日」。谁先发现、先上站，谁就占了先机。<span class="st hf">哥飞原话</span></p>
+    <div class="viz" id="sim0-intro">
+      <div class="viz-head"><span class="viz-label">看动画 · 点「播放开场」</span><p class="viz-title">日历翻到第 0 天，新闻弹了出来</p></div>
+      <div class="sim0-stage">
+        <div class="sim0-cal" aria-hidden="true">
+          <div class="sim0-cal-top">日 历</div>
+          <div class="sim0-cal-page today" id="sim0-page"><b>第 0 天</b><span>Lumibo 2 发布</span></div>
+          <div class="sim0-cal-leaf" id="sim0-leaf"><b>第 0 天</b><span></span></div>
+        </div>
+        <div class="sim0-right">
+          <div class="sim0-news" id="sim0-news">
+            <span class="tag">突发 · 虚构新闻</span>
+            <b>Lumora Labs 发布 AI 视频模型 Lumibo 2</b>
+            <span>打一句话，就能生成一段视频；今天起开放网页试用。（公司和模型都是编的）</span>
+          </div>
+          <div class="sim0-trend" id="sim0-trend">
+            <svg viewBox="0 0 320 96" role="img" aria-label="谷歌趋势示意：一年来几乎为 0，今天开始往上走">
+              <text class="sim0-cap" x="4" y="12">谷歌趋势：lumibo 2（示意）</text>
+              <line class="sim0-axis" x1="4" y1="84" x2="316" y2="84"/>
+              <path class="sim0-line" d="M6 82 L262 82"/>
+              <path class="sim0-line" id="sim0-rise" d="M262 82 C 282 80, 292 50, 312 22"/>
+              <g id="sim0-birth">
+                <line class="sim0-mark" x1="262" y1="22" x2="262" y2="84"/>
+                <text class="sim0-mark-t" x="256" y="34" text-anchor="end">出生日 = 今天</text>
+              </g>
+              <text class="sim0-cap" x="6" y="96" style="font-weight:400">12 个月前</text>
+              <text class="sim0-cap" x="316" y="96" text-anchor="end" style="font-weight:400">今天</text>
+            </svg>
+          </div>
+          <div class="sim0-you" id="sim0-you"><i>你</i><span class="sim0-bubble">没见过的名字，还没人做……我能不能抢在大家前面？</span></div>
+        </div>
+      </div>
+      <p class="viz-say" id="sim0-say" aria-live="polite">第 0 天：新模型 <b>Lumibo 2</b> 发布，谷歌趋势的线刚从 0 往上抬头。你的站长生涯从这里开始。</p>
+      <div class="viz-controls"><button type="button" class="btn primary" id="sim0-play">播放开场（约 8 秒）</button></div>
+    </div>
+  </section>
+
+  <section class="kp" id="sim0-card">
+    <div class="kp-head"><span class="kp-no">站长档案</span><h2>你的站、你的目标、你的方向</h2></div>
+    <p class="kp-say">这一局的设定都写在档案里。名字和数字都是编的 <span class="st sy">示意</span>，做法照哥飞的教程来。</p>
+    <div class="sim0-file" id="sim0-file">
+      <div class="sim0-file-head"><span>站长档案 · No.001</span><span>FramePop</span></div>
+      <div class="sim0-file-body">
+        <div class="sim0-avatar" aria-hidden="true">你</div>
+        <dl>
+          <dt>站长</dt><dd>你<small>SEO 新手，第一次做站</small></dd>
+          <dt>你的站</dt><dd>FramePop（示意）<small>想用的域名：framepop.com，第 1 关里再确认</small></dd>
+          <dt>方向</dt><dd>AI 工具 + 按月订阅，抢新词<small>用别人的 AI 模型，做一个好用的网页工具，按月收费</small></dd>
+          <dt>目标</dt><dd>3 个月后：谷歌里有排名，有人付钱<small>第 8 关快进 3 个月，看你做到没有</small></dd>
+          <dt>起点</dt><dd>新域名、0 个页面、0 条外链<small>大家都是同一天起跑：这正是新词的好处</small></dd>
+        </dl>
+      </div>
+      <div class="sim0-stamp" id="sim0-stamp" hidden>已领取</div>
+    </div>
+    <div class="sim0-take">
+      <button type="button" class="btn primary big" id="sim0-take">领取档案</button>
+      <span class="muted" id="sim0-take-say" style="font-size:14.5px">领了档案，路线图上就会记下你看过开局。</span>
+    </div>
+  </section>
+
+  <section class="kp" id="sim0-route-sec">
+    <div class="kp-head"><span class="kp-no">8 关路线图</span><h2>从找词到上线，一关一件事</h2></div>
+    <div class="sim0-sum"><span class="big-num" id="sim0-total">0</span><span class="muted">/ 800 分 · 已过 <b id="sim0-passed">0</b> / 8 关</span></div>
+    <ol class="sim0-route" id="sim0-route"></ol>
+    <div class="sim0-go" id="sim0-go"></div>
+  </section>
+
+  <section class="kp" id="sim0-rules-sec">
+    <div class="kp-head"><span class="kp-no">规则</span><h2>开玩之前，记住这几条</h2></div>
+    <ul class="sim0-rules">
+      <li><b>每关满分 100</b><span>做对加分，做错不扣成负数。每一步都会马上告诉你对不对、为什么。8 关加起来满分 800。</span></li>
+      <li><b>数字全是示意</b><span>Lumibo 2、Lumora Labs、FramePop 都是编的。搜索量、曲线、价格也是为了讲清楚编的，别拿去当真数据。</span></li>
+      <li><b>每关对应一页讲解</b><span>可以先看讲解再玩，也可以先玩，错了再回去看。结算卡上会写清楚该回哪一段。</span></li>
+      <li><b>每关最后一道复盘题</b><span>答完复盘题，再进下一关。每关都有「重玩这一关」，想刷分随时重来。</span></li>
+      <li><b>颜色有意思</b><span><span class="legend-row" style="display:inline-flex;gap:4px 12px"><span><i class="sw ours"></i>你自己这边</span><span><i class="sw big"></i>坑、别人</span><span><i class="sw good"></i>做对了</span></span></span></li>
+      <li><b>进度存在你的浏览器里</b><span>换台电脑、清了浏览器数据，存档就没了。每关也都能单独打开玩。</span></li>
+    </ul>
+    <h3>每关对应的讲解</h3>
+    <div class="sim0-map" id="sim0-map"></div>
+  </section>
+
+</main>
+
+<nav id="pager"></nav>
+<footer id="foot"></footer>
+<script src="assets/kit.js"></script>
+<script>
+(() => {
+  const { $, $$, el, tween, sleep, replay, countUp, confetti, reduce, store, SIM, SIM_PAGES, PAGES } = KIT;
+
+  const LEVELS = SIM_PAGES.filter(p => /^sim-[1-8]$/.test(p.id));
+  const WHAT = {
+    'sim-1': '刷信息流揪出新词，让候选词过 5 道关，定核心词和域名',
+    'sim-2': '点 9 个来源收词，再去重、查搜索量、按量排序',
+    'sim-3': '把词拖进「首页 / 单独一页 / 写进正文 / 先不做」',
+    'sim-4': '定第一天上线哪些页，把页面卡拖到网站树上',
+    'sim-5': '把词拖进 Title、H1、H2，看谷歌预览和体检分',
+    'sim-6': '在页面之间连线，放爬虫，看哪页成了孤岛',
+    'sim-7': '拖成本滑块算账，选收款平台',
+    'sim-8': '一天天快进，看后台数据，每周做决定',
+  };
+
+  // ---------- 任务清单 ----------
+  const check = (k, yes) => $(`#sim0-check [data-k="${k}"]`).classList.toggle('ok', yes);
+
+  // ---------- 开场动画 ----------
+  const page = $('#sim0-page'), leaf = $('#sim0-leaf'), news = $('#sim0-news'), trend = $('#sim0-trend');
+  const rise = $('#sim0-rise'), birth = $('#sim0-birth'), you = $('#sim0-you'), say = $('#sim0-say');
+  const riseLen = rise.getTotalLength();
+  const dayText = d => d === 0 ? ['第 0 天', 'Lumibo 2 发布'] : [`第 −${-d} 天`, '风平浪静'];
+  function setDay(d) {
+    const [b, s] = dayText(d);
+    page.innerHTML = `<b>${b}</b><span>${s}</span>`;
+    page.classList.toggle('today', d === 0);
+  }
+  function flipTo(from, to) {
+    const [b, s] = dayText(from);
+    leaf.innerHTML = `<b>${b}</b><span>${s}</span>`;
+    setDay(to);
+    replay(leaf, 'go');
+  }
+  let run = 0;
+  async function playIntro() {
+    const me = ++run;
+    const alive = () => me === run;
+    news.classList.add('sim0-off');
+    you.classList.add('sim0-off');
+    birth.style.opacity = 0;
+    rise.style.strokeDasharray = riseLen;
+    rise.style.strokeDashoffset = riseLen;
+    setDay(-3);
+    say.innerHTML = '倒数几天：AI 圈风平浪静，谷歌趋势里也没什么新鲜的。';
+    await sleep(700);
+    for (const d of [-2, -1, 0]) {
+      if (!alive()) return;
+      flipTo(d - 1, d);
+      await sleep(620);
+    }
+    if (!alive()) return;
+    say.innerHTML = '<b>第 0 天</b>：手机一震，新闻弹了出来。';
+    news.classList.remove('sim0-off');
+    replay(news, 'pop');
+    await sleep(900);
+    if (!alive()) return;
+    say.innerHTML = '打开谷歌趋势看一眼：一年来几乎<b>没人搜</b>，今天线刚开始往上走。';
+    tween(1100, k => { if (alive()) rise.style.strokeDashoffset = riseLen * (1 - k); });
+    await sleep(1150);
+    if (!alive()) return;
+    birth.style.opacity = 1;
+    say.innerHTML = '线开始往上走的这一天，就是它的<b>出生日</b>。出生一年内的词都算新词，越新越好做。';
+    await sleep(1500);
+    if (!alive()) return;
+    you.classList.remove('sim0-off');
+    say.innerHTML = '第 0 天：新模型 <b>Lumibo 2</b> 发布，谷歌趋势的线刚从 0 往上抬头。你的站长生涯从这里开始。下一步：领取档案，然后去第 1 关把它「找」出来。';
+    check('play', true);
+  }
+  $('#sim0-play').addEventListener('click', () => {
+    $('#sim0-play').textContent = '再看一遍';
+    playIntro();
+  });
+
+  // ---------- 站长档案 ----------
+  const stamp = $('#sim0-stamp'), takeBtn = $('#sim0-take');
+  function paintTaken(animate) {
+    const taken = !!SIM.load('sim-0');
+    stamp.hidden = !taken;
+    takeBtn.disabled = taken;
+    takeBtn.textContent = taken ? '档案已领取' : '领取档案';
+    $('#sim0-take-say').textContent = taken ? '档案在手。往下看路线图，去第 1 关。' : '领了档案，路线图上就会记下你看过开局。';
+    check('take', taken);
+    if (taken && animate) { replay(stamp, 'pop'); confetti($('#sim0-file')); }
+  }
+  takeBtn.addEventListener('click', () => {
+    SIM.save('sim-0', 0, 0, { at: new Date().toISOString().slice(0, 10) });
+    paintTaken(true);
+    paintRoute();
+  });
+
+  // ---------- 路线图 ----------
+  const route = $('#sim0-route'), go = $('#sim0-go');
+  function paintRoute() {
+    const saves = LEVELS.map(p => SIM.load(p.id));
+    const total = saves.reduce((s, x) => s + (x ? x.score : 0), 0);
+    const passed = saves.filter(Boolean).length;
+    const nextIdx = saves.findIndex(x => !x);
+    route.innerHTML = '';
+    LEVELS.forEach((p, i) => {
+      const s = saves[i];
+      const step = PAGES.find(x => x.id === p.step);
+      const cls = ['sim0-lv', s ? 'passed' : '', i === nextIdx ? 'next' : ''].join(' ').trim();
+      const status = s ? `<b>${s.score} / ${s.max}</b>` : '<b>还没玩</b>';
+      const pct = s && s.max ? s.score / s.max * 100 : 0;
+      route.appendChild(el('li', {}, `<a class="${cls}" href="${p.href}"><span class="no">第 ${i + 1} 关 · 讲解：${step.short}</span><b>${p.title.replace(/^第 \d 关 /, '')}</b><span class="what">${WHAT[p.id]}</span><span class="st-row"><span class="meter"><i style="width:${pct}%"></i></span>${status}</span></a>`));
+    });
+    const end = SIM_PAGES.find(p => p.id === 'sim-end');
+    route.appendChild(el('li', {}, `<a class="sim0-lv${passed === 8 ? ' next' : ''}" href="${end.href}"><span class="no">结局</span><b>成绩单</b><span class="what">各关得分、做错了什么、该回去看哪一页讲解</span><span class="st-row"><span class="meter"><i style="width:${total / 8}%"></i></span><b>${total} / 800</b></span></a>`));
+    $('#sim0-pts').textContent = `总分 ${total} / 800`;
+    countUp($('#sim0-total'), total, 700);
+    $('#sim0-passed').textContent = passed;
+
+    go.innerHTML = '';
+    const anySave = passed > 0 || !!SIM.load('sim-0');
+    let main;
+    if (passed === 0) main = el('a', { class: 'btn primary big', href: 'sim-1.html' }, '开始第 1 关：找词 →');
+    else if (nextIdx === -1) main = el('a', { class: 'btn primary big', href: end.href }, '8 关都过了，看结局成绩单 →');
+    else main = el('a', { class: 'btn primary big', href: LEVELS[nextIdx].href }, `继续：${LEVELS[nextIdx].title} →`);
+    main.addEventListener('click', () => check('go', true));
+    go.appendChild(main);
+    if (anySave) {
+      const clear = el('button', { type: 'button', class: 'btn sim0-danger' }, '清空存档重新开始');
+      let armed = false;
+      clear.addEventListener('click', () => {
+        if (!armed) {
+          armed = true;
+          clear.classList.add('armed');
+          clear.textContent = '真的清空？8 关得分和复盘题都会删掉，再点一次确认';
+          setTimeout(() => { if (armed) { armed = false; clear.classList.remove('armed'); clear.textContent = '清空存档重新开始'; } }, 5000);
+          return;
+        }
+        SIM_PAGES.forEach(p => { store.del('sim.' + p.id); store.del('quiz.' + p.id); store.del('done.' + p.id); });
+        scrollTo(0, 0);
+        location.reload();
+      });
+      go.appendChild(clear);
+    }
+    if (passed > 0) check('go', true);
+  }
+
+  // ---------- 每关对应的讲解 ----------
+  $('#sim0-map').innerHTML = LEVELS.map(p => {
+    const step = PAGES.find(x => x.id === p.step);
+    return `<div class="sim0-map-row"><a href="${p.href}">${p.title}</a><i>↔</i><a href="${step.href}">${step.title}</a></div>`;
+  }).join('');
+
+  paintTaken(false);
+  paintRoute();
+})();
+</script>
+</body>
+</html>

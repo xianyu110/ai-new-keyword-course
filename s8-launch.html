@@ -1,0 +1,1224 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>第 8 步 上线验收和优化 · AI 新词站白话课</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<style>
+/* ===== 第 8 步专用样式，类名都带 s8- ===== */
+
+/* 知识点 1：第一周时间轴 */
+.s8-tl-wrap { padding: 46px 34px 70px; }
+.s8-rail { position: relative; height: 6px; border-radius: 3px; background: var(--line); }
+.s8-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 3px; background: var(--indigo); }
+.s8-flag {
+  position: absolute; top: -40px; left: 0; transform: translateX(-50%); pointer-events: none;
+  font-size: 11.5px; font-weight: 700; line-height: 1; padding: 6px 9px; border-radius: 999px; white-space: nowrap;
+  background: var(--indigo); color: var(--on-indigo); box-shadow: var(--shadow);
+}
+.s8-flag::after { content: ""; position: absolute; left: 50%; bottom: -5px; margin-left: -5px; border: 5px solid transparent; border-bottom: 0; border-top-color: var(--indigo); }
+.s8-node {
+  position: absolute; top: -7px; transform: translateX(-50%); width: 68px;
+  display: grid; justify-items: center; gap: 3px; padding: 0; border: 0; background: none;
+  font: inherit; color: var(--ink); text-align: center; line-height: 1.3; cursor: pointer;
+}
+.s8-node i { width: 20px; height: 20px; border-radius: 50%; border: 3px solid var(--line); background: var(--surface); transition: background .3s, border-color .3s, transform .3s, box-shadow .3s; }
+.s8-node b { font-size: 12.5px; font-weight: 650; margin-top: 4px; white-space: nowrap; }
+.s8-node span { font-size: 12px; color: var(--muted); }
+.s8-node.on i { border-color: var(--indigo); background: var(--indigo); }
+.s8-node[aria-pressed="true"] i { transform: scale(1.25); box-shadow: 0 0 0 4px var(--indigo-soft); }
+.s8-node[aria-pressed="true"] span { color: var(--indigo); font-weight: 700; }
+.s8-tl-say { min-height: 104px; }
+@media (max-width: 480px) {
+  .s8-tl-wrap { padding: 46px 28px 66px; }
+  .s8-node b, .s8-node span { font-size: 11.5px; }
+}
+
+/* 48 小时排查清单 */
+.s8-fix { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; counter-reset: s8fx; }
+.s8-fix li { border: 1px solid var(--line); border-radius: 12px; background: var(--bg); transition: border-color .3s; }
+.s8-fix-q {
+  width: 100%; display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: center;
+  padding: 10px 14px; border: 0; background: none; font: inherit; font-size: 15.5px; font-weight: 600; line-height: 1.5;
+  color: var(--ink); text-align: left; cursor: pointer; border-radius: 12px;
+}
+.s8-fix-q::before {
+  counter-increment: s8fx; content: counter(s8fx); width: 26px; height: 26px; border-radius: 50%;
+  display: grid; place-items: center; font-family: var(--font-mono); font-size: 13px; background: var(--indigo-soft); color: var(--indigo);
+}
+.s8-fix-q::after { content: "点开"; font-size: 12.5px; font-weight: 500; color: var(--muted); white-space: nowrap; }
+.s8-fix li.done { border-color: color-mix(in srgb, var(--green) 55%, var(--line)); }
+.s8-fix li.done .s8-fix-q::before { background: var(--green-soft); color: var(--green); }
+.s8-fix li.done .s8-fix-q::after { content: "查过了 ✓"; color: var(--green); }
+.s8-fix-a { padding: 0 14px 12px 50px; font-size: 14.5px; line-height: 1.75; color: var(--muted); }
+.s8-fix-a b { color: var(--ink); }
+.s8-fix-n { font-size: 14px; color: var(--muted); }
+
+/* 知识点 2：200 个网页的赛场 */
+.s8-ar-head { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; justify-content: space-between; }
+.s8-ar-rank { font-size: 15px; }
+.s8-ar-rank b { font-family: var(--font-mono); font-size: 28px; color: var(--indigo); }
+.s8-ar-count { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+.s8-ar-grid { display: grid; grid-template-columns: repeat(20, minmax(0, 1fr)); gap: 3px; }
+.s8-ar-grid i { aspect-ratio: 1; border-radius: 3px; background: var(--bg); border: 1px solid var(--line); transition: background .5s, border-color .5s; }
+.s8-ar-grid i.top { background: var(--green-soft); border-color: var(--green); }
+.s8-ar-grid i.trail { background: color-mix(in srgb, var(--indigo) 40%, var(--surface)); border-color: var(--indigo); transition: none; }
+.s8-ar-grid i.you { background: var(--indigo); border-color: var(--indigo); transition: none; animation: pulse 1.6s infinite; position: relative; z-index: 1; }
+.s8-sw-cell { background: var(--bg); border: 1px solid var(--muted); border-radius: 3px; }
+.s8-ar-ends { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
+
+/* 9 天真实数据 */
+.s8-nine { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 6px; align-items: end; height: 146px; }
+.s8-nine button {
+  height: 100%; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px;
+  padding: 0; border: 0; background: none; font: inherit; color: var(--muted); cursor: pointer;
+}
+.s8-nine button i { display: block; min-height: 3px; border-radius: 6px 6px 2px 2px; background: var(--indigo); opacity: .5; transition: opacity .2s; }
+.s8-nine button span { font-size: 12px; font-family: var(--font-mono); text-align: center; }
+.s8-nine button.rival i { background: var(--amber); }
+.s8-nine button[aria-pressed="true"] i { opacity: 1; }
+.s8-nine button[aria-pressed="true"] span { color: var(--indigo); font-weight: 700; }
+.s8-nine-say { min-height: 76px; }
+
+/* 知识点 3：看后台的节奏 + GSC 小练习 */
+.s8-rhythm { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; }
+.s8-rhythm div { display: grid; gap: 4px; align-content: start; padding: 12px 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); font-size: 14.5px; line-height: 1.65; }
+.s8-rhythm b { font-size: 15.5px; color: var(--indigo); }
+.s8-gs-sum { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.s8-gs-sum div { display: grid; gap: 2px; padding: 10px 12px; border-radius: 12px; background: var(--bg); border-top: 3px solid var(--indigo); }
+.s8-gs-sum span { font-size: 12.5px; color: var(--muted); }
+.s8-gs-sum b { font-family: var(--font-mono); font-size: 20px; font-weight: 600; }
+.s8-gs-list { display: grid; gap: 8px; }
+.s8-gs-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "q act" "n act" "fb fb";
+  gap: 4px 12px; align-items: center; padding: 10px 12px; border-radius: 12px;
+  border: 1.5px solid var(--line); background: var(--surface); transition: opacity .3s, border-color .3s;
+}
+.s8-gs-q { grid-area: q; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-family: var(--font-mono); font-size: 14.5px; font-weight: 600; overflow-wrap: anywhere; }
+.s8-gs-n { grid-area: n; display: flex; flex-wrap: wrap; gap: 2px 14px; font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+.s8-gs-n i { font-style: normal; font-family: var(--font-body); margin-right: 4px; }
+.s8-gs-act { grid-area: act; justify-content: flex-end; }
+.s8-gs-act button { font-size: 13.5px; padding: 6px 12px; }
+.s8-gs-fb { grid-area: fb; margin-top: 4px; padding: 8px 12px; border-radius: 10px; background: var(--bg); font-size: 14.5px; line-height: 1.7; }
+.s8-gs-row.good { border-color: var(--green); }
+.s8-gs-row.good .s8-gs-fb { background: var(--green-soft); }
+.s8-gs-row.good .s8-gs-fb b { color: var(--green); }
+.s8-gs-row.ok { border-color: var(--indigo); }
+.s8-gs-row.ok .s8-gs-fb { background: var(--indigo-soft); }
+.s8-gs-row.ok .s8-gs-fb b { color: var(--indigo); }
+.s8-gs-row.bad { border-color: var(--amber); }
+.s8-gs-row.bad .s8-gs-fb { background: var(--amber-soft); }
+.s8-gs-row.bad .s8-gs-fb b { color: var(--amber); }
+.s8-gs-tag { font-family: var(--font-body); font-size: 11.5px; font-weight: 700; line-height: 1; padding: 4px 8px; border-radius: 999px; background: var(--green-soft); color: var(--green); }
+.s8-gs-list.hot .s8-gs-row:not(.hot) { opacity: .32; }
+.s8-gs-list.hot .s8-gs-row.hot { border-color: var(--green); box-shadow: 0 0 0 3px var(--green-soft); }
+#s8-gs-hot[aria-pressed="true"] { background: var(--green-soft); color: var(--green); border-color: var(--green); }
+@media (max-width: 640px) {
+  .s8-gs-sum { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .s8-gs-row { grid-template-columns: minmax(0, 1fr); grid-template-areas: "q" "n" "act" "fb"; }
+  .s8-gs-act { justify-content: flex-start; }
+}
+
+/* 知识点 4：两周验收器 + 及格线 */
+.s8-ck-card { display: grid; gap: 6px; padding: 12px 14px; border-radius: 12px; background: var(--bg); font-size: 15px; line-height: 1.65; }
+.s8-ck-data { display: flex; flex-wrap: wrap; gap: 4px 18px; font-family: var(--font-mono); font-size: 13.5px; color: var(--muted); }
+.s8-ck-data b { color: var(--ink); }
+.s8-ck-own { display: grid; gap: 8px; }
+.s8-ck-own > div { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; font-size: 14.5px; }
+.s8-ck-own > div > span { min-width: 7em; }
+.s8-lamps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.s8-lamps li { display: grid; justify-items: center; gap: 4px; padding: 12px 6px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface); text-align: center; font-size: 14px; line-height: 1.4; transition: border-color .3s, background .3s, opacity .3s; }
+.s8-lamps i { width: 22px; height: 22px; border-radius: 50%; background: var(--line); transition: background .3s, box-shadow .3s; }
+.s8-lamps span { font-size: 12.5px; color: var(--muted); }
+.s8-lamps li.pass { border-color: var(--green); background: var(--green-soft); }
+.s8-lamps li.pass i { background: var(--green); box-shadow: 0 0 0 4px color-mix(in srgb, var(--green) 25%, transparent); }
+.s8-lamps li.fail { border-color: var(--amber); background: var(--amber-soft); }
+.s8-lamps li.fail i { background: var(--amber); box-shadow: 0 0 0 4px color-mix(in srgb, var(--amber) 25%, transparent); }
+.s8-lamps li.skip { opacity: .38; }
+.s8-lamps li.pass, .s8-lamps li.fail { animation: pop .4s; }
+.s8-ps-body { display: grid; grid-template-columns: minmax(0, 230px) minmax(0, 1fr); gap: 18px; align-items: center; }
+.s8-ps-grid { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 3px; }
+.s8-ps-grid i { aspect-ratio: 1; border-radius: 3px; background: var(--bg); border: 1px solid var(--line); position: relative; overflow: hidden; }
+.s8-ps-grid i::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: var(--f, 0%); background: var(--green); transition: width .45s; transition-delay: var(--dl, 0ms); }
+.s8-ps-grid i.line { border: 2px solid var(--indigo); }
+.s8-ps-read { display: grid; gap: 6px; font-size: 15px; }
+.s8-ps-pct { font-family: var(--font-mono); font-size: 36px; font-weight: 600; line-height: 1.1; }
+.s8-ps-pct.good { color: var(--green); }
+.s8-ps-pct.bad { color: var(--amber); }
+.s8-ps-verdict { font-weight: 650; }
+.s8-ps-verdict.good { color: var(--green); }
+.s8-ps-verdict.bad { color: var(--amber); }
+@media (max-width: 560px) {
+  .s8-ps-body { grid-template-columns: minmax(0, 1fr); }
+  .s8-ps-grid { max-width: 250px; }
+}
+
+/* 知识点 5：数字果园 */
+.s8-or-top { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 14px; align-items: center; }
+.s8-or-heat { background: var(--bg); border-radius: 12px; padding: 8px 10px 4px; }
+.s8-or-cap { display: block; font-size: 12.5px; font-weight: 650; color: var(--muted); }
+.s8-or-traffic { display: grid; gap: 8px; }
+.s8-or-bar { position: relative; height: 24px; border-radius: 6px; background: var(--line); overflow: hidden; display: flex; }
+.s8-or-bar i { display: block; height: 100%; width: 0; transition: width .8s cubic-bezier(.3, .7, .3, 1); }
+.s8-or-bar .s8-or-a { background: var(--indigo); }
+.s8-or-bar .s8-or-b { background: var(--green); }
+.s8-or-peak { position: absolute; top: 0; bottom: 0; border-left: 2px dashed var(--amber); }
+.s8-or-num { font-size: 14px; color: var(--muted); }
+.s8-or-num b { font-family: var(--font-mono); font-size: 26px; font-weight: 600; color: var(--ink); }
+.s8-trees { background: var(--bg); border-radius: 12px; }
+.s8-trees svg { max-width: 560px; margin: 0 auto; }
+.s8-trees svg, .s8-or-heat svg { overflow: visible; }
+.s8-ax { stroke: var(--line); stroke-width: 1.5; }
+.s8-heat { fill: none; stroke: var(--indigo); stroke-width: 3; stroke-linecap: round; }
+.s8-heat.fall { stroke: var(--amber); }
+.s8-now { stroke: var(--amber); stroke-width: 1.5; stroke-dasharray: 4 4; }
+.s8-svg-small { fill: var(--muted); font-size: 11px; font-family: var(--font-body); }
+.s8-svg-amber { fill: var(--amber); font-size: 11px; font-weight: 700; font-family: var(--font-body); }
+.s8-ground { stroke: var(--line); stroke-width: 2; }
+.s8-trunk { fill: none; stroke: var(--muted); stroke-width: 8; stroke-linecap: round; }
+.s8-branch { fill: none; stroke: var(--muted); stroke-width: 4; stroke-linecap: round; }
+.s8-leaf circle { fill: var(--green-soft); stroke: var(--green); stroke-width: 2; }
+.s8-leaf text { fill: var(--green); font-size: 11px; font-weight: 700; font-family: var(--font-body); }
+.s8-leaf.big text { font-size: 12px; }
+.s8-ghost { opacity: .2; }
+.s8-ghost .s8-branch, .s8-ghost .s8-trunk { stroke-dasharray: 5 5; }
+.s8-tree-name { fill: var(--ink); font-size: 12px; font-weight: 650; font-family: var(--font-body); }
+.s8-or-btns .btn.s8-shake { animation: shake .45s; border-color: var(--amber); }
+@media (max-width: 600px) { .s8-or-top { grid-template-columns: minmax(0, 1fr); } }
+
+/* 知识点 6：打卡表 + 放弃信号 */
+.s8-plan { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.s8-plan > li { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 8px 14px; padding: 14px 16px; border-radius: 14px; background: var(--bg); border: 1.5px solid var(--line); transition: border-color .3s; }
+.s8-plan > li.all { border-color: var(--green); }
+.s8-plan-when { font-family: var(--font-display); font-weight: 700; font-size: 17px; line-height: 1.5; color: var(--indigo); }
+.s8-plan-do { display: grid; gap: 4px; }
+.s8-plan-do label { display: flex; gap: 8px; align-items: flex-start; font-size: 15px; line-height: 1.6; cursor: pointer; }
+.s8-plan-do input { accent-color: var(--green); width: 17px; height: 17px; margin: 3px 0 0; flex: none; }
+.s8-plan-do label.done span { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--green); }
+.s8-plan-ok { grid-column: 2; font-size: 14px; line-height: 1.6; padding: 6px 10px; border-radius: 8px; background: var(--green-soft); }
+.s8-plan-ok b { color: var(--green); }
+.s8-plan-foot { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; font-size: 14.5px; }
+.s8-plan-foot b { font-family: var(--font-mono); }
+.s8-two { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; }
+.s8-sig-pick { display: grid; gap: 6px; }
+.s8-sig-pick button { text-align: left; border-radius: 12px; font-weight: 600; }
+.s8-sig-pick button[aria-pressed="true"] { background: var(--indigo); border-color: var(--indigo); color: var(--on-indigo); }
+.s8-sig-lamps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.s8-sig-lamps span { display: grid; justify-items: center; gap: 6px; padding: 10px 4px; border-radius: 12px; background: var(--bg); font-size: 13px; line-height: 1.35; text-align: center; color: var(--muted); transition: color .3s; }
+.s8-sig-lamps i { width: 20px; height: 20px; border-radius: 50%; background: var(--line); transition: background .3s, box-shadow .3s; }
+.s8-sig-lamps span.on { color: var(--ink); font-weight: 700; animation: pop .4s; }
+.s8-sig-lamps span.on.go i { background: var(--green); box-shadow: 0 0 0 5px var(--green-soft); }
+.s8-sig-lamps span.on.fix i { background: var(--indigo); box-shadow: 0 0 0 5px var(--indigo-soft); }
+.s8-sig-lamps span.on.swap i, .s8-sig-lamps span.on.stop i { background: var(--amber); box-shadow: 0 0 0 5px var(--amber-soft); }
+@media (max-width: 520px) {
+  .s8-plan > li { grid-template-columns: minmax(0, 1fr); }
+  .s8-plan-ok { grid-column: 1; }
+  .s8-plan-foot { grid-template-columns: minmax(0, 1fr) auto; }
+  .s8-plan-foot .meter { grid-column: 1 / -1; grid-row: 2; }
+}
+</style>
+</head>
+<body data-page="s8">
+<header id="topbar"></header>
+
+<div class="ph"><div class="wrap">
+  <span class="eyebrow">第 8 步 / 共 8 步</span>
+  <h1>上线以后：多久该见效、后台怎么看、热度掉了怎么办</h1>
+  <p class="lead">网站上线不是结束，是开始。这一页把前三个月拆开讲：哪天该看到什么、后台冒出来的词怎么处理、什么样的页算合格、热度过了怎么接着种。例子还是 FramePop。</p>
+  <ul class="asks">
+    <li><a href="#k1">上线第一天、第一周做什么？多久收录、多久出词、多久该有排名？</a></li>
+    <li><a href="#k2">出词了，可排在八九十名，正常吗？怎么往上爬？</a></li>
+    <li><a href="#k3">后台看什么、多久看一次？冒出新词，是改标题还是新做一页？</a></li>
+    <li><a href="#k4">什么样的页算精品页？整个网站的及格线是多少？</a></li>
+    <li><a href="#k5">热度掉了怎么办？要不要关站？</a></li>
+    <li><a href="#k6">前三个月怎么排？做多久没起色算失败？</a></li>
+  </ul>
+  <div class="gist"><span class="lab">一句话答案</span><p>上线当天交 <button type="button" class="term" data-t="gsc">GSC</button> 和 sitemap；24 小时收录、再过 1～2 天<button type="button" class="term" data-t="chuci">出词</button>，三五天有曝光、三五周有排名，看不到就去查问题。之后只干两件事：加精品页、加外链。后台冒出的词，变体写进首页，新的事新做一页。热度掉了不关站，转做兄弟词、父词，再种下一棵树。</p></div>
+  <div class="scorebar" data-scorebar></div>
+</div></div>
+
+<main class="wrap">
+
+  <!-- ============ 知识点 1 ============ -->
+  <section class="kp" id="k1">
+    <div class="kp-head"><span class="kp-no">知识点 1</span><h2>第一周：24 小时收录，再 1～2 天出词</h2></div>
+    <p class="kp-say">上线当天要做的，就是<b>告诉谷歌：我开业了</b>。在 <button type="button" class="term" data-t="gsc">GSC</button>（谷歌给站长的免费后台）里验证网站、交上 <button type="button" class="term" data-t="sitemap">sitemap</button>（网站地图），再去几个地方发帖留链接，让<button type="button" class="term" data-t="crawler">爬虫</button>早点来。之后对着时间表看进度。<span class="st hf">哥飞原话</span></p>
+    <blockquote class="said"><p>「一般如果你的页面内容写得没问题的话，24 小时内就能够被收录。」</p><span class="who">哥飞 · 2025-01-20</span></blockquote>
+
+    <div class="viz" id="s8-tlviz">
+      <div class="viz-head"><span class="viz-label">看动画 · 点「播放」，或点时间轴上的点</span><p class="viz-title">FramePop 上线后的头几周</p></div>
+      <div class="viz-controls">
+        <button type="button" class="btn primary" id="s8-tl-play">播放</button>
+        <div class="seg" id="s8-tl-mode" role="group" aria-label="上线当天怎么做">
+          <button type="button" data-v="0" aria-pressed="true">只交 GSC</button>
+          <button type="button" data-v="1" aria-pressed="false">再发几条外链</button>
+        </div>
+      </div>
+      <div class="s8-tl-wrap" id="s8-tl">
+        <div class="s8-rail">
+          <div class="s8-fill"></div>
+          <span class="s8-flag" aria-hidden="true">FramePop</span>
+          <button type="button" class="s8-node" style="left:0%" aria-pressed="true"><i></i><b>第 0 天</b><span>交 GSC</span></button>
+          <button type="button" class="s8-node" style="left:25%" aria-pressed="false"><i></i><b>24 小时内</b><span>收录</span></button>
+          <button type="button" class="s8-node" style="left:50%" aria-pressed="false"><i></i><b>再 1～2 天</b><span>出词</span></button>
+          <button type="button" class="s8-node" style="left:75%" aria-pressed="false"><i></i><b>3～5 天</b><span>有曝光</span></button>
+          <button type="button" class="s8-node" style="left:100%" aria-pressed="false"><i></i><b>3～5 周</b><span>有排名</span></button>
+        </div>
+      </div>
+      <p class="viz-say s8-tl-say" id="s8-tl-say" aria-live="polite"></p>
+      <p class="viz-note">时间轴上的间距不按比例。这些是「内容写得没问题」时的正常进度，不是保证。</p>
+    </div>
+
+    <div class="viz" id="s8-fixviz">
+      <div class="viz-head"><span class="viz-label">动手查 · 点开每一条</span><p class="viz-title">收录了，48 小时还没出词？照这 5 条一条条查</p></div>
+      <ol class="s8-fix" id="s8-fix">
+        <li><button type="button" class="s8-fix-q" aria-expanded="false">标题、描述、H1 里有没有核心词</button>
+          <div class="s8-fix-a" hidden>打开首页，右键「查看网页源代码」，找 <code>&lt;title&gt;</code> 和 <code>&lt;h1&gt;</code>，看里面有没有 <b>lumibo video generator</b>。这三处哥飞叫 <button type="button" class="term" data-t="tdh">TDH</button>，是页面最要紧的三个位置。</div></li>
+        <li><button type="button" class="s8-fix-q" aria-expanded="false">内容够不够，核心词出现得够不够</button>
+          <div class="s8-fix-a" hidden>只有一个工具框、几行字是不够的。围绕核心词写图文：它是什么、怎么用、常见问题。哥飞的清单里这是三条：<b>内容长度、关键词分布、核心词密度</b>。</div></li>
+        <li><button type="button" class="s8-fix-q" aria-expanded="false">文字是不是靠脚本才冒出来</button>
+          <div class="s8-fix-a" hidden>在网页源代码里搜首页的一句正文。搜不到，说明文字要等浏览器跑完脚本才出来（前端渲染）。爬虫不跑脚本，拿到的只是一个空模板。要改成<button type="button" class="term" data-t="ssr">服务器上写好文字</button>。</div></li>
+        <li><button type="button" class="s8-fix-q" aria-expanded="false">用户内容有没有混进落地页</button>
+          <div class="s8-fix-a" hidden>评论、用户作品这类 <button type="button" class="term" data-t="s8-ugc">UGC</button> 别放进落地页。哥飞原话：「UGC 内容不要误入落地页，防止稀释你的核心关键词密度。」</div></li>
+        <li><button type="button" class="s8-fix-q" aria-expanded="false">出了词，是不是你想要的词</button>
+          <div class="s8-fix-a" hidden>出词了也要看一眼：至少得是相关的词。全是不相干的词，说明<b>文案有问题</b>，把标题、H1、正文往核心词上靠。</div></li>
+      </ol>
+      <p class="s8-fix-n" id="s8-fix-n" aria-live="polite">查过 0 / 5 条</p>
+    </div>
+
+    <div class="box case"><span class="lab">真实案例 · 2026 年 8 月新词比赛第 3 名</span><p>上午发现词，下午先把页面的关键词位置做好就上站，功能先拿一个现成小游戏顶着，「网站上线当天晚上就出词了」。对比：他以前做一个老词重新起热度的站，不加外链，2 周才出词。<span class="st sq">社群经验</span></p></div>
+
+    <div class="quiz" data-answer="B">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">FramePop 收录了，可 48 小时过去，GSC 里一个词都没出。先查什么？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">先别动，再等一个月看看</button>
+        <button class="q-opt" data-l="B">查标题、描述、H1 有没有核心词，内容够不够，文字是不是靠脚本才出来</button>
+        <button class="q-opt" data-l="C">马上换个域名，把站重新做一遍</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>哥飞给了时间：收录后 24～48 小时就该在 GSC 看到曝光，48 小时没动静就要一个个细节排查，确保能出词。干等和换域名，都没对准问题。<span class="st hf">哥飞原话</span></p></div>
+    </div>
+
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://new.web.cafe/tutorial/detail/sk5je1bj0f">《上站之后要做什么；再次详解谷歌搜索排名》</a><span class="meta">哥飞 · 2025-01-20</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/9sox64g7o9">《Google Search Console 使用入门讲解》</a><span class="meta">哥飞 · 公众号旧文归档，2025-01-16</span></li>
+      <li><a href="https://mp.weixin.qq.com/s/oAmrfRXrIWAMBVS0uB6C8Q">《老手可以去做难而正确的事情，新手只需要去追热点追新词就行》</a><span class="meta">哥飞 · 2025-02-28 · 公众号</span></li>
+      <li><a href="https://new.web.cafe/topic/6dx0cbme8c">《2026年8月新词大赛分享-第三名》</a><span class="meta">运气选手走得远 · 2026-09-23</span></li>
+    </ul></div>
+  </section>
+
+  <!-- ============ 知识点 2 ============ -->
+  <section class="kp" id="k2">
+    <div class="kp-head"><span class="kp-no">知识点 2</span><h2>出词，就是进了前 200 名</h2></div>
+    <p class="kp-say">后台一出词，很多人看到排第 88 名就慌了。哥飞说，<b>能出词，说明谷歌已经从几千亿个网页里挑出了你</b>，让你参加这个词的排名。一开始显示八九十名、甚至一百多名都正常，接着<b>加外链、加精品页往前爬</b>。<span class="st hf">哥飞原话</span></p>
+    <blockquote class="said"><p>「我们一个网页参与一个关键词排名时，不需要跟整个互联网的所有网页去比赛。而只需要跟两百个网页去比赛。」</p><span class="who">哥飞 · 2025-01-20</span></blockquote>
+
+    <div class="viz" id="s8-arena">
+      <div class="viz-head"><span class="viz-label">动手玩 · 点按钮 <span class="st sy">示意</span></span><p class="viz-title">lumibo video generator 这个词的 200 个参赛网页</p></div>
+      <div class="s8-ar-head">
+        <span class="s8-ar-rank">FramePop 现在：第 <b id="s8-rank">88</b> 名</span>
+        <span class="s8-ar-count" id="s8-ar-count">外链 0 条 · 精品页 0 个</span>
+      </div>
+      <div class="legend-row"><span><i class="sw ours"></i>你</span><span><i class="sw good"></i>前 10 名＝搜索结果第一页</span><span><i class="sw s8-sw-cell"></i>别的网页</span></div>
+      <div class="s8-ar-ends"><span>第 1 名 ↓</span><span>每行 20 名</span></div>
+      <div class="s8-ar-grid" id="s8-grid" role="img" aria-label="200 个小方块，代表参加这个词排名的 200 个网页，蓝色那格是你"></div>
+      <div class="s8-ar-ends"><span></span><span>第 200 名 ↑</span></div>
+      <div class="viz-controls">
+        <button type="button" class="btn primary" id="s8-ar-link">加外链</button>
+        <button type="button" class="btn" id="s8-ar-page">加一个精品页</button>
+        <button type="button" class="btn" id="s8-ar-rival">对手进场</button>
+        <button type="button" class="btn" id="s8-ar-reset">重来</button>
+      </div>
+      <p class="viz-say" id="s8-ar-say" aria-live="polite"></p>
+    </div>
+
+    <div class="box analogy"><span class="lab">打个比方</span><p>像一场歌唱比赛：海选是几千亿人，出词就是你过了海选，进了 200 人的复赛。刚进复赛排八九十名很正常，接下来是一轮一轮往前比。新词的复赛里，对手大多还是「弱鸡」，所以几条外链就见效。</p></div>
+
+    <div class="viz" id="s8-nineviz">
+      <div class="viz-head"><span class="viz-label">真实案例 · 点柱子，或「按天播放」</span><p class="viz-title">一个新词站头 9 天的 GSC 数据（Threads 上线当天建的站）</p></div>
+      <div class="viz-controls"><button type="button" class="btn primary" id="s8-nine-play">按天播放</button><span class="viz-note">柱子＝当天曝光，按原文的大约数画；黄色那天对手进场</span></div>
+      <div class="s8-nine" id="s8-nine"></div>
+      <p class="viz-note" style="text-align:center">上线第几天 →</p>
+      <p class="viz-say s8-nine-say" id="s8-nine-say" aria-live="polite"></p>
+    </div>
+    <p class="kp-say">这个例子里，新词竞争弱，<b>上线当天就进了第一页</b>；第 5 天对手出现，排名被挤下来。哥飞给的办法还是多搞外链，最好是找到真实用户、请他们帮忙分享的「自然外链」。<span class="st hf">哥飞原话</span></p>
+
+    <div class="quiz" data-answer="C">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">刚出词，GSC 显示核心词排第 87 名。这正常吗？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">不正常，说明这个词选错了，赶紧换词</button>
+        <button class="q-opt" data-l="B">不正常，首页写得太差，要推倒重写</button>
+        <button class="q-opt" data-l="C">正常，出词就是进了前 200 名，接着加外链</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>出词说明你已经参加了排名、进了前 200 名。哥飞说一开始显示八九十名甚至一百多名没关系，持续加外链，排名就会往上走。<span class="st hf">哥飞原话</span></p></div>
+    </div>
+
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://new.web.cafe/tutorial/detail/sk5je1bj0f">《上站之后要做什么；再次详解谷歌搜索排名》</a><span class="meta">哥飞 · 2025-01-20</span></li>
+      <li><a href="https://mp.weixin.qq.com/s/bYaNwMoIkxmJwAsxQ0-Sug">《群友新站上线9天拿到11030个独立访客，他是怎么做到的？》</a><span class="meta">哥飞 · 2023-07-15 · 公众号</span></li>
+    </ul></div>
+  </section>
+
+  <!-- ============ 知识点 3 ============ -->
+  <section class="kp" id="k3">
+    <div class="kp-head"><span class="kp-no">知识点 3</span><h2>看后台：变体写进首页，新的事新做一页</h2></div>
+    <p class="kp-say">GSC 的「效果」页，就看四个数：<button type="button" class="term" data-t="click">点击</button>、<button type="button" class="term" data-t="impr">曝光</button>、<button type="button" class="term" data-t="ctr">点击率</button>、<button type="button" class="term" data-t="position">平均排名</button>。折线图下面是每个搜索词的表现，可以照着这些词去优化。每天还要看一眼右上角的通知。<span class="st hf">哥飞原话</span></p>
+    <div class="s8-rhythm">
+      <div><b>每天 1 分钟</b><span>看右上角通知<span class="st hf">哥飞原话</span>，再看收录几页、有没有曝光。头两周先别盯排名。<span class="st tl">推出来的</span></span></div>
+      <div><b>每周 15 分钟</b><span>按搜索词排一排，挑出曝光有量、排在 3～20 名的词。<span class="st tl">推出来的</span></span></div>
+      <div><b>每两周</b><span>看新上的页，验收是不是精品页（知识点 4）。<span class="st tl">推出来的</span></span></div>
+      <div><b>每月一次</b><span>看谁进了前 20、谁掉了出去。<span class="st tl">推出来的</span></span></div>
+    </div>
+    <p class="kp-say">后台冒出来的词，按三条分：<b>主词的变体，写进首页</b>；<b>一件新的事、又有人搜，新做一页</b>；<b>别人的品牌词、你给不了的，先不动</b>。排在 3～20 名、曝光不少的，离第一页最近，重点照顾。<span class="st tl">推出来的，依据哥飞「保小图大」</span></p>
+
+    <div class="viz" id="s8-gsc">
+      <div class="viz-head"><span class="viz-label">动手玩 · 每一行选一个动作 <span class="st sy">示意</span></span><p class="viz-title">FramePop 上线两周，GSC「效果」报表里的搜索词</p></div>
+      <div class="s8-gs-sum" id="s8-gs-sum"></div>
+      <div class="viz-controls">
+        <div class="seg" id="s8-gs-sort" role="group" aria-label="排序">
+          <button type="button" data-v="imp" aria-pressed="true">按曝光排</button>
+          <button type="button" data-v="pos" aria-pressed="false">按排名排</button>
+        </div>
+        <button type="button" class="btn" id="s8-gs-hot" aria-pressed="false">圈出第 3～20 名</button>
+      </div>
+      <div class="s8-gs-list" id="s8-gs-list"></div>
+      <p class="viz-say" id="s8-gs-say" aria-live="polite">8 个词，每个选「写进首页」「新做一页」或「先不动」，马上告诉你对不对。</p>
+      <p class="viz-note">「平均排名」是一段时间里所有曝光的平均数。哥飞举过例子：lk99 wiki 这个词后台显示平均排名 5.5，实际已经排第二。</p>
+    </div>
+
+    <div class="box warn"><span class="lab">补充提醒（不是原文内容）</span><p>「写进首页」不是推倒重写。核心词在标题最前面的位置别动，只在标题后半段或正文里加；一次只改一处，改完看两周。<span class="st bc">补充提醒</span></p></div>
+    <div class="box case"><span class="lab">真实案例 · 已经有排名的首页别乱改</span><p>2026 年 8 月新词比赛第 3 名，在热度下降时给首页的 SEO 内容加了一批改动，结果<b>已经排上去的词排名明显下降</b>，新加进去的词也没涨多少。<span class="st sq">社群经验</span></p></div>
+
+    <div class="quiz" data-answer="A">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">后台里有个词，曝光不少，排在第 3～20 名。怎么处理？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">重点照顾：确认页面写到了它，再给这一页加外链</button>
+        <button class="q-opt" data-l="B">不用管，反正已经有排名了</button>
+        <button class="q-opt" data-l="C">把首页标题整个换成这个词，冲得更快</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>这批词离第一页最近，推一把就上去了：变体写进首页，新的事新做一页，再给那一页加外链。<span class="st tl">推出来的</span> 把首页标题整个换掉，可能把已经排上去的词弄掉，8 月比赛第 3 名就吃过这个亏。<span class="st sq">社群经验</span></p></div>
+    </div>
+
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://new.web.cafe/tutorial/detail/9sox64g7o9">《Google Search Console 使用入门讲解》</a><span class="meta">哥飞 · 公众号旧文归档，2025-01-16</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/feoogz15ou">《保小图大：专门给初学者的用小词图谋大词做站策略》</a><span class="meta">哥飞 · 公众号文章，2023 年 9 月</span></li>
+      <li><a href="https://new.web.cafe/topic/6dx0cbme8c">《2026年8月新词大赛分享-第三名：运气选手走得远-经验分享》</a><span class="meta">运气选手走得远 · 2026-09-23</span></li>
+      <li><span>看后台的节奏、冒出的词怎么分：哥飞 SEO Agent 按哥飞原文推的（2026-10-26），无单独文章</span></li>
+    </ul></div>
+  </section>
+
+  <!-- ============ 知识点 4 ============ -->
+  <section class="kp" id="k4">
+    <div class="kp-head"><span class="kp-no">知识点 4</span><h2>精品页：上线两周，有曝光、有点击、出的词对</h2></div>
+    <p class="kp-say">哥飞给<button type="button" class="term" data-t="quality">精品页</button>的标准，打开 GSC 就能查：<b>上线两周后，有排名、有曝光、有点击，而且出的词是你想要的</b>。三样都有，说明这一页过了谷歌的质量关。<span class="st hf">哥飞原话</span></p>
+    <blockquote class="said"><p>「GSC 有这些数据，就认为这个页面过了谷歌的质量检测关了，我就认为是一个精品页面。」</p><span class="who">哥飞 · 2026-05-29 群聊，经哥飞 SEO Agent 转述</span></blockquote>
+
+    <div class="viz" id="s8-check">
+      <div class="viz-head"><span class="viz-label">动手玩 · 选一页，看它过三道关 <span class="st sy">示意</span></span><p class="viz-title">两周验收器</p></div>
+      <div class="seg" id="s8-ck-pick" role="group" aria-label="选一页"></div>
+      <div class="s8-ck-card" id="s8-ck-card"></div>
+      <div class="s8-ck-own" id="s8-ck-own" hidden>
+        <div><span>有曝光吗？</span><div class="seg" data-q="imp"><button type="button" data-v="1" aria-pressed="true">有</button><button type="button" data-v="0" aria-pressed="false">没有</button></div></div>
+        <div><span>有点击吗？</span><div class="seg" data-q="clk"><button type="button" data-v="1" aria-pressed="true">有</button><button type="button" data-v="0" aria-pressed="false">没有</button></div></div>
+        <div><span>出的词对吗？</span><div class="seg" data-q="word"><button type="button" data-v="1" aria-pressed="true">对</button><button type="button" data-v="0" aria-pressed="false">不对</button></div></div>
+      </div>
+      <ol class="s8-lamps" id="s8-lamps">
+        <li><i></i><b>有曝光吗</b><span></span></li>
+        <li><i></i><b>有点击吗</b><span></span></li>
+        <li><i></i><b>出的词对吗</b><span></span></li>
+      </ol>
+      <p class="viz-say" id="s8-ck-say" aria-live="polite"></p>
+    </div>
+
+    <p class="kp-say">一页一页看精品，整个网站看<button type="button" class="term" data-t="wscore">及格线</button>：<b>有曝光有点击的页数 ÷ 谷歌发现的页数，至少 1%</b>（哥飞写成 100‱，万分之一百）。低于这条线，就该停下别再加页，先处理老页面，再想新办法。<span class="st hf">哥飞原话</span></p>
+
+    <div class="viz" id="s8-pass">
+      <div class="viz-head"><span class="viz-label">动手玩 · 选一个站，或拖滑块</span><p class="viz-title">每 100 个被谷歌发现的页面里，有几个是好页面</p></div>
+      <div class="seg" id="s8-ps-pick" role="group" aria-label="选一个站">
+        <button type="button" data-v="fp" aria-pressed="true">FramePop（示意）</button>
+        <button type="button" data-v="gefei" aria-pressed="false">哥飞自己的站</button>
+        <button type="button" data-v="woy" aria-pressed="false">Woy.ai</button>
+        <button type="button" data-v="sticker" aria-pressed="false">Sticker.Show</button>
+        <button type="button" data-v="aisong" aria-pressed="false">AISong</button>
+      </div>
+      <label class="range-wrap" id="s8-ps-rw"><span>一口气再铺几页（都没出词）：<b id="s8-ps-n">0</b> 页</span>
+        <input type="range" id="s8-ps-range" min="0" max="990" step="10" value="0">
+        <span class="ticks"><span>0</span><span>500</span><span>990</span></span>
+      </label>
+      <div class="s8-ps-body">
+        <div class="s8-ps-grid" id="s8-ps-grid" role="img" aria-label="100 个小格子，绿色是有曝光有点击的页面所占的份额，左上角带框那格就是 1% 及格线"></div>
+        <div class="s8-ps-read">
+          <span id="s8-ps-formula"></span>
+          <span class="s8-ps-pct" id="s8-ps-pct">0%</span>
+          <span class="s8-ps-verdict" id="s8-ps-verdict"></span>
+          <span class="viz-note">一格＝1%。左上角带蓝框那一格就是及格线：至少要把它涂满。</span>
+        </div>
+      </div>
+      <p class="viz-say" id="s8-ps-say" aria-live="polite"></p>
+    </div>
+    <div class="box warn"><span class="lab">读的时候注意</span><p>1% 这条线，哥飞自己说是样本不够、先「拍脑袋」定的。GSC 最多只能导出 1000 个网页，所以它只适合页面不多的新站；他建议网页还在 1 万个以内时，就用它去试探谷歌认不认你的做法。<span class="st hf">哥飞原话</span></p></div>
+
+    <div class="quiz" data-answer="C">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">按哥飞的说法，什么样的页面算精品页？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">字数多、图片多、做得最漂亮的页面</button>
+        <button class="q-opt" data-l="B">上线当天就被谷歌收录的页面</button>
+        <button class="q-opt" data-l="C">上线两周后有排名、有曝光、有点击，出的词也对</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>哥飞的标准只看 GSC 里的数据：上线两周后有没有排名、曝光、点击，出的词是不是想要的。字数多、收录快，都不等于谷歌认了这一页。<span class="st hf">哥飞原话</span></p></div>
+    </div>
+
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://new.web.cafe/tutorial/detail/lqxrxz4wux">《再聊内链和内页，以及如何做好一个内容型工具站》</a><span class="meta">哥飞 · 2025-01-15 · 及格线公式和几个站的原始数字</span></li>
+      <li><span>精品页标准、哥飞自己站的数字：2026-05-29 哥飞 1 群群聊，经哥飞 SEO Agent 转述，无单独文章</span></li>
+    </ul></div>
+  </section>
+
+  <!-- ============ 知识点 5 ============ -->
+  <section class="kp" id="k5">
+    <div class="kp-head"><span class="kp-no">知识点 5</span><h2>热度掉了：不关站，接着种</h2></div>
+    <p class="kp-say">新词的热度总会过去。哥飞说<b>不用怕，也别关站</b>：热点过后流量不一定归零，站稳了的余量能吃很久。接下来两件事一起做：<b>在这个站上做<button type="button" class="term" data-t="brother">兄弟词</button>、<button type="button" class="term" data-t="parent">父词</button></b>；<b>同时开下一个新词站</b>。<span class="st hf">哥飞原话</span></p>
+    <blockquote class="said"><p>「去年6月的热点过后，现在半年多了，每天依然还有八九百上千个点击从谷歌过来。」</p><span class="who">哥飞 · 2025-02-28</span></blockquote>
+
+    <div class="viz" id="s8-orch">
+      <div class="viz-head"><span class="viz-label">看动画 · 点按钮 <span class="st sy">示意</span></span><p class="viz-title">Lumibo 2 的热度回落以后，FramePop 怎么办</p></div>
+      <div class="s8-or-top">
+        <div class="s8-or-heat">
+          <span class="s8-or-cap">Lumibo 2 在谷歌趋势里的热度</span>
+          <svg viewBox="0 0 320 140" role="img" aria-label="热度曲线：先升到最高点，再回落">
+            <line class="s8-ax" x1="24" y1="118" x2="312" y2="118"/>
+            <line class="s8-ax" x1="24" y1="14" x2="24" y2="118"/>
+            <path class="s8-heat" d="M24 114 L70 114 C 95 112, 110 40, 135 24"/>
+            <path class="s8-heat fall" id="s8-fall" d="M135 24 C 160 28, 185 88, 220 98 C 250 106, 280 108, 306 108"/>
+            <text class="s8-svg-small" x="140" y="18">最火的时候</text>
+            <line class="s8-now" x1="306" y1="14" x2="306" y2="118"/>
+            <text class="s8-svg-amber" x="302" y="12" text-anchor="end">现在</text>
+            <text class="s8-svg-small" x="312" y="134" text-anchor="end">时间 →</text>
+          </svg>
+        </div>
+        <div class="s8-or-traffic">
+          <span class="s8-or-cap">每天从谷歌来的点击</span>
+          <div class="s8-or-bar" aria-hidden="true"><i class="s8-or-a" id="s8-or-a"></i><i class="s8-or-b" id="s8-or-b"></i><em class="s8-or-peak" id="s8-or-peak"></em></div>
+          <p class="s8-or-num"><b id="s8-or-total">700</b> 次/天　<span>虚线＝最火时 3,200</span></p>
+          <div class="legend-row"><span><i class="sw ours"></i>FramePop</span><span><i class="sw good"></i>下一棵树</span></div>
+        </div>
+      </div>
+      <div class="s8-trees">
+        <svg viewBox="52 24 356 232" role="img" aria-label="两棵树：左边是 FramePop，右边是下一个新词站">
+          <line class="s8-ground" x1="56" y1="232" x2="404" y2="232"/>
+          <!-- 第一棵树：FramePop -->
+          <g id="s8-tree1">
+            <g id="s8-par" class="s8-ghost">
+              <path class="s8-branch" d="M150 122 L150 78"/>
+              <g class="s8-leaf big"><circle cx="150" cy="58" r="22"/><text x="150" y="62" text-anchor="middle">父词</text></g>
+            </g>
+            <path class="s8-trunk" d="M150 232 L150 122"/>
+            <path class="s8-branch" d="M150 172 Q126 162 104 148"/>
+            <path class="s8-branch" d="M150 160 Q176 150 198 136"/>
+            <g class="s8-leaf"><circle cx="104" cy="148" r="16"/><text x="104" y="152" text-anchor="middle">图生</text></g>
+            <g class="s8-leaf"><circle cx="198" cy="136" r="16"/><text x="198" y="140" text-anchor="middle">文生</text></g>
+            <g class="s8-leaf big"><circle cx="150" cy="110" r="19"/><text x="150" y="114" text-anchor="middle">首页</text></g>
+            <g id="s8-bro" class="s8-ghost">
+              <path class="s8-branch" d="M150 208 Q120 200 86 192"/>
+              <path class="s8-branch" d="M150 198 Q184 190 216 182"/>
+              <g class="s8-leaf"><circle cx="86" cy="192" r="17"/><text x="86" y="196" text-anchor="middle">兄弟词</text></g>
+              <g class="s8-leaf"><circle cx="216" cy="182" r="17"/><text x="216" y="186" text-anchor="middle">兄弟词</text></g>
+            </g>
+            <text class="s8-tree-name" x="150" y="248" text-anchor="middle">FramePop（Lumibo 2）</text>
+          </g>
+          <!-- 第二棵树：下一个新词 -->
+          <g id="s8-tree2" class="s8-ghost">
+            <path class="s8-trunk" d="M330 232 L330 156"/>
+            <path class="s8-branch" d="M330 192 Q312 182 294 172"/>
+            <path class="s8-branch" d="M330 182 Q350 172 366 162"/>
+            <g class="s8-leaf"><circle cx="294" cy="172" r="14"/><text x="294" y="176" text-anchor="middle">内页</text></g>
+            <g class="s8-leaf"><circle cx="366" cy="162" r="14"/><text x="366" y="166" text-anchor="middle">内页</text></g>
+            <g class="s8-leaf big"><circle cx="330" cy="142" r="17"/><text x="330" y="146" text-anchor="middle">首页</text></g>
+            <text class="s8-tree-name" x="330" y="248" text-anchor="middle">下一个新词站</text>
+          </g>
+        </svg>
+      </div>
+      <div class="viz-controls s8-or-btns">
+        <button type="button" class="btn" id="s8-or-fallbtn">重看热度回落</button>
+        <button type="button" class="btn primary" id="s8-or-bro">做兄弟词</button>
+        <button type="button" class="btn primary" id="s8-or-par">做父词</button>
+        <button type="button" class="btn primary" id="s8-or-new">种下一棵新树</button>
+        <button type="button" class="btn" id="s8-or-reset">重来</button>
+      </div>
+      <p class="viz-say" id="s8-or-say" aria-live="polite"></p>
+    </div>
+
+    <div class="box analogy"><span class="lab">打个比方 · 数字果园</span><p>一个站像一棵果树：结果最多的季节会过去，树还在，还能接着结果。不停地种下一棵，一年半载回头看，就是一片果园。哥飞的原话是：「一个，两个，三个，不断的上线网站，一年半载之后回头看，你就会发现，积少成多。」「数字果园」是群友 GONG 在《哥飞实战手册》里的说法，源头是哥飞的「养网站防老」。</p></div>
+
+    <div class="quiz" data-answer="B">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">Lumibo 2 热度掉了，FramePop 每天的点击少了一大半。要不要关站？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">关掉，省下服务器的钱去做下一个</button>
+        <button class="q-opt" data-l="B">不关，转做兄弟词、父词，同时开下一个新词站</button>
+        <button class="q-opt" data-l="C">不关，但什么也不做，等热度自己回来</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>热点过去，流量不一定归零：哥飞举的热点站过了半年多，每天还有八九百上千个点击。站留着，在原来的域名上加兄弟词、再加父词；同时开下一个新词站，两件事不是二选一。<span class="st hf">哥飞原话</span></p></div>
+    </div>
+
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://mp.weixin.qq.com/s/oAmrfRXrIWAMBVS0uB6C8Q">《老手可以去做难而正确的事情，新手只需要去追热点追新词就行》</a><span class="meta">哥飞 · 2025-02-28 · 公众号</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/feoogz15ou">《保小图大：专门给初学者的用小词图谋大词做站策略》</a><span class="meta">哥飞 · 公众号文章，2023 年 9 月 · 兄弟词、父词怎么加</span></li>
+      <li><a href="https://mp.weixin.qq.com/s/L9BOyFrisy-xsw-NPWlPJQ">《放弃一站发思维，先从练手站做起》</a><span class="meta">哥飞 · 2024-12-02 · 公众号</span></li>
+      <li><a href="https://new.web.cafe/topic/8kgp07yhld">《哥飞实战手册：海外工具站从0到月入万刀全流程指南》</a><span class="meta">GONG（群友）· 2026-01-06</span></li>
+    </ul></div>
+  </section>
+
+  <!-- ============ 知识点 6 ============ -->
+  <section class="kp" id="k6">
+    <div class="kp-head"><span class="kp-no">知识点 6</span><h2>前三个月的时间表，和多久算失败</h2></div>
+    <p class="kp-say">把前三个月排成一张打卡表，每一格写<b>做什么</b>和<b>该看到什么</b>。表是哥飞 SEO Agent 照着哥飞的原文拼出来的<span class="st tl">推出来的</span>，其中<b>三五天有曝光、三五周有排名</b>这两条验收线是哥飞原话。<span class="st hf">哥飞原话</span></p>
+
+    <div class="viz" id="s8-planviz">
+      <div class="viz-head"><span class="viz-label">打卡表 · 做完一件勾一件（只存在你的浏览器里）</span><p class="viz-title">FramePop 的前 3 个月</p></div>
+      <ol class="s8-plan" id="s8-plan"></ol>
+      <div class="s8-plan-foot"><span>打卡 <b id="s8-plan-n">0</b> / <b id="s8-plan-total">0</b></span><span class="meter"><i id="s8-plan-meter"></i></span><button type="button" class="btn" id="s8-plan-reset">全部清空</button></div>
+    </div>
+
+    <p class="kp-say">做多久没起色算失败？资料里有两种说法，其实不矛盾：一个是<b>正常该看到的进度</b>，一个是<b>彻底放弃的底线</b>。</p>
+    <div class="s8-two">
+      <div class="box analogy"><span class="lab">哥飞：看进度</span><p>「作为新人，就应该短视一点」：上线三五天，GSC 里该有一点效果；三五周，该有不错的排名。看不到，就去查问题、改页面，不是干等。<span class="st hf">哥飞原话</span></p></div>
+      <div class="box good"><span class="lab">群友阿飞：放弃的底线</span><p>从 1 月做到 12 月，域名一年到期，还是没有任何起色、没有任何流量，「这个才是要放弃了」。一个站折腾半天不见起色，答案是「多上站,多找词,多累积经验」。<span class="st sq">社群经验</span></p></div>
+    </div>
+
+    <div class="viz" id="s8-sig">
+      <div class="viz-head"><span class="viz-label">动手玩 · 选你现在的情况</span><p class="viz-title">该继续、该改页面，还是该换词？</p></div>
+      <div class="s8-sig-pick" id="s8-sig-pick" role="group" aria-label="现在的情况"></div>
+      <div class="s8-sig-lamps" id="s8-sig-lamps">
+        <span class="go"><i></i>继续加外链</span>
+        <span class="fix"><i></i>改页面</span>
+        <span class="swap"><i></i>换词不换站</span>
+        <span class="stop"><i></i>放弃这个站</span>
+      </div>
+      <p class="viz-say" id="s8-sig-say" aria-live="polite">选一个上面的情况，看亮哪盏灯。</p>
+      <p class="viz-note">这几条信号是哥飞 SEO Agent 按原文推出来的，最后一条是群友阿飞的底线。</p>
+    </div>
+
+    <div class="box case"><span class="lab">真实案例 · 慢是常态</span><p>王马扎从 3 月中旬起前后做了 20 多个站，<b>4 个半月</b>才靠一个 AI 新词站的广告赚到第一个 0.01 美元。哥飞讲过的群友小南姐，做了六七十个站大部分没流量，才终于爆了一个。<span class="st sq">社群经验</span></p></div>
+
+    <div class="quiz" data-answer="A">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">上线两周，GSC 显示收录正常，可一个曝光都没有。先做什么？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">先改页面：照清单查标题、描述、H1、内容和文字是不是服务器上写好的</button>
+        <button class="q-opt" data-l="B">认定这个词不行，马上换个新域名重做</button>
+        <button class="q-opt" data-l="C">先放着不管，等满一年再说</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>收录正常却零曝光，多半是页面本身的问题，哥飞的说法是看不到效果就去排查。<span class="st hf">哥飞原话</span> 改了还不行再换词，换词不换站，比换域名省事得多。<span class="st tl">推出来的</span> 阿飞的「一年」是彻底放弃的底线，不是让你一年什么都不做。<span class="st sq">社群经验</span></p></div>
+    </div>
+
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://mp.weixin.qq.com/s/oAmrfRXrIWAMBVS0uB6C8Q">《老手可以去做难而正确的事情，新手只需要去追热点追新词就行》</a><span class="meta">哥飞 · 2025-02-28 · 公众号</span></li>
+      <li><a href="https://new.web.cafe/topic/vtq2v9lwp2">《萌新小白入门教程 2-常见问题解答》</a><span class="meta">阿飞（群友）· 2025-08-28</span></li>
+      <li><a href="https://new.web.cafe/topic/2mz756r3yb">《我的4000人出海创业社群里，靠SEO赚到钱的人都做对了什么？》</a><span class="meta">哥飞 · 2025-12-21</span></li>
+      <li><a href="https://new.web.cafe/topic/xmsohbemzf">《海外 AI 产品新手复盘：4 个月赚到 1 刀，15 天破 1000 刀》</a><span class="meta">王马扎 · 2025-09-26</span></li>
+      <li><span>三个月时间表和放弃信号：哥飞 SEO Agent 按哥飞原文拼的（2026-10-26），无单独文章</span></li>
+    </ul></div>
+  </section>
+
+  <!-- ============ 小结 ============ -->
+  <section class="kp" id="recap">
+    <div class="kp-head"><span class="kp-no">小结</span><h2>这一步记住 6 件事</h2></div>
+    <div class="recap"><ol>
+      <li>上线当天：GSC 验证网站、交 sitemap，再去几个地方发帖留链接。</li>
+      <li>对时间：24 小时收录（有外链最快 2 小时），再 24～48 小时出词；三五天有曝光，三五周有排名。48 小时没出词，查 TDH、内容、文字是不是靠脚本才出来。</li>
+      <li>出词＝进了前 200 名，排八九十名正常。上线后只干两件事：加精品页、加外链。</li>
+      <li>后台看四个数和每个词：变体写进首页，新的事新做一页，别人的品牌词先不动；排 3～20 名的重点照顾；已经有排名的首页别乱改。</li>
+      <li>精品页＝上线两周有排名、有曝光、有点击、出的词对。全站有曝光有点击的页 ÷ 谷歌发现的页，至少 1%。</li>
+      <li>热度掉了不关站：先兄弟词、再父词，同时种下一棵树。看不到进度先查问题；一年还没任何流量，才是放弃底线。</li>
+    </ol></div>
+    <div class="scorebar" data-scorebar></div>
+    <h3>这一步该读的原文（按顺序）</h3>
+    <ol class="readlist">
+      <li><a href="https://new.web.cafe/tutorial/detail/9sox64g7o9">《Google Search Console 使用入门讲解》</a><label><input type="checkbox">读过了</label><span class="why">上线当天照着点：验证网站、交 sitemap、看效果报表的四个数、处理通知。</span><span class="meta">哥飞 · 2025-01-16 · 约 15 分钟</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/sk5je1bj0f">《上站之后要做什么；再次详解谷歌搜索排名》</a><label><input type="checkbox">读过了</label><span class="why">24 小时收录、48 小时出词、没出词怎么查、出词＝前 200 名、上线后只干两件事。</span><span class="meta">哥飞 · 2025-01-20 · 约 25 分钟</span></li>
+      <li><a href="https://mp.weixin.qq.com/s/oAmrfRXrIWAMBVS0uB6C8Q">《老手可以去做难而正确的事情，新手只需要去追热点追新词就行》</a><label><input type="checkbox">读过了</label><span class="why">三五天、三五周两条验收线；热点过后流量不一定归零。</span><span class="meta">哥飞 · 2025-02-28 · 约 10 分钟</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/285cmpjx1m">《重新梳理排名三要素，以及外链到底在排名中起到了什么作用》</a><label><input type="checkbox">读过了</label><span class="why">排名看三样：自夸、试用、他夸，讲清外链在排名里起什么作用。</span><span class="meta">哥飞 · 2026-10-25 · 约 20 分钟</span></li>
+    </ol>
+  </section>
+
+</main>
+
+<nav id="pager"></nav>
+<footer id="foot"></footer>
+<script src="assets/kit.js"></script>
+<script>
+(() => {
+  const { $, $$, el, bindSeg, tween, sleep, fmt, replay, countUp, flip, store, SIM, addTerms } = KIT;
+
+  addTerms({
+    's8-v2ex': ['V2EX', '国内一个程序员社区，谷歌爬虫去得很勤。哥飞说在上面发帖介绍网站、留个链接，谷歌能更快发现你。'],
+    's8-ugc': ['UGC（用户内容）', '用户自己发的东西，比如评论、用户生成的作品。哥飞说别让它混进落地页，免得冲淡核心词。'],
+  });
+
+  // 例子统一用 KIT.SIM 的词表和页面清单；对不上就直接报错，免得两边各说各的
+  const WORD = Object.fromEntries(SIM.words.map(w => [w.w, w]));
+  const PAGE = Object.fromEntries(SIM.pages.map(p => [p.id, p]));
+  const simWord = w => { if (!WORD[w]) throw new Error(`KIT.SIM 词表里没有这个词：${w}`); return WORD[w]; };
+  const simPage = id => { if (!PAGE[id]) throw new Error(`KIT.SIM 页面清单里没有这一页：${id}`); return PAGE[id]; };
+  const T = (key, text) => `<button type="button" class="term" data-t="${key}">${text}</button>`;
+
+  // ================= 知识点 1：第一周时间轴 =================
+  const tl = $('#s8-tl');
+  const tlFill = $('.s8-fill', tl), tlFlag = $('.s8-flag', tl), tlSay = $('#s8-tl-say');
+  const tlNodes = $$('.s8-node', tl);
+  const TL_AT = [0, 25, 50, 75, 100];
+  const TL_SAY = [
+    links => `<b>第 0 天，上线当天</b>：在 GSC 里验证 ${SIM.domain}，左边菜单点「站点地图」，交上 sitemap。${links
+      ? `再去 ${T('s8-v2ex', 'V2EX')} 等好几个地方发帖，留下网站链接，也就是${T('external', '外链')}。`
+      : '只交 GSC 也能收录，就是在爬虫的待爬名单里慢慢排队。'}<span class="st hf">哥飞原话</span>`,
+    links => links
+      ? `<b>最快 2 小时收录</b>：爬虫每天发现很多新网站，排着队爬，多几条外链就能插队。哥飞原话是「在合适的外链刺激下，最快可以2小时被谷歌收录」。<span class="st hf">哥飞原话</span>`
+      : `<b>24 小时内${T('index', '收录')}</b>：页面内容写得没问题，一般 24 小时内谷歌就收录了。在谷歌搜 <code>site:${SIM.domain}</code>，能看到收录了几页。<span class="st hf">哥飞原话</span>`,
+    () => `<b>收录后 24～48 小时：${T('chuci', '出词')}</b>。GSC「效果」页开始有曝光，能看到哪些词让你被人看到、排第几。<b>48 小时还没动静</b>，就照下面的清单一条条查。<span class="st hf">哥飞原话</span>`,
+    () => `<b>第 3～5 天：有一点效果</b>。哥飞给新手的第一条验收线：「三五天之后，就应该在 GSC 看到一点效果了」。这几天每天看一眼 GSC 右上角的通知，接着发外链，博客评论外链也还有用。<span class="st hf">哥飞原话</span>`,
+    () => `<b>第 3～5 周：有不错的排名</b>。「三五周之后，就应该有不错的排名了」。这段时间只干两件事：<b>加精品页、加外链</b>。<span class="st hf">哥飞原话</span> 到点了还看不到这些进度，就去查问题，别干等。<span class="st tl">推出来的</span>`,
+  ];
+  let tlCur = 0, tlRun = 0, tlLinks = false;
+  const tlSet = p => { tlFill.style.width = p + '%'; tlFlag.style.left = p + '%'; };
+  function tlPaint(i, animate) {
+    tlNodes.forEach((b, k) => { b.classList.toggle('on', k <= i); b.setAttribute('aria-pressed', String(k === i)); });
+    $('b', tlNodes[1]).textContent = tlLinks ? '最快 2 小时' : '24 小时内';
+    tlSay.innerHTML = TL_SAY[i](tlLinks);
+    if (animate) replay(tlSay);
+  }
+  const tlMove = (run, from, to, ms) => new Promise(res => tween(ms, k => {
+    if (run === tlRun) tlSet(TL_AT[from] + (TL_AT[to] - TL_AT[from]) * k);
+  }, res));
+  async function tlGo(i) {
+    const run = ++tlRun;
+    await tlMove(run, tlCur, i, 600);
+    if (run !== tlRun) return;
+    tlCur = i;
+    tlPaint(i, true);
+  }
+  async function tlPlay() {
+    const run = ++tlRun;
+    tlCur = 0; tlSet(0); tlPaint(0, true);
+    for (let i = 1; i < TL_AT.length; i++) {
+      await sleep(1600);
+      if (run !== tlRun) return;
+      await tlMove(run, i - 1, i, i === 1 && tlLinks ? 350 : 1000);
+      if (run !== tlRun) return;
+      tlCur = i;
+      tlPaint(i, true);
+    }
+  }
+  tlNodes.forEach((b, i) => b.addEventListener('click', () => tlGo(i)));
+  $('#s8-tl-play').addEventListener('click', tlPlay);
+  bindSeg($('#s8-tl-mode'), v => { tlLinks = v === '1'; tlPaint(tlCur, true); });
+  tlSet(0);
+  tlPaint(0, false);
+
+  // 48 小时排查清单
+  const fixItems = $$('#s8-fix li'), fixN = $('#s8-fix-n');
+  fixItems.forEach(li => {
+    const q = $('.s8-fix-q', li), a = $('.s8-fix-a', li);
+    q.addEventListener('click', () => {
+      const open = q.getAttribute('aria-expanded') !== 'true';
+      q.setAttribute('aria-expanded', String(open));
+      a.hidden = !open;
+      if (open) { li.classList.add('done'); replay(a); }
+      const n = fixItems.filter(x => x.classList.contains('done')).length;
+      fixN.textContent = n === fixItems.length ? '5 条都查过了。改好以后再等 24～48 小时，看 GSC 有没有出词。' : `查过 ${n} / ${fixItems.length} 条`;
+    });
+  });
+
+  // ================= 知识点 2：200 个网页的赛场 =================
+  const grid = $('#s8-grid');
+  const cells = Array.from({ length: 200 }, (_, i) => {
+    const c = el('i', { title: `第 ${i + 1} 名` });
+    if (i < 10) c.classList.add('top');
+    grid.appendChild(c);
+    return c;
+  });
+  const AR_START = 88;
+  let arRank = AR_START, arLinks = 0, arPages = 0, arBusy = false;
+  const rankOut = $('#s8-rank'), arSay = $('#s8-ar-say'), arCount = $('#s8-ar-count');
+  function arPlace(r) {
+    cells.forEach(c => c.classList.remove('you'));
+    cells[r - 1].classList.add('you');
+    rankOut.textContent = r;
+    arCount.textContent = `外链 ${arLinks} 条 · 精品页 ${arPages} 个`;
+  }
+  function arMove(to) {
+    const from = arRank;
+    arRank = to;
+    return new Promise(res => {
+      let last = from;
+      tween(Math.min(1400, 260 + Math.abs(to - from) * 20), k => {
+        const r = Math.round(from + (to - from) * k);
+        if (r !== last) {
+          const old = cells[last - 1];
+          old.classList.remove('you');
+          old.classList.add('trail');
+          setTimeout(() => old.classList.remove('trail'), 380);
+          last = r;
+        }
+        cells[r - 1].classList.add('you');
+        rankOut.textContent = r;
+      }, () => { arPlace(to); res(); });
+    });
+  }
+  function arZone(r) {
+    if (r <= 10) return '<b>进了第一页（前 10 名）！</b>再往前，外链的质量越来越要紧。';
+    if (r <= 30) return '进了前 30。越往前越难，要的外链也越多。';
+    if (r <= 100) return '在前 100 名里。新站有了一些外链，一般都能轻松进前 100。';
+    return '还在 100 名以外。';
+  }
+  async function arAct(kind, btn) {
+    if (arBusy) return;
+    const from = arRank;
+    let to = from, msg = '';
+    if (kind === 'link') {
+      if (from === 1) { arSay.innerHTML = '<b>已经第 1 名了。</b>接下来是守住它：继续加外链，让用户用得满意。'; replay(arSay); return; }
+      arLinks++;
+      to = from > 30 ? Math.round(from * 0.6) : from > 10 ? Math.max(10, from - 5) : from - 1;
+      msg = `外链 +1：第 ${from} → 第 ${to} 名。${arZone(to)}${arLinks === 1 ? ' 新站别挑：「质量再差的外链，也比没有外链好」。<span class="st hf">哥飞原话</span>' : ''}`;
+    } else if (kind === 'page') {
+      arPages++;
+      to = from > 10 ? Math.round(from * 0.9) : from;
+      msg = from > 10
+        ? `精品页 +1：第 ${from} → 第 ${to} 名。网站里围绕 Lumibo 的好页面多了，谷歌更信你，也会多出几个词。光靠加页爬得慢，外链才是主要推力。`
+        : '精品页 +1：这个词的排名没动。已经在第一页了，加页主要是让网站多出几个词、更可信；在第一页里抢位置，还得靠外链，和用户用得满不满意。';
+    } else {
+      to = Math.min(200, from + (from <= 10 ? 2 : 5));
+      msg = `一个做得更好的对手进场，你被挤到第 ${to} 名。哥飞说新词刚开始，参赛的大多是「弱鸡」，没有对手就一直保持先发优势；一旦有人做得比你好，就会把你挤下去。<span class="st hf">哥飞原话</span>`;
+    }
+    arBusy = true;
+    btn.disabled = true;
+    await arMove(to);
+    arBusy = false;
+    btn.disabled = false;
+    arSay.className = 'viz-say' + (kind === 'rival' ? ' bad' : to <= 10 ? ' good' : '');
+    arSay.innerHTML = msg;
+    replay(arSay);
+  }
+  $('#s8-ar-link').addEventListener('click', e => arAct('link', e.currentTarget));
+  $('#s8-ar-page').addEventListener('click', e => arAct('page', e.currentTarget));
+  $('#s8-ar-rival').addEventListener('click', e => arAct('rival', e.currentTarget));
+  const arIntro = () => {
+    arSay.className = 'viz-say';
+    arSay.innerHTML = `刚出词：FramePop 排第 ${AR_START} 名。出词就说明进了前 200 名，只跟这 200 个网页比赛。点「加外链」往上爬，看几下能进第一页。`;
+  };
+  $('#s8-ar-reset').addEventListener('click', () => {
+    if (arBusy) return;
+    arRank = AR_START; arLinks = 0; arPages = 0;
+    arPlace(AR_START); arIntro(); replay(arSay);
+  });
+  arPlace(AR_START);
+  arIntro();
+
+  // 9 天真实数据（原文数字，柱子按大约数画）
+  const NINE = [
+    { h: 15, t: '上线当天（7 月 6 日）：15 次曝光，平均排名 6.8，已经在第一页，点击率 40%。' },
+    { h: 593, t: '第 2 天：593 次曝光，235 次点击，平均排名 5.7。' },
+    { h: 4900, t: '第 3 天（周六）：接近 5000 次曝光，1604 次点击，点击率 33.7%。' },
+    { h: 5200, t: '第 4 天：排名又往前走，五千多次曝光，1864 次点击。' },
+    { h: 3900, rival: true, t: '第 5 天：<b>竞争者出现</b>，排名降到 6.2；曝光接近 4000，1226 次点击。' },
+    { h: 3100, t: '第 6 天：排名不变，曝光掉到 3000 出头，点击率还稳在 30% 以上。' },
+    { h: 2100, t: '第 7 天：曝光两千出头，排名升到 5.5。' },
+    { h: 2000, t: '第 8 天：曝光 2000 左右，排名跌到第 7。' },
+    { h: 2100, t: '第 9 天：曝光两千出头，排名升到 5.3。<b>9 天合计 11030 个独立访客。</b>Threads 的热度最高点就在上线那天，之后一直往下走。' },
+  ];
+  const NINE_MAX = 5200, NINE_PX = 116;
+  const nineH = d => Math.max(3, d.h / NINE_MAX * NINE_PX);
+  const nineBox = $('#s8-nine'), nineSay = $('#s8-nine-say');
+  const nineBtns = NINE.map((d, i) => {
+    const b = el('button', { type: 'button', 'aria-pressed': 'false', 'aria-label': `第 ${i + 1} 天` }, `<i></i><span>${i + 1}</span>`);
+    if (d.rival) b.classList.add('rival');
+    $('i', b).style.height = nineH(d) + 'px';
+    b.addEventListener('click', () => { nineRun++; NINE.forEach((x, k) => { $('i', nineBtns[k]).style.height = nineH(x) + 'px'; }); nineShow(i, true); });
+    nineBox.appendChild(b);
+    return b;
+  });
+  function nineShow(i, animate) {
+    nineBtns.forEach((b, k) => b.setAttribute('aria-pressed', String(k === i)));
+    nineSay.innerHTML = NINE[i].t;
+    if (animate) replay(nineSay);
+  }
+  let nineRun = 0;
+  $('#s8-nine-play').addEventListener('click', async () => {
+    const run = ++nineRun;
+    nineBtns.forEach(b => { $('i', b).style.height = '3px'; });
+    for (let i = 0; i < NINE.length; i++) {
+      if (run !== nineRun) return;
+      const bar = $('i', nineBtns[i]), to = nineH(NINE[i]);
+      nineShow(i, true);
+      await new Promise(r => tween(450, k => { if (run === nineRun) bar.style.height = (3 + (to - 3) * k) + 'px'; }, r));
+      await sleep(900);
+    }
+  });
+  nineSay.innerHTML = '9 天合计 11030 个独立访客。点一根柱子看那天的数，或者点「按天播放」从第 1 天看起。';
+
+  // ================= 知识点 3：GSC 小练习 =================
+  const ACT = { text: '写进首页', own: '新做一页', skip: '先不动' };
+  const GS = [
+    { w: 'lumibo video generator', imp: 3200, clk: 96, pos: 8.4, right: ['skip'],
+      why: '核心词本来就在首页的标题和 H1 里，排第 8.4、正往前爬。页面别乱改，接着给首页加外链。',
+      no: { text: '它已经在首页标题里了，再塞一遍没用。8 月比赛第 3 名就是改了首页，已经排上去的词反而掉了。', own: '核心词就是首页的事，再做一页去抢同一个词，等于自己跟自己比赛。' } },
+    { w: 'lumibo ai video generator', imp: 1400, clk: 21, pos: 12.6, right: ['text'],
+      why: '和核心词是同一件事，只多了个 ai。写进首页标题的后半段或正文里就行。它排第 12.6，离第一页很近，值得照顾。',
+      no: { own: '同一件事不用拆页，拆了就是两页抢一个词。', skip: '排第 12.6、曝光 1,400，是最该照顾的那种词，首页里写到它花不了几分钟。' } },
+    { w: 'lumibo video maker', imp: 900, clk: 6, pos: 17.3, right: ['text'],
+      ok: { own: '哥飞说过同一件事的不同叫法可以各做一页，但 2026 年起他强调每页内容必须真不一样。新站先写进首页正文更稳，有数据了再拆。' },
+      why: '同一件事的另一种叫法，先写进首页正文。',
+      no: { skip: '排第 17.3，有人在搜，写进首页正文就能接住。' } },
+    { w: 'lumibo for tiktok', imp: 520, clk: 3, pos: 24.8, right: ['own'],
+      why: '「拿 Lumibo 做 TikTok 视频」是一件新的事，而且真有人搜。新做一个用途页 /for/tiktok，再从首页连过去。',
+      no: { text: '塞进首页，会把首页的主题冲淡。一件新的事，一个页面。', skip: '已经有 520 次曝光，说明真有人在找，值得给它一个页面。' } },
+    { w: 'lumibo 2 vs sora', imp: 380, clk: 1, pos: 33.5, right: ['own'],
+      ok: { skip: '对比页可以等第 3～6 周再做，先把功能页做扎实。' },
+      why: '对比是另一件事，单独做一个对比页 /vs/sora。',
+      no: { text: '「哪个更好」是另一个问题，写进首页会把首页的主题冲淡。' } },
+    { w: 'lumibo 2', imp: 6100, clk: 9, pos: 41.2, right: ['text', 'skip'],
+      why: '光秃秃的模型名，搜的人多半想找官网，第一名是官方。正文里提一句「支持 Lumibo 2」就够了，别为它单独做页，也别塞进标题。',
+      no: { own: '这是别人的品牌词，搜的人要找官网，你单独做一页也抢不过官方。' } },
+    { w: 'lumibo 2 download', imp: 760, clk: 0, pos: 47.6, right: ['skip'],
+      why: '搜的人想下载官方 App，你给不了，先不动。',
+      no: { own: '用户要的是官方 App，你做一页也满足不了，点进来就走。', text: '首页写「下载」，会招来找 App 的人，他们点进来就走。' } },
+    { w: 'ai video generator', imp: 2300, clk: 0, pos: 86.0, right: ['skip'],
+      why: '这是父词，搜的人多、对手很强，排 86 名很正常。等兄弟词站稳了（大约第 3 个月），再把它加进首页标题，这叫「保小图大」。',
+      no: { text: '现在就塞进首页标题太早了：先把小词保住，再图大词。', own: '父词要靠整个站的分量去拿，单做一页抢不动。' } },
+  ];
+  GS.forEach(r => simWord(r.w));
+  const gsImp = GS.reduce((s, r) => s + r.imp, 0), gsClk = GS.reduce((s, r) => s + r.clk, 0);
+  const gsPos = GS.reduce((s, r) => s + r.pos * r.imp, 0) / gsImp;
+  $('#s8-gs-sum').innerHTML = [['总点击', fmt(gsClk)], ['总曝光', fmt(gsImp)], ['平均点击率', (gsClk / gsImp * 100).toFixed(1) + '%'], ['平均排名', gsPos.toFixed(1)]]
+    .map(([a, b]) => `<div><span>${a}</span><b>${b}</b></div>`).join('');
+  const gsList = $('#s8-gs-list'), gsSay = $('#s8-gs-say');
+  const gsPicks = {};
+  const isHot = r => r.pos >= 3 && r.pos <= 20 && r.imp >= 500;
+  const gsRows = GS.map((r, i) => {
+    const row = el('div', { class: 's8-gs-row' + (isHot(r) ? ' hot' : '') });
+    row.dataset.i = i;
+    row.innerHTML = `<div class="s8-gs-q"><span>${r.w}</span>${isHot(r) ? '<span class="s8-gs-tag" hidden>重点照顾</span>' : ''}</div>
+      <div class="s8-gs-n"><span><i>曝光</i>${fmt(r.imp)}</span><span><i>点击</i>${r.clk}</span><span><i>排名</i>${r.pos.toFixed(1)}</span></div>
+      <div class="seg s8-gs-act" role="group" aria-label="${r.w} 怎么处理">${Object.entries(ACT).map(([k, v]) => `<button type="button" data-v="${k}" aria-pressed="false">${v}</button>`).join('')}</div>
+      <p class="s8-gs-fb" hidden></p>`;
+    bindSeg($('.s8-gs-act', row), v => gsPick(i, v));
+    gsList.appendChild(row);
+    return row;
+  });
+  function gsPick(i, v) {
+    const r = GS[i], row = gsRows[i];
+    const verdict = r.right.includes(v) ? 'good' : (r.ok && r.ok[v]) ? 'ok' : 'bad';
+    gsPicks[i] = verdict;
+    row.classList.remove('good', 'ok', 'bad');
+    row.classList.add(verdict);
+    const fb = $('.s8-gs-fb', row);
+    if (verdict === 'good') fb.innerHTML = `<b>对。</b>${r.why}`;
+    else if (verdict === 'ok') fb.innerHTML = `<b>也说得通。</b>${r.ok[v]}`;
+    else fb.innerHTML = `<b>不太对，该选「${r.right.map(k => ACT[k]).join('」或「')}」。</b>${(r.no && r.no[v]) ? r.no[v] + ' ' : ''}${r.why}`;
+    fb.hidden = false;
+    replay(fb);
+    gsSummary();
+  }
+  function gsSummary() {
+    const done = Object.keys(gsPicks).length;
+    const good = Object.values(gsPicks).filter(x => x === 'good').length;
+    const ok = Object.values(gsPicks).filter(x => x === 'ok').length;
+    if (done < GS.length) {
+      gsSay.className = 'viz-say';
+      gsSay.innerHTML = `已经处理 ${done} / ${GS.length} 个词：做对 <b>${good}</b> 个${ok ? `，也说得通 ${ok} 个` : ''}。`;
+      return;
+    }
+    gsSay.className = 'viz-say ' + (good + ok === GS.length ? 'good' : 'bad');
+    gsSay.innerHTML = `8 个词处理完：做对 <b>${good}</b> 个${ok ? `，也说得通 ${ok} 个` : ''}。记住四条：<b>变体写进首页</b>；<b>新的事、有人搜，新做一页</b>；<b>别人的品牌词、给不了的、父词，先不动</b>；<b>已经有排名的首页别乱改</b>。`;
+    if (good === GS.length) KIT.confetti($('#s8-gsc'));
+  }
+  const gsSort = v => [...gsRows]
+    .sort((a, b) => v === 'pos' ? GS[a.dataset.i].pos - GS[b.dataset.i].pos : GS[b.dataset.i].imp - GS[a.dataset.i].imp)
+    .forEach(r => gsList.appendChild(r));
+  bindSeg($('#s8-gs-sort'), v => flip(gsRows, () => gsSort(v)));
+  gsSort('imp');
+  $('#s8-gs-hot').addEventListener('click', e => {
+    const btn = e.currentTarget, on = btn.getAttribute('aria-pressed') !== 'true';
+    btn.setAttribute('aria-pressed', String(on));
+    gsList.classList.toggle('hot', on);
+    $$('.s8-gs-tag', gsList).forEach(t => { t.hidden = !on; });
+    if (on) {
+      gsSay.className = 'viz-say good';
+      gsSay.innerHTML = '亮着的 3 个词，排在 3～20 名、曝光也不少，离第一页最近，<b>重点照顾</b>：先确认页面写到了它，再给那一页加外链。';
+      replay(gsSay);
+    } else gsSummary();
+  });
+
+  // ================= 知识点 4：两周验收器 =================
+  const CK = [
+    { page: 'home', imp: 3200, clk: 96, got: ['lumibo video generator', 'lumibo ai video generator'], word: true },
+    { page: 'i2v', imp: 1150, clk: 38, got: ['lumibo image to video'], word: true },
+    { page: 't2v', imp: 640, clk: 0, got: ['lumibo text to video'], word: true },
+    { page: 'howto', imp: 420, clk: 5, got: ['lumibo 2 download'], word: false },
+    { page: 'prompts', imp: 0, clk: 0, got: [], word: false },
+  ];
+  CK.forEach(c => { simPage(c.page); c.got.forEach(simWord); });
+  const ckPick = $('#s8-ck-pick'), ckCard = $('#s8-ck-card'), ckOwn = $('#s8-ck-own'), ckSay = $('#s8-ck-say');
+  const lamps = $$('#s8-lamps li');
+  ckPick.innerHTML = CK.map((c, i) => `<button type="button" data-v="${i}" aria-pressed="${i === 0}">${simPage(c.page).name}</button>`).join('') + '<button type="button" data-v="own" aria-pressed="false">自己的页</button>';
+  const own = { imp: true, clk: true, word: true };
+  const LAMP_TXT = [['有', '没有'], ['有', '没有'], ['对', '不对']];
+  const CK_SAY = [
+    '<b>两周零曝光</b>：先在 GSC 顶上的网址检查里输入这一页的网址，看收录了没有。没收录，多半是技术问题（比如文字靠脚本才出来）；收录了还是零曝光，就改内容。<b>同类的页先别再加。</b><span class="st tl">推出来的</span>',
+    '<b>有人看到、没人点</b>：改 Title 和描述，让人更想点；首屏一眼说清这一页能干什么。有曝光说明谷歌认了这一页，别推倒重来。<span class="st tl">推出来的</span>',
+    '<b>出的词不是你想要的</b>：哥飞说这是文案有问题。改这一页的 H1 和 Title，内容往你瞄准的那个词上靠，先别急着加新页。<span class="st hf">哥飞原话</span><span class="st tl">推出来的</span>',
+  ];
+  let ckRun = 0;
+  async function ckCheck(ans, animate) {
+    const run = ++ckRun;
+    const res = [ans.imp, ans.clk, ans.word];
+    lamps.forEach(l => { l.className = ''; $('span', l).textContent = animate ? '查一查…' : ''; });
+    if (animate) { ckSay.className = 'viz-say'; ckSay.textContent = '验收中……'; }
+    let failAt = -1;
+    for (let k = 0; k < 3; k++) {
+      if (animate) await sleep(480);
+      if (run !== ckRun) return;
+      if (failAt >= 0) { lamps[k].className = 'skip'; $('span', lamps[k]).textContent = '先不用看'; continue; }
+      lamps[k].className = res[k] ? 'pass' : 'fail';
+      $('span', lamps[k]).textContent = LAMP_TXT[k][res[k] ? 0 : 1];
+      if (!res[k]) failAt = k;
+    }
+    ckSay.className = 'viz-say ' + (failAt < 0 ? 'good' : 'bad');
+    ckSay.innerHTML = failAt < 0
+      ? '<b>精品页！</b>上线两周，有排名、有曝光、有点击，出的词也对。照这一页的做法，去做下一页。<span class="st hf">哥飞原话</span>'
+      : CK_SAY[failAt];
+    if (animate) replay(ckSay);
+  }
+  function ckShow(v, animate) {
+    if (v === 'own') {
+      ckCard.innerHTML = '想想你自己网站上一个上线满两周的页面，在下面三个问题里选「有」或「没有」。';
+      ckOwn.hidden = false;
+      ckCheck(own, animate);
+      return;
+    }
+    ckOwn.hidden = true;
+    const c = CK[v], p = simPage(c.page);
+    ckCard.innerHTML = `<span><b>${p.name}</b>　<code>${SIM.domain}${p.path}</code>　瞄准的词：<b>${p.kw}</b></span>
+      <span class="s8-ck-data"><span>两周曝光 <b>${fmt(c.imp)}</b></span><span>点击 <b>${c.clk}</b></span><span>出的词 <b>${c.got.length ? c.got.join('、') : '（还没有）'}</b></span></span>`;
+    ckCheck({ imp: c.imp > 0, clk: c.clk > 0, word: c.word }, animate);
+  }
+  bindSeg(ckPick, v => ckShow(v === 'own' ? 'own' : Number(v), true));
+  $$('.seg[data-q]', ckOwn).forEach(g => bindSeg(g, v => { own[g.dataset.q] = v === '1'; ckCheck(own, true); }));
+  ckShow(0, false);
+
+  // 网站及格线
+  const PS = {
+    fp: { a: 4, b: 10, name: 'FramePop', tag: 'sy' },
+    gefei: { a: 760, b: 1000, name: '哥飞自己的站', note: '哥飞在群里说的：1000 个收录、760 个有点击（经哥飞 SEO Agent 转述）。' },
+    woy: { a: 1000, b: 13385, name: 'Woy.ai', note: '它有点击的页其实超过 1000 个，可 GSC 最多只能导出 1000 个，只能按 1000 算。' },
+    sticker: { a: 122, b: 56993, name: 'Sticker.Show', note: '给每条用户生成的内容做一个页面，页面一多，比例就很低。' },
+    aisong: { a: 307, b: 300000, name: 'AISong', note: '30 万个页面，只有 307 个有曝光有点击。' },
+  };
+  const psGrid = $('#s8-ps-grid'), psRange = $('#s8-ps-range'), psRW = $('#s8-ps-rw');
+  const psCells = Array.from({ length: 100 }, (_, i) => {
+    const c = el('i');
+    if (i === 0) c.classList.add('line');
+    c.style.setProperty('--dl', (i * 5) + 'ms');
+    psGrid.appendChild(c);
+    return c;
+  });
+  let psKey = 'fp';
+  const pctText = p => p >= 10 ? p.toFixed(0) + '%' : p >= 1 ? p.toFixed(1) + '%' : p.toFixed(2) + '%';
+  const wanText = w => w >= 100 ? fmt(w) + '‱' : w.toFixed(w >= 10 ? 1 : 2) + '‱';
+  function psPaint(animate) {
+    const s = PS[psKey], extra = psKey === 'fp' ? Number(psRange.value) : 0;
+    const a = s.a, b = s.b + extra, pct = a / b * 100, good = pct >= 1;
+    psCells.forEach((c, i) => c.style.setProperty('--f', Math.max(0, Math.min(1, pct - i)) * 100 + '%'));
+    $('#s8-ps-formula').innerHTML = `${s.name}${s.tag ? '（示意）' : '（原文数字）'}：有曝光有点击 <b>${fmt(a)}</b> 页 ÷ 谷歌发现 <b>${fmt(b)}</b> 页`;
+    const pctEl = $('#s8-ps-pct');
+    pctEl.className = 's8-ps-pct ' + (good ? 'good' : 'bad');
+    pctEl.textContent = `${pctText(pct)}`;
+    const v = $('#s8-ps-verdict');
+    v.className = 's8-ps-verdict ' + (good ? 'good' : 'bad');
+    v.textContent = `${wanText(a / b * 10000)}　${good ? '及格（至少 1%）' : '不及格（不到 1%）'}`;
+    const say = $('#s8-ps-say');
+    say.className = 'viz-say ' + (good ? 'good' : 'bad');
+    if (psKey === 'fp') {
+      $('#s8-ps-n').textContent = extra;
+      say.innerHTML = extra === 0
+        ? `FramePop 现在被谷歌发现 10 页，其中 4 页有曝光有点击（示意），一格一格涂满 40 格。拖滑块，看一口气再铺几百页、却都没出词会怎样。`
+        : good
+          ? `再铺 ${extra} 页都没出词，比例从 40% 掉到 ${pctText(pct)}。还在线上，可每多一页没出词的，就往下掉一点。`
+          : `再铺 ${extra} 页都没出词，比例跌破 1% 了。哥飞说低于这条线，就要反思做页面的办法是不是有问题，<b>立即停止生成新页面，先处理老页面</b>，再想新办法。<span class="st hf">哥飞原话</span>`;
+    } else {
+      say.innerHTML = `${s.name}：${pctText(pct)}，${good ? '过了及格线。' : '没过及格线。'}${s.note}`;
+    }
+    if (animate) replay(say);
+  }
+  bindSeg($('#s8-ps-pick'), v => { psKey = v; psRW.hidden = v !== 'fp'; psPaint(true); });
+  psRange.addEventListener('input', () => psPaint(false));
+  psPaint(false);
+
+  // ================= 知识点 5：数字果园 =================
+  const OR_PEAK = 3200, OR_LOW = 700, OR_MAX = 4200;
+  const orA = $('#s8-or-a'), orB = $('#s8-or-b'), orTotal = $('#s8-or-total'), orSay = $('#s8-or-say');
+  const fallPath = $('#s8-fall');
+  const bro = $('#s8-bro'), par = $('#s8-par'), tree2 = $('#s8-tree2');
+  $('#s8-or-peak').style.left = (OR_PEAK / OR_MAX * 100) + '%';
+  const orState = { t1: OR_LOW, t2: 0, bro: false, par: false, tree2: false };
+  let orBusy = false;
+  function orBars(animate) {
+    orA.style.width = (orState.t1 / OR_MAX * 100) + '%';
+    orB.style.width = (orState.t2 / OR_MAX * 100) + '%';
+    const total = orState.t1 + orState.t2;
+    if (animate) countUp(orTotal, total); else { orTotal.textContent = fmt(total); orTotal.dataset.val = total; }
+  }
+  function orSayIt(html, cls) { orSay.className = 'viz-say' + (cls ? ' ' + cls : ''); orSay.innerHTML = html; replay(orSay); }
+  function growPath(p, ms) {
+    const len = p.getTotalLength();
+    p.style.strokeDasharray = len;
+    p.style.strokeDashoffset = len;
+    return new Promise(res => tween(ms, k => { p.style.strokeDashoffset = len * (1 - k); }, () => { p.style.strokeDasharray = ''; p.style.strokeDashoffset = ''; res(); }));
+  }
+  function popLeaf(g, ms) {
+    const c = $('circle', g), cx = c.getAttribute('cx'), cy = c.getAttribute('cy');
+    return new Promise(res => tween(ms, k => {
+      const s = k < 1 ? k * 1.12 : 1;
+      g.setAttribute('transform', `translate(${cx} ${cy}) scale(${s}) translate(${-cx} ${-cy})`);
+    }, () => { g.removeAttribute('transform'); res(); }));
+  }
+  async function growGroup(g) {
+    g.classList.remove('s8-ghost');
+    const leaves = $$('.s8-leaf', g);
+    leaves.forEach(l => l.setAttribute('transform', `translate(${$('circle', l).getAttribute('cx')} ${$('circle', l).getAttribute('cy')}) scale(0) translate(${-$('circle', l).getAttribute('cx')} ${-$('circle', l).getAttribute('cy')})`));
+    await Promise.all($$('.s8-branch, .s8-trunk', g).map(p => growPath(p, 750)));
+    for (const l of leaves) await popLeaf(l, 280);
+  }
+  function orShake(btn) { btn.classList.remove('s8-shake'); void btn.offsetWidth; btn.classList.add('s8-shake'); }
+  $('#s8-or-fallbtn').addEventListener('click', async () => {
+    if (orBusy) return;
+    orBusy = true;
+    const keep1 = orState.t1, keep2 = orState.t2;
+    orState.t1 = OR_PEAK; orState.t2 = 0; orBars(false);
+    orSayIt('Lumibo 2 刚发布、最火的那几周，FramePop 每天能有 3,200 次点击（示意）……');
+    await sleep(500);
+    await growPath(fallPath, 1300);
+    orState.t1 = OR_LOW; orBars(true);
+    orSayIt(`热度回落，点击掉到每天 ${fmt(OR_LOW)}，<b>但没有归零</b>。哥飞说热点过去之后，流量不一定完全没有，站稳了脚跟，余量也能吃很久。<span class="st hf">哥飞原话</span>`);
+    if (keep1 !== OR_LOW || keep2) {
+      await sleep(1600);
+      orState.t1 = keep1; orState.t2 = keep2; orBars(true);
+      orSay.insertAdjacentHTML('beforeend', ` 再加上你后来种的${orState.par ? '兄弟词、父词' : orState.bro ? '兄弟词' : ''}${keep2 ? (keep1 !== OR_LOW ? '和' : '') + '第二棵树' : ''}，现在每天一共 ${fmt(keep1 + keep2)}。`);
+    }
+    orBusy = false;
+  });
+  $('#s8-or-bro').addEventListener('click', async e => {
+    if (orBusy) return;
+    if (orState.bro) { orSayIt('兄弟词已经种上了。下一步可以试试「做父词」。'); return; }
+    orBusy = true;
+    await growGroup(bro);
+    orState.bro = true; orState.t1 += 500; orBars(true);
+    orSayIt(`<b>做兄弟词</b>：和你的词同一层、需求相近的词，比如同类的其他 AI 视频模型的生成器（示意）<span class="st tl">推出来的</span>。就在 FramePop 这个域名上做，不另注册：「在标题里增加兄弟词汇，在首页增加兄弟词汇的解释」，再给它们做内页。域名在小词上已经有了分量，谷歌更容易接受兄弟词。<span class="st hf">哥飞原话</span>`, 'good');
+    orBusy = false;
+  });
+  $('#s8-or-par').addEventListener('click', async e => {
+    if (orBusy) return;
+    if (!orState.bro) {
+      orShake(e.currentTarget);
+      orSayIt('<b>先别急。</b>保小图大的顺序是先兄弟词、后父词：几个兄弟词都站稳了，你去搜父词，一般也能搜到自己，这时候再加大马力。先点「做兄弟词」。<span class="st hf">哥飞原话</span>', 'bad');
+      return;
+    }
+    if (orState.par) { orSayIt('父词已经加上了。接下来就是慢慢磨：父词竞争大，要更多内页和外链。'); return; }
+    orBusy = true;
+    await growGroup(par);
+    orState.par = true; orState.t1 += 400; orBars(true);
+    orSayIt(`<b>做父词</b>：首页标题加上 <b>${simWord('ai video generator').w}</b>，首页加父词的解释，再加更多父词下面的兄弟词。父词搜的人多、对手也强，所以涨得慢。域名还是原来那个小词域名，哥飞说「其实也没多大关系」。<span class="st hf">哥飞原话</span>`, 'good');
+    orBusy = false;
+  });
+  $('#s8-or-new').addEventListener('click', async () => {
+    if (orBusy) return;
+    if (orState.tree2) { orSayIt('第二棵树已经在长了。一棵一棵种下去，就是一片果园。'); return; }
+    orBusy = true;
+    await growGroup(tree2);
+    orState.tree2 = true; orState.t2 = 1200; orBars(true);
+    orSayIt('<b>种下一棵新树</b>：盯住下一个刚出生的新词，再上一个站。哥飞说新手就该追热点、追新词练手，一个、两个、三个不断上线，一年半载回头看，积少成多。它和照顾老站同时做，不是二选一。<span class="st hf">哥飞原话</span>', 'good');
+    orBusy = false;
+  });
+  $('#s8-or-reset').addEventListener('click', () => {
+    if (orBusy) return;
+    [bro, par, tree2].forEach(g => g.classList.add('s8-ghost'));
+    Object.assign(orState, { t1: OR_LOW, t2: 0, bro: false, par: false, tree2: false });
+    orBars(true);
+    orSayIt('回到热度刚掉的时候。三个按钮可以都点一遍，注意先后顺序。');
+  });
+  orBars(false);
+  orSay.innerHTML = `热度过了最高点，FramePop 每天的点击从 3,200 掉到 ${fmt(OR_LOW)}（示意）。站留着，点下面的按钮，看接下来怎么种。`;
+
+  // ================= 知识点 6：打卡表 + 放弃信号 =================
+  const PLAN = [
+    { when: '第 1 天', items: ['域名解析好、网站部署上线，能打开', 'GSC 验证网站，交 sitemap', `首页的 Title 和 H1 写核心词 ${SIM.core}`], pass: '网站能打开，sitemap 提交成功' },
+    { when: '第 1 周', items: ['去 V2EX 等几个地方发帖，留下网站链接', '发 10～20 条博客评论外链', '每天看一眼 GSC 右上角的通知'], pass: '第 3～5 天，GSC 里有曝光' },
+    { when: '第 2～4 周', items: ['接着加外链', '照后台冒出的词：变体写进首页，新的事新做一页', '新页上线满两周，验收是不是精品页'], pass: '第 3～5 周，核心词有不错的排名' },
+    { when: '第 2 个月', items: ['核心词冲前 10，继续加外链', '兄弟词做成内页', '精品率稳了再加下一批页：一批 5～10 个，隔 1～2 周'], pass: '排在 3～20 名的词越来越多' },
+    { when: '第 3 个月', items: ['兄弟词站稳了，首页标题加父词、首页加父词的解释', '开下一个新词站'], pass: '曝光、点击稳定；决定继续养，还是当练手站' },
+  ];
+  const planBox = $('#s8-plan');
+  PLAN.forEach((s, si) => {
+    const li = el('li');
+    li.innerHTML = `<span class="s8-plan-when">${s.when}</span><div class="s8-plan-do">${s.items.map((t, k) => `<label><input type="checkbox" data-id="${si}-${k}"><span>${t}</span></label>`).join('')}</div><p class="s8-plan-ok"><b>验收：</b>${s.pass}</p>`;
+    planBox.appendChild(li);
+  });
+  const planBoxes = $$('input', planBox);
+  $('#s8-plan-total').textContent = planBoxes.length;
+  function planPaint(animate) {
+    planBoxes.forEach(b => b.closest('label').classList.toggle('done', b.checked));
+    $$('.s8-plan > li').forEach(li => li.classList.toggle('all', $$('input', li).every(b => b.checked)));
+    const n = planBoxes.filter(b => b.checked).length;
+    $('#s8-plan-n').textContent = n;
+    $('#s8-plan-meter').style.width = (n / planBoxes.length * 100) + '%';
+    if (animate && n === planBoxes.length) KIT.confetti($('#s8-planviz'));
+  }
+  const planSaved = store.get('s8.plan', {});
+  planBoxes.forEach(b => {
+    b.checked = !!planSaved[b.dataset.id];
+    b.addEventListener('change', () => {
+      const s = store.get('s8.plan', {});
+      if (b.checked) s[b.dataset.id] = true; else delete s[b.dataset.id];
+      store.set('s8.plan', s);
+      planPaint(true);
+    });
+  });
+  $('#s8-plan-reset').addEventListener('click', () => {
+    store.del('s8.plan');
+    planBoxes.forEach(b => { b.checked = false; });
+    planPaint(false);
+  });
+  planPaint(false);
+
+  const SIG = [
+    { label: '收录了，过了 48 小时一个词都不出', lamp: 'fix', say: '<b>改页面，不是换词。</b>照知识点 1 的清单查：标题、描述、H1 有没有核心词，内容够不够，文字是不是服务器上就写好的。<span class="st hf">哥飞原话</span>' },
+    { label: '有曝光，但排在 30 名以后', lamp: 'go', say: '<b>别放弃。</b>谷歌已经让你参赛了，接着加外链往前爬。<span class="st tl">推出来的</span>' },
+    { label: '在 10～20 名上下晃', lamp: 'go', say: '<b>快到了。</b>离第一页就差一口气，继续加外链，盯住这一页的点击。<span class="st tl">推出来的</span>' },
+    { label: '6～8 周了，核心词一直在 50 名外，加外链也不动', lamp: 'swap', say: '<b>考虑换词，不换站。</b>在同一个域名上换一个更好做的词，比重新注册域名、从零开始省事得多。<span class="st tl">推出来的</span>' },
+    { label: '域名快满一年了，还是没有任何流量', lamp: 'stop', say: '<b>可以放弃这个站了。</b>这是群友阿飞的底线：域名一年到期，还是没有任何起色、没有任何流量，「这个才是要放弃了」。经验带走，多上站、多找词。<span class="st sq">社群经验</span>' },
+  ];
+  const sigPick = $('#s8-sig-pick'), sigSay = $('#s8-sig-say');
+  const sigLamps = $$('#s8-sig-lamps span');
+  sigPick.innerHTML = SIG.map((s, i) => `<button type="button" class="btn" data-v="${i}" aria-pressed="false">${s.label}</button>`).join('');
+  let sigRun = 0;
+  bindSeg(sigPick, async v => {
+    const run = ++sigRun, s = SIG[Number(v)];
+    sigLamps.forEach(l => l.classList.remove('on'));
+    await sleep(260);
+    if (run !== sigRun) return;
+    sigLamps.forEach(l => l.classList.toggle('on', l.classList.contains(s.lamp)));
+    sigSay.className = 'viz-say ' + (s.lamp === 'go' ? 'good' : s.lamp === 'fix' ? '' : 'bad');
+    sigSay.innerHTML = s.say;
+    replay(sigSay);
+  });
+})();
+</script>
+</body>
+</html>

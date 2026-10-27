@@ -1,0 +1,736 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>第 6 关 连内链 · 站长模拟器 · AI 新词站白话课</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<style>
+/* 第 6 关：连内链。类名一律 s6- 开头 */
+.s6-stick { position: sticky; top: 53px; z-index: 30; box-shadow: 0 6px 18px rgba(17, 24, 39, .07); margin-top: 18px; }
+main > .kp { scroll-margin-top: 118px; }
+.s6-how { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
+.s6-how li { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; font-size: 15px; line-height: 1.65; }
+.s6-how i { font-style: normal; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--amber-soft); color: var(--amber); font-family: var(--font-mono); font-size: 13px; font-weight: 600; }
+
+.s6-rules { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.s6-rules li { font-size: 13px; line-height: 1.4; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); color: var(--muted); transition: background .3s, color .3s, border-color .3s; }
+.s6-rules li b { font-family: var(--font-mono); margin-right: 3px; }
+.s6-rules li.on { background: var(--green-soft); border-color: var(--green); color: var(--green); }
+.s6-rules li.on::after { content: " ✓"; font-weight: 700; }
+.s6-sub { font-size: 13px; color: var(--muted); font-weight: 650; }
+.s6-quick { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.s6-quick button[aria-pressed="true"] { background: var(--indigo); color: var(--on-indigo); border-color: var(--indigo); }
+.s6-quick button[aria-pressed="true"]::before { content: "✓ "; }
+
+.s6-stage { background: var(--bg); border-radius: 14px; padding: 6px; }
+#s6-svg { min-width: 560px; user-select: none; -webkit-user-select: none; }
+#s6-svg text { font-family: var(--font-body); }
+.s6-node { cursor: pointer; }
+.s6-node:focus { outline: none; }
+.s6-node rect { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; transition: fill .3s, stroke .3s, stroke-width .2s; }
+.s6-node:hover rect, .s6-node:focus-visible rect { stroke: var(--indigo); }
+.s6-node .nm { fill: var(--ink); font-size: 13.5px; font-weight: 650; pointer-events: none; }
+.s6-node .pa { fill: var(--muted); font-size: 10px; font-family: var(--font-mono) !important; pointer-events: none; }
+.s6-node.home rect { stroke: var(--indigo); stroke-width: 2; }
+.s6-node.sel rect { stroke: var(--indigo); stroke-width: 3.5; fill: var(--indigo-soft); }
+.s6-node.ok rect { stroke: var(--green); stroke-width: 2.5; fill: var(--green-soft); }
+.s6-node.island rect { stroke: var(--amber); stroke-width: 2.5; fill: var(--amber-soft); stroke-dasharray: 6 4; }
+.s6-node.pulse rect { animation: s6pulse .5s; }
+@keyframes s6pulse { 50% { stroke-width: 6; } }
+.s6-isl { display: none; fill: var(--amber); font-size: 12px; font-weight: 700; }
+.s6-node.island .s6-isl { display: block; }
+.s6-new rect { fill: var(--green); }
+.s6-new text { fill: var(--surface); font-size: 10.5px; font-weight: 700; }
+.s6-edge { fill: none; stroke: var(--indigo); stroke-width: 2; }
+.s6-edge.click { stroke: var(--amber); stroke-dasharray: 6 4; }
+.s6-edge.auto { stroke: var(--muted); stroke-width: 1.3; opacity: .55; }
+.s6-edge.bar { stroke-width: 1.6; }
+.s6-edge.hot { stroke-width: 4; }
+.s6-edge.trail { stroke: var(--green); stroke-width: 4; opacity: .55; stroke-linecap: round; }
+.s6-ah { fill: var(--indigo); }
+.s6-ah.amb { fill: var(--amber); }
+.s6-ah.mut { fill: var(--muted); }
+.s6-elab { fill: var(--amber); font-size: 10.5px; font-weight: 700; paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; pointer-events: none; }
+.s6-bar rect { fill: var(--indigo-soft); stroke: var(--indigo); stroke-width: 1.2; }
+.s6-bar text { fill: var(--indigo); font-size: 12px; font-weight: 650; }
+.s6-bar.foot rect { fill: var(--surface); stroke: var(--muted); stroke-dasharray: 4 3; }
+.s6-bar.foot text { fill: var(--muted); }
+.s6-bar.foot .s6-edge { stroke: var(--muted); }
+.s6-crawler circle { fill: var(--amber); }
+.s6-crawler text { fill: var(--amber); font-size: 11px; font-weight: 700; paint-order: stroke; stroke: var(--bg); stroke-width: 4px; }
+.s6-ball { fill: var(--green); }
+.s6-ball.lost { fill: var(--amber); }
+.s6-pow { fill: var(--green); font-size: 12px; font-weight: 700; font-family: var(--font-mono) !important; }
+
+.s6-pick { display: grid; gap: 8px; padding: 12px 14px; border-radius: 12px; border: 1.5px solid var(--indigo); background: var(--indigo-soft); }
+.s6-pick p { font-size: 15px; }
+.s6-pick .seg button { font-family: var(--font-mono); font-size: 13.5px; }
+.s6-pick .seg button[data-v="click"][aria-pressed="true"] { background: var(--amber); border-color: var(--amber); color: var(--surface); }
+.s6-pick-read { font-size: 13.5px; color: var(--muted); }
+.s6-pick-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.s6-links { display: flex; flex-wrap: wrap; gap: 6px; }
+.s6-links button { font: inherit; font-size: 13px; line-height: 1.4; padding: 5px 10px; border-radius: 8px; border: 1px solid var(--indigo); background: var(--surface); color: var(--indigo); cursor: pointer; }
+.s6-links button.click { border-color: var(--amber); color: var(--amber); border-style: dashed; }
+.s6-links button.cur { box-shadow: 0 0 0 3px color-mix(in srgb, var(--indigo) 25%, transparent); }
+.s6-links em { font-style: normal; font-family: var(--font-mono); font-size: 12px; }
+
+.s6-go { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.s6-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.s6-stats div { background: var(--bg); border-radius: 12px; padding: 10px 12px; display: grid; gap: 2px; }
+.s6-stats span { font-size: 12.5px; color: var(--muted); }
+.s6-stats b { font-family: var(--font-mono); font-size: 22px; line-height: 1.2; }
+.s6-stats .good b { color: var(--green); }
+.s6-stats .bad b { color: var(--amber); }
+.s6-log { list-style: none; margin: 0; padding: 10px 14px; display: grid; gap: 4px; max-height: 230px; overflow-y: auto; background: var(--bg); border-radius: 12px; font-size: 14px; line-height: 1.6; }
+.s6-log:empty::before { content: "爬虫日记：放爬虫以后，这里一行行记下它走到哪、读到了什么字。"; color: var(--muted); }
+.s6-log li { animation: rise .3s both; }
+.s6-log li.ok { color: var(--green); }
+.s6-log li.bad { color: var(--amber); }
+.s6-log li.muted { color: var(--muted); }
+
+.s6-check { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.s6-check li { display: grid; grid-template-columns: 26px 1fr auto; gap: 4px 10px; align-items: start; background: var(--surface); border-radius: 12px; padding: 10px 12px; font-size: 14.5px; line-height: 1.65; }
+.s6-check li > i { font-style: normal; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 13px; margin-top: 2px; }
+.s6-check li.ok > i { background: var(--green-soft); color: var(--green); }
+.s6-check li.miss > i { background: var(--amber-soft); color: var(--amber); }
+.s6-check li > em { font-style: normal; font-family: var(--font-mono); font-weight: 600; white-space: nowrap; }
+.s6-check li.ok > em { color: var(--green); }
+.s6-check li.miss > em { color: var(--amber); }
+.s6-check b { display: block; }
+.s6-check a { font-size: 13.5px; }
+.s6-endbtns { display: flex; flex-wrap: wrap; gap: 8px; }
+.s6-swipe { display: none; }
+@media (max-width: 620px) { .s6-swipe { display: block; margin-top: -6px; } }
+@media (max-width: 480px) {
+  .s6-stick { font-size: 13px; gap: 4px 12px; padding: 8px 12px; }
+  .s6-stick .s6-site { display: none; }
+  .s6-stats b { font-size: 19px; }
+  .s6-check li { grid-template-columns: 24px 1fr; }
+  .s6-check li > em { grid-column: 2; }
+}
+</style>
+</head>
+<body data-page="sim-6">
+<header id="topbar"></header>
+
+<div class="ph"><div class="wrap">
+  <span class="eyebrow">站长模拟器 · 第 6 关 / 共 8 关</span>
+  <h1>连内链：让谷歌的爬虫走遍全站</h1>
+  <p class="lead">FramePop 的 10 个页面都做好了，可页面之间几乎没连起来。你来点一点、连一连，再放谷歌的爬虫进来逛一圈：走不到的页会变红，连对了，力量会顺着链接流回首页。</p>
+  <div class="sim-task"><span class="lab">本关任务</span><p>① 爬虫从首页出发，要能走到全部 10 页；② 每一页都能一步回到首页；③ 首页要链到今天刚发的教程；④ 链接上写关键词，别写「点击这里」；⑤ 两个功能页（图生视频、文生视频）多给几个入口。连好了就点「放爬虫」，满分 100。</p></div>
+</div></div>
+
+<main class="wrap">
+  <div class="sim-hud s6-stick"><span class="lv">第 6 关</span><span class="s6-site">站：FramePop（示意）</span><span id="s6-prev" class="muted"></span><span class="pts">得分 <b id="s6-pts">—</b> / 100</span></div>
+
+  <section class="kp" id="s6-play">
+    <div class="kp-head"><span class="kp-no">动手连</span><h2>网站地图：点一个页面，再点另一个，就连一条链接</h2></div>
+    <p class="kp-say"><button type="button" class="term" data-t="crawler">爬虫</button>只会顺着<button type="button" class="term" data-t="internal">内链</button>从一页走到另一页。没有链接指过去的页，就是<button type="button" class="term" data-t="orphan">孤岛页</button>，谷歌找不到。链接上写的字叫<button type="button" class="term" data-t="anchor">锚文本</button>，爬虫靠它知道那一页讲什么。<span class="st hf">哥飞原话</span> 页面和数字都是 <span class="st sy">示意</span></p>
+    <ol class="s6-how">
+      <li><i>1</i><span>点一个页面（变蓝），再点另一个页面，就从前一页连一条链接到后一页。同样两页再连一次就是删掉。</span></li>
+      <li><i>2</i><span>也可以用快捷按钮，一下给每一页都加上：回首页的链接、顶部导航、面包屑、页脚。</span></li>
+      <li><i>3</i><span>连好了点「放爬虫」：看它能不能走遍全站，力量能不能流回首页，马上出分。</span></li>
+    </ol>
+
+    <div class="viz" id="s6-map">
+      <div class="viz-head"><span class="viz-label">动手玩 · 连链接 → 放爬虫</span><p class="viz-title">FramePop 的 10 个页面（模板自带了 3 条链接，链接文字都是「点击这里」）</p></div>
+      <div style="display:grid;gap:6px">
+        <span class="s6-sub">哥飞的内链 5 条（做到的会变绿）</span>
+        <ul class="s6-rules" id="s6-rules">
+          <li data-r="0"><b>1</b>每页链回首页</li>
+          <li data-r="1"><b>2</b>顶部导航放最重要的几页</li>
+          <li data-r="2"><b>3</b>面包屑</li>
+          <li data-r="3"><b>4</b>首页列出下一级的每一页</li>
+          <li data-r="4"><b>5</b>重要的页多给入口</li>
+        </ul>
+      </div>
+      <div style="display:grid;gap:6px">
+        <span class="s6-sub">快捷按钮（再点一次就去掉）</span>
+        <div class="s6-quick" id="s6-quick">
+          <button type="button" class="btn" data-f="home" aria-pressed="false">所有页加回首页链接</button>
+          <button type="button" class="btn" data-f="nav" aria-pressed="false">加顶部导航</button>
+          <button type="button" class="btn" data-f="crumb" aria-pressed="false">加面包屑</button>
+          <button type="button" class="btn" data-f="foot" aria-pressed="false">加页脚</button>
+        </div>
+      </div>
+      <div class="viz-scroll s6-stage" id="s6-stage">
+        <svg id="s6-svg" viewBox="0 0 720 474" role="img" aria-label="FramePop 网站地图：10 个页面和它们之间的链接"></svg>
+      </div>
+      <p class="viz-note s6-swipe">地图比手机屏幕宽，左右滑一滑看全图。</p>
+      <div class="legend-row">
+        <span><span class="sw ours"></span>你连的链接（写了关键词）</span>
+        <span><span class="sw big"></span>虚线 = 写着「点击这里」</span>
+        <span><span class="sw mut"></span>灰线 = 每页回首页的链接</span>
+        <span><span class="sw good"></span>爬虫走到的页</span>
+      </div>
+      <p class="viz-say" id="s6-say" aria-live="polite">先点「首页」，再点「教程」，试着连第一条链接。</p>
+      <div class="s6-pick" id="s6-pick" hidden>
+        <p><b id="s6-pick-edge">首页 → 教程</b>：这条链接上写什么字？</p>
+        <div class="seg" id="s6-pick-seg"><button type="button" data-v="click" aria-pressed="false">点击这里</button><button type="button" data-v="kw" aria-pressed="false">关键词</button></div>
+        <div class="s6-pick-row"><span class="s6-pick-read" id="s6-pick-read"></span><span style="display:flex;gap:8px"><button type="button" class="btn" id="s6-pick-del">删掉这条</button><button type="button" class="btn" id="s6-pick-close">好了</button></span></div>
+      </div>
+      <div style="display:grid;gap:6px">
+        <span class="s6-sub" id="s6-links-lab">你手动连的链接（点一条改链接文字）</span>
+        <div class="s6-links" id="s6-links"></div>
+      </div>
+      <div class="s6-go">
+        <button type="button" class="btn primary big" id="s6-run">放爬虫</button>
+        <button type="button" class="btn" id="s6-reset">清空，回到刚上线的样子</button>
+      </div>
+      <div class="s6-stats" id="s6-stats">
+        <div><span>爬虫走到</span><b id="s6-st-seen">— / 10</b></div>
+        <div><span>孤岛页</span><b id="s6-st-isl">—</b></div>
+        <div><span>力量回到首页</span><b id="s6-st-pow">— / 9</b></div>
+      </div>
+      <ol class="s6-log" id="s6-log" aria-live="polite"></ol>
+    </div>
+    <div class="box analogy"><span class="lab">打个比方</span><p>内链就是商场里的指示牌。没有牌子指过去的店，客人（爬虫）永远走不到；牌子上只写「点这里」，客人也不知道那家店卖什么。</p></div>
+  </section>
+
+  <section class="kp" id="s6-end" hidden>
+    <div class="kp-head"><span class="kp-no">结果卡</span><h2>爬虫逛完了，看看你连得怎么样</h2></div>
+    <div class="sim-result" id="s6-card">
+      <h3>本关得分 <span class="big-num" id="s6-score">0</span> / 100</h3>
+      <p id="s6-verdict"></p>
+      <ul class="s6-check" id="s6-check"></ul>
+      <div class="s6-endbtns">
+        <button type="button" class="btn primary" id="s6-again">回去改一改，再放一次</button>
+        <button type="button" class="btn" id="s6-replay">重玩这一关</button>
+        <a class="btn" href="sim-7.html" style="text-decoration:none">下一关：定价收款 →</a>
+      </div>
+    </div>
+    <div class="quiz" data-answer="B">
+      <span class="q-tag">复盘题</span>
+      <p class="q-title">放爬虫以后，「提示词模板页」变成了红色的孤岛。最可能是哪里没做好？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">它的标题里没写关键词</button>
+        <button class="q-opt" data-l="B">网站里没有任何一页链到它</button>
+        <button class="q-opt" data-l="C">它自己没有链回首页</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>爬虫只会顺着「指向它」的链接走过去，没人指向它，它就是孤岛。C 是另一回事：没链回首页，爬虫照样找得到它，只是它的力量传不回首页。sitemap 也代替不了内链，哥飞说 sitemap 对谷歌只是建议，谷歌更爱顺着链接爬。<span class="st hf">哥飞原话</span></p></div>
+    </div>
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://new.web.cafe/tutorial/detail/lqxrxz4wux">《再聊内链和内页》</a><span class="meta">哥飞 · 2025-01-15 · 内链 2～5 条</span></li>
+      <li><a href="https://mp.weixin.qq.com/s/X95UZmPEKHZZ4rNoBcaoJg">《养网站防老第 5 步：内页和内链》</a><span class="meta">哥飞 · 公众号 2023-10-19 · 首页用关键词链到每个内页</span></li>
+      <li><a href="https://mp.weixin.qq.com/s/Dgf_3fJmNrBWj6u76essUw">《如何制作出 SEO 友好的网页？》</a><span class="meta">哥飞 · 公众号 2024-04-19 · sitemap 只是建议、首页列最新内容</span></li>
+      <li><a href="https://new.web.cafe/experience/hq96hlfs02">《图解内链、外链、反链、正向链接》</a><span class="meta">哥飞 · 2025-08-15</span></li>
+      <li><span>「每个内页链回首页」「首页最显眼的位置给内页留入口，锚文本就用这个小词」：哥飞 1 群 2025-03-02、2025-04-27 群聊，经哥飞 SEO Agent 转述，无单独文章</span></li>
+    </ul></div>
+  </section>
+</main>
+
+<nav id="pager"></nav>
+<footer id="foot"></footer>
+<script src="assets/kit.js"></script>
+<script>
+(() => {
+  const { $, $$, svgEl, el, tween, sleep, countUp, SIM, store, reduce, confetti } = KIT;
+
+  // ---------- 页面、位置（页面清单用 KIT.SIM.pages 同一份） ----------
+  const POS = {
+    home: [360, 100], i2v: [92, 210], t2v: [268, 210], prompts: [452, 210], pricing: [628, 210],
+    howto: [190, 312], vs: [530, 312], about: [190, 396], privacy: [360, 396], terms: [530, 396],
+  };
+  const IDS = Object.keys(POS);
+  const PG = {};
+  IDS.forEach(id => {
+    const p = SIM.pages.find(x => x.id === id);
+    if (!p) throw new Error(`KIT.SIM.pages 里找不到页面：${id}`);
+    PG[id] = p;
+  });
+  const LABEL = { pricing: 'Pricing', about: 'About', privacy: 'Privacy Policy', terms: 'Terms of Service' };
+  const kwText = id => PG[id].kw || LABEL[id];
+  const name = id => PG[id].name;
+  const NAV = ['i2v', 't2v', 'prompts', 'pricing'];
+  const FOOT = ['about', 'privacy', 'terms'];
+  const CONTENT = ['i2v', 't2v', 'prompts', 'howto', 'vs'];
+  const NEWEST = 'howto';
+  const KEYPAGES = ['i2v', 't2v'];
+  const TEMPLATE = [['home', 'i2v'], ['home', 'pricing'], ['i2v', 't2v']];
+  const SIZE = id => id === 'home' ? [150, 48] : [116, 48];
+  const FLAG_NAME = { home: '所有页加回首页链接', nav: '顶部导航', crumb: '面包屑', foot: '页脚' };
+
+  // ---------- 状态 ----------
+  let manual = new Map();   // 'a>b' -> { from, to, anchor: 'click' | 'kw' }
+  const flags = { home: false, nav: false, crumb: false, foot: false };
+  let sel = null, picked = null, busy = false, ran = false;
+  function resetState() {
+    manual = new Map(TEMPLATE.map(([a, b]) => [`${a}>${b}`, { from: a, to: b, anchor: 'click' }]));
+    Object.keys(flags).forEach(k => { flags[k] = false; });
+    sel = null; picked = null;
+  }
+
+  // 实际生效的链接 = 手动连的 + 快捷按钮带来的
+  function edges() {
+    const m = new Map();
+    const add = (a, b) => { if (a !== b) m.set(`${a}>${b}`, { from: a, to: b }); };
+    manual.forEach(e => add(e.from, e.to));
+    IDS.forEach(id => {
+      if (flags.home || flags.crumb) add(id, 'home');
+      if (flags.nav) NAV.forEach(t => add(id, t));
+      if (flags.foot) FOOT.forEach(t => add(id, t));
+    });
+    return m;
+  }
+  const incoming = (E, id) => IDS.filter(a => a !== id && E.has(`${a}>${id}`)).length;
+  function viaFlag(a, b) {
+    if (b === 'home' && flags.home) return FLAG_NAME.home;
+    if (b === 'home' && flags.crumb) return FLAG_NAME.crumb;
+    if (flags.nav && NAV.includes(b)) return FLAG_NAME.nav;
+    if (flags.foot && FOOT.includes(b)) return FLAG_NAME.foot;
+    return '';
+  }
+  // 爬虫顺着某条链接读到的字：手动链接看你选的字，快捷按钮带来的都是页面名或关键词
+  function anchorRead(a, b) {
+    const e = manual.get(`${a}>${b}`);
+    return e && e.anchor === 'click' && !viaFlag(a, b) ? '点击这里' : kwText(b);
+  }
+
+  // ---------- 画图 ----------
+  const svg = $('#s6-svg');
+  const defs = svgEl('defs', {}, svg);
+  [['s6-ah', 's6-ah'], ['s6-ah-amb', 's6-ah amb'], ['s6-ah-mut', 's6-ah mut']].forEach(([id, cls]) => {
+    const m = svgEl('marker', { id, viewBox: '0 0 10 10', refX: 8.5, refY: 5, markerWidth: 9, markerHeight: 9, markerUnits: 'userSpaceOnUse', orient: 'auto-start-reverse' }, defs);
+    svgEl('path', { d: 'M0 0 L10 5 L0 10 z', class: cls }, m);
+  });
+  const gBar = svgEl('g', {}, svg), gAuto = svgEl('g', {}, svg), gHand = svgEl('g', {}, svg);
+  const gTrail = svgEl('g', {}, svg), gNode = svgEl('g', {}, svg), gFx = svgEl('g', {}, svg);
+  const powText = svgEl('text', { class: 's6-pow', x: 360, y: 66, 'text-anchor': 'middle', opacity: 0 }, gFx);
+
+  function clip(id, vx, vy, pad) {
+    const [x, y] = POS[id], [w, h] = SIZE(id);
+    const t = Math.min((w / 2 + pad) / Math.max(Math.abs(vx), 1e-6), (h / 2 + pad) / Math.max(Math.abs(vy), 1e-6));
+    return [x + vx * t, y + vy * t];
+  }
+  function geom(a, b, bend) {
+    const [x1, y1] = POS[a], [x2, y2] = POS[b];
+    const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy);
+    const cx = (x1 + x2) / 2 - dy / L * bend, cy = (y1 + y2) / 2 + dx / L * bend;
+    const p0 = clip(a, cx - x1, cy - y1, 2), p1 = clip(b, cx - x2, cy - y2, 5);
+    return {
+      d: `M${p0[0].toFixed(1)} ${p0[1].toFixed(1)} Q${cx.toFixed(1)} ${cy.toFixed(1)} ${p1[0].toFixed(1)} ${p1[1].toFixed(1)}`,
+      mid: [(p0[0] + 2 * cx + p1[0]) / 4, (p0[1] + 2 * cy + p1[1]) / 4],
+    };
+  }
+  // 线慢慢长出来
+  function grow(p) {
+    if (reduce) return;
+    const len = p.getTotalLength(), mk = p.getAttribute('marker-end');
+    p.removeAttribute('marker-end');
+    p.style.strokeDasharray = len; p.style.strokeDashoffset = len;
+    tween(520, k => { p.style.strokeDashoffset = len * (1 - k); }, () => {
+      p.style.strokeDasharray = ''; p.style.strokeDashoffset = '';
+      if (mk) p.setAttribute('marker-end', mk);
+    });
+  }
+  function drawBar(kind, animate) {
+    const top = kind === 'nav';
+    const g = svgEl('g', { class: 's6-bar ' + kind }, gBar);
+    const y = top ? 8 : 442, h = 26;
+    svgEl('rect', { x: 14, y, width: 692, height: h, rx: 8 }, g);
+    const t = svgEl('text', { x: 360, y: y + 17.5, 'text-anchor': 'middle' }, g);
+    t.textContent = top ? '顶部导航（每一页都有）：图生视频 · 文生视频 · 提示词模板 · 定价' : '页脚（每一页都有）：关于 · 隐私政策 · 服务条款';
+    (top ? NAV : FOOT).forEach(id => {
+      const [x, ny] = POS[id], nh = SIZE(id)[1];
+      const d = top ? `M${x} ${y + h} L${x} ${ny - nh / 2 - 5}` : `M${x} ${y} L${x} ${ny + nh / 2 + 5}`;
+      const p = svgEl('path', { d, class: 's6-edge bar', 'marker-end': `url(#${top ? 's6-ah' : 's6-ah-mut'})` }, g);
+      if (animate) grow(p);
+    });
+    if (animate && !reduce) { g.style.opacity = 0; tween(320, k => { g.style.opacity = k; }); }
+  }
+  function drawEdges(fresh = new Set()) {
+    gBar.textContent = ''; gAuto.textContent = ''; gHand.textContent = '';
+    if (flags.nav) drawBar('nav', fresh.has('nav'));
+    if (flags.foot) drawBar('foot', fresh.has('foot'));
+    if (flags.home || flags.crumb) {
+      IDS.filter(id => id !== 'home' && !manual.has(`${id}>home`)).forEach(id => {
+        const p = svgEl('path', { d: geom(id, 'home', 12).d, class: 's6-edge auto', 'marker-end': 'url(#s6-ah-mut)' }, gAuto);
+        if (fresh.has('home') || fresh.has('crumb')) grow(p);
+      });
+    }
+    manual.forEach((e, k) => {
+      const { d, mid } = geom(e.from, e.to, 16);
+      const click = e.anchor === 'click';
+      const p = svgEl('path', { d, class: 's6-edge' + (click ? ' click' : '') + (k === picked ? ' hot' : ''), 'marker-end': `url(#${click ? 's6-ah-amb' : 's6-ah'})` }, gHand);
+      if (fresh.has(k)) grow(p);
+      if (click) {
+        const t = svgEl('text', { class: 's6-elab', x: mid[0].toFixed(1), y: (mid[1] + 4).toFixed(1), 'text-anchor': 'middle' }, gHand);
+        t.textContent = '点击这里';
+      }
+    });
+  }
+
+  const nodeEl = {};
+  IDS.forEach(id => {
+    const [x, y] = POS[id], [w, h] = SIZE(id);
+    const g = svgEl('g', { class: 's6-node' + (id === 'home' ? ' home' : ''), transform: `translate(${x} ${y})`, tabindex: 0, role: 'button', 'aria-label': `${name(id)}，网址 ${PG[id].path}` }, gNode);
+    svgEl('rect', { x: -w / 2, y: -h / 2, width: w, height: h, rx: 10 }, g);
+    const t1 = svgEl('text', { class: 'nm', x: 0, y: -3, 'text-anchor': 'middle' }, g);
+    t1.textContent = name(id);
+    const t2 = svgEl('text', { class: 'pa', x: 0, y: 14, 'text-anchor': 'middle' }, g);
+    const path = PG[id].path;
+    t2.textContent = path.length > 18 ? path.slice(0, 16) + '…' : path;
+    if (id === NEWEST) {
+      const tag = svgEl('g', { class: 's6-new', transform: `translate(${w / 2 - 22} ${-h / 2 - 2})` }, g);
+      svgEl('rect', { x: -27, y: -9, width: 54, height: 18, rx: 9 }, tag);
+      const tt = svgEl('text', { x: 0, y: 3.8, 'text-anchor': 'middle' }, tag);
+      tt.textContent = '今天新发';
+    }
+    const isl = svgEl('text', { class: 's6-isl', x: 0, y: h / 2 + 15, 'text-anchor': 'middle' }, g);
+    isl.textContent = '孤岛：没人链到这里';
+    g.addEventListener('click', () => tapNode(id));
+    g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tapNode(id); } });
+    nodeEl[id] = g;
+  });
+
+  // ---------- 说明文字、规则灯、链接清单 ----------
+  const sayBox = $('#s6-say');
+  function say(html, tone) {
+    sayBox.innerHTML = html;
+    sayBox.className = 'viz-say' + (tone ? ' ' + tone : '');
+  }
+  function rulesState() {
+    const E = edges();
+    return [
+      IDS.every(id => id === 'home' || E.has(`${id}>home`)),
+      flags.nav,
+      flags.crumb,
+      CONTENT.every(id => E.has(`home>${id}`)),
+      KEYPAGES.every(id => incoming(E, id) >= 3),
+    ];
+  }
+  function paintRules() {
+    const st = rulesState();
+    $$('#s6-rules li').forEach((li, i) => li.classList.toggle('on', st[i]));
+  }
+  function paintLinks() {
+    const box = $('#s6-links');
+    box.textContent = '';
+    $('#s6-links-lab').textContent = manual.size ? `你手动连的链接（${manual.size} 条，点一条改链接文字）` : '你手动连的链接：还没有';
+    manual.forEach((e, k) => {
+      const b = el('button', { type: 'button', class: (e.anchor === 'click' ? 'click' : '') + (k === picked ? ' cur' : '') });
+      b.innerHTML = `${name(e.from)} → ${name(e.to)} · <em>${e.anchor === 'click' ? '点击这里' : kwText(e.to)}</em>`;
+      b.addEventListener('click', () => { if (!busy) openPick(k); });
+      box.appendChild(b);
+    });
+  }
+  function markSel() { IDS.forEach(id => nodeEl[id].classList.toggle('sel', id === sel)); }
+  function clearRun() {
+    if (!ran) return;
+    ran = false;
+    IDS.forEach(id => nodeEl[id].classList.remove('ok', 'island'));
+    gTrail.textContent = '';
+    gTrail.style.opacity = 1;
+    powText.setAttribute('opacity', 0);
+    $('#s6-st-seen').textContent = '— / 10'; $('#s6-st-isl').textContent = '—'; $('#s6-st-pow').textContent = '— / 9';
+    $$('#s6-stats div').forEach(d => d.classList.remove('good', 'bad'));
+  }
+  function changed(fresh) {
+    clearRun();
+    drawEdges(fresh);
+    paintRules();
+    paintLinks();
+  }
+
+  // ---------- 选链接文字 ----------
+  const pickBox = $('#s6-pick');
+  const [pickClick, pickKw] = $$('#s6-pick-seg button');
+  function openPick(k) {
+    const e = manual.get(k);
+    if (!e) return;
+    picked = k;
+    pickBox.hidden = false;
+    $('#s6-pick-edge').textContent = `${name(e.from)} → ${name(e.to)}`;
+    pickKw.textContent = kwText(e.to);
+    pickClick.setAttribute('aria-pressed', String(e.anchor === 'click'));
+    pickKw.setAttribute('aria-pressed', String(e.anchor === 'kw'));
+    $('#s6-pick-read').textContent = e.anchor === 'kw'
+      ? `爬虫读到「${kwText(e.to)}」，就知道那一页讲的是什么。`
+      : '爬虫读到「点击这里」，只知道有这一页，不知道它讲什么。';
+    drawEdges();
+    paintLinks();
+  }
+  function closePick() { picked = null; pickBox.hidden = true; drawEdges(); paintLinks(); }
+  [pickClick, pickKw].forEach(b => b.addEventListener('click', () => {
+    if (!picked || busy) return;
+    manual.get(picked).anchor = b.dataset.v;
+    const e = manual.get(picked);
+    clearRun();
+    openPick(picked);
+    paintRules();
+    say(b.dataset.v === 'kw'
+      ? `好：${name(e.from)} 链到 ${name(e.to)}，链接上写「<b>${kwText(e.to)}</b>」。谷歌会把这几个字当成那一页的「推荐词」。<span class="st tl">推出来的</span>`
+      : `链接上写「点击这里」，谷歌读不出那一页讲什么。新手和不少模板都这么写，最好改掉。`, b.dataset.v === 'kw' ? 'good' : 'bad');
+  }));
+  $('#s6-pick-del').addEventListener('click', () => {
+    if (!picked || busy) return;
+    const e = manual.get(picked);
+    manual.delete(picked);
+    picked = null; pickBox.hidden = true;
+    changed();
+    say(`删掉了链接：${name(e.from)} → ${name(e.to)}。`);
+  });
+  $('#s6-pick-close').addEventListener('click', closePick);
+
+  // ---------- 点页面连线 ----------
+  function tapNode(id) {
+    if (busy) return;
+    if (sel == null) {
+      sel = id; markSel();
+      say(`选中了「${name(id)}」。再点另一个页面，就从它连一条链接过去；再点它自己就取消。`);
+      return;
+    }
+    if (sel === id) { sel = null; markSel(); say('取消选中了。'); return; }
+    const a = sel, b = id;
+    sel = null; markSel();
+    const k = `${a}>${b}`;
+    if (manual.has(k)) {
+      manual.delete(k);
+      if (picked === k) { picked = null; pickBox.hidden = true; }
+      changed();
+      say(`删掉了链接：${name(a)} → ${name(b)}。`);
+      return;
+    }
+    const via = viaFlag(a, b);
+    if (via) {
+      say(`「${name(a)}」已经通过「${via}」链到「${name(b)}」了，不用再连。想去掉，就关掉上面的「${via}」按钮。`);
+      return;
+    }
+    manual.set(k, { from: a, to: b, anchor: 'click' });
+    changed(new Set([k]));
+    openPick(k);
+    let extra = '';
+    if (a === 'home' && b === NEWEST) extra = ' 首页一步就能点到新页，爬虫一来首页就能发现它。<span class="st hf">哥飞原话</span>';
+    else if (b === 'home') extra = ' 往首页的链接，会把这一页的力量传回首页。<span class="st hf">哥飞原话</span>';
+    say(`连上了：${name(a)} → ${name(b)}。链接上默认写着「点击这里」，在下面改成关键词更好。${extra}`);
+  }
+
+  // ---------- 快捷按钮 ----------
+  const FLAG_SAY = {
+    home: ['每一页都加了一条回首页的链接（第 1 条）。哥飞说这样「就能够把每一个内页的权重传递到首页」。<span class="st hf">哥飞原话</span>', '去掉了「每页回首页」的链接。'],
+    nav: ['每一页顶上都有了导航条，指向图生视频、文生视频、提示词模板、定价（第 2 条）。等于全站每一页都给这几页加了内链，它们的入口一下多了。<span class="st hf">哥飞原话</span>', '去掉了顶部导航。'],
+    crumb: ['每一页顶上加了「首页 › 本页」这一行（第 3 条），用户和谷歌都知道它在第几层。这个站只有两层，所以面包屑的上一级就是首页；等有了 /blog/ 这样的目录，它还会多指一层。<span class="st hf">哥飞原话</span>', '去掉了面包屑。'],
+    foot: ['每一页底下都有了页脚，指向关于、隐私政策、服务条款。这几页不指望带流量，但收款平台审核要看。<span class="st tl">推出来的</span> 页脚的链接没有导航显眼，力量也小一些。<span class="st hf">哥飞原话</span>', '去掉了页脚。'],
+  };
+  $$('#s6-quick button').forEach(b => b.addEventListener('click', () => {
+    if (busy) return;
+    const f = b.dataset.f;
+    flags[f] = !flags[f];
+    b.setAttribute('aria-pressed', String(flags[f]));
+    changed(flags[f] ? new Set([f]) : new Set());
+    say(FLAG_SAY[f][flags[f] ? 0 : 1], flags[f] ? 'good' : '');
+  }));
+  $('#s6-reset').addEventListener('click', () => {
+    if (busy) return;
+    resetState();
+    $$('#s6-quick button').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    pickBox.hidden = true;
+    markSel();
+    changed();
+    $('#s6-log').textContent = '';
+    say('回到刚上线的样子：只有模板自带的 3 条「点击这里」。');
+  });
+
+  // ---------- 放爬虫 ----------
+  const logBox = $('#s6-log');
+  function log(html, cls) {
+    const li = el('li', cls ? { class: cls } : {}, html);
+    logBox.appendChild(li);
+    logBox.scrollTop = logBox.scrollHeight;
+  }
+  function moveAlong(node, pts, msPerHop) {
+    return new Promise(res => {
+      if (reduce || pts.length < 2) { const p = pts[pts.length - 1]; node.setAttribute('transform', `translate(${p[0]} ${p[1]})`); res(); return; }
+      let i = 0;
+      const hop = () => {
+        const [x1, y1] = pts[i], [x2, y2] = pts[i + 1];
+        tween(msPerHop, k => node.setAttribute('transform', `translate(${x1 + (x2 - x1) * k} ${y1 + (y2 - y1) * k})`), () => {
+          i++;
+          if (i < pts.length - 1) hop(); else res();
+        });
+      };
+      hop();
+    });
+  }
+  function setBusy(on) {
+    busy = on;
+    $$('#s6-map button').forEach(b => { b.disabled = on; });
+    $('#s6-run').textContent = on ? '爬虫正在逛……' : '再放一次爬虫';
+  }
+  function pulse(id) { const g = nodeEl[id]; g.classList.remove('pulse'); void g.getBoundingClientRect(); g.classList.add('pulse'); }
+
+  async function runCrawler() {
+    if (busy) return;
+    sel = null; markSel();
+    if (picked) closePick();
+    clearRun();
+    setBusy(true);
+    ran = true;
+    logBox.textContent = '';
+    const E = edges();
+    const stage = $('#s6-stage');
+    // 1. 爬虫从首页出发，顺着链接一层层走
+    const seen = new Set(['home']), order = [], queue = ['home'];
+    while (queue.length) {
+      const a = queue.shift();
+      IDS.forEach(b => { if (!seen.has(b) && E.has(`${a}>${b}`)) { seen.add(b); order.push([a, b]); queue.push(b); } });
+    }
+    const bot = svgEl('g', { class: 's6-crawler', transform: `translate(${POS.home[0]} ${POS.home[1]})` }, gFx);
+    svgEl('circle', { r: 8 }, bot);
+    const bl = svgEl('text', { x: 11, y: -10 }, bot);
+    bl.textContent = '爬虫';
+    nodeEl.home.classList.add('ok');
+    log('爬虫从首页 framepop.com 出发。', 'muted');
+    await sleep(350);
+    for (const [a, b] of order) {
+      const room = stage.scrollWidth - stage.clientWidth;
+      if (room > 0) stage.scrollTo({ left: Math.max(0, Math.min(room, POS[b][0] / 720 * stage.scrollWidth - stage.clientWidth / 2)), behavior: reduce ? 'auto' : 'smooth' });
+      await moveAlong(bot, [POS[a], POS[b]], 420);
+      svgEl('path', { d: `M${POS[a][0]} ${POS[a][1]} L${POS[b][0]} ${POS[b][1]}`, class: 's6-edge trail' }, gTrail);
+      nodeEl[b].classList.add('ok');
+      pulse(b);
+      const word = anchorRead(a, b);
+      if (word === '点击这里') log(`从 ${name(a)} 顺着「点击这里」走到 ${name(b)}：只知道有这一页，不知道它讲什么。`, 'bad');
+      else log(`从 ${name(a)} 顺着「${word}」走到 ${name(b)}：记下了，这页讲 ${word}。`, 'ok');
+      await sleep(120);
+    }
+    bot.remove();
+    const islands = IDS.filter(id => !seen.has(id));
+    $('#s6-st-seen').textContent = `${seen.size} / 10`;
+    $('#s6-st-seen').parentElement.classList.add(islands.length ? 'bad' : 'good');
+    $('#s6-st-isl').textContent = `${islands.length} 页`;
+    $('#s6-st-isl').parentElement.classList.add(islands.length ? 'bad' : 'good');
+    if (islands.length) {
+      islands.forEach(id => nodeEl[id].classList.add('island'));
+      log(`走不到：${islands.map(name).join('、')}。没有任何链接指向它们，它们是孤岛。`, 'bad');
+    } else log('10 页全走到了，没有孤岛。', 'ok');
+    await sleep(500);
+
+    // 2. 力量小球：爬虫走到过的页，顺着链接把力量送回首页
+    const next = {}, back = new Set(['home']), q = ['home'];
+    while (q.length) {
+      const b = q.shift();
+      IDS.forEach(a => { if (!back.has(a) && E.has(`${a}>${b}`)) { back.add(a); next[a] = b; q.push(a); } });
+    }
+    const senders = IDS.filter(id => id !== 'home' && seen.has(id));
+    let power = 0;
+    powText.setAttribute('opacity', 1);
+    powText.textContent = '首页收到力量 0';
+    if (stage.scrollWidth > stage.clientWidth) stage.scrollTo({ left: (stage.scrollWidth - stage.clientWidth) / 2, behavior: reduce ? 'auto' : 'smooth' });
+    log('接着看力量：每个被找到的页，顺着链接把力量往首页送。', 'muted');
+    await Promise.all(senders.map(async (id, i) => {
+      await sleep(i * 160);
+      const ball = svgEl('circle', { class: 's6-ball', r: 6, transform: `translate(${POS[id][0]} ${POS[id][1]})` }, gFx);
+      if (back.has(id)) {
+        const pts = [POS[id]];
+        let cur = id;
+        while (cur !== 'home') { cur = next[cur]; pts.push(POS[cur]); }
+        await moveAlong(ball, pts, 520);
+        ball.remove();
+        power++;
+        powText.textContent = `首页收到力量 ${power}`;
+        pulse('home');
+      } else {
+        ball.classList.add('lost');
+        await moveAlong(ball, [POS[id], [POS[id][0], POS[id][1] - 26]], 600);
+        await sleep(250);
+        ball.remove();
+      }
+    }));
+    const stuck = senders.filter(id => !back.has(id));
+    if (stuck.length) log(`${stuck.map(name).join('、')} 没有路回到首页，力量传不回去。`, 'bad');
+    if (islands.length) log(`孤岛页连谷歌都没见过，也就没有力量可传。`, 'muted');
+    if (!reduce) tween(600, k => { gTrail.style.opacity = 1 - .7 * k; }); else gTrail.style.opacity = .3;
+    $('#s6-st-pow').textContent = `${power} / 9`;
+    $('#s6-st-pow').parentElement.classList.add(power === 9 ? 'good' : 'bad');
+    setBusy(false);
+    finish(E, seen, islands);
+  }
+  $('#s6-run').addEventListener('click', runCrawler);
+
+  // ---------- 计分、结果卡 ----------
+  function finish(E, seen, islands) {
+    const notBack = IDS.filter(id => id !== 'home' && !E.has(`${id}>home`));
+    const clicks = [...manual.values()].filter(e => e.anchor === 'click');
+    const weakKey = KEYPAGES.filter(id => incoming(E, id) < 3);
+    const items = [
+      {
+        t: '没有孤岛页', max: 40, pts: Math.max(0, 40 - 8 * islands.length),
+        good: '爬虫从首页出发，10 页都走到了。谷歌的爬虫就是这样顺着链接一页页逛的。',
+        bad: `走不到：${islands.map(name).join('、')}（每个孤岛扣 8 分）。没有链接指向它们，爬虫找不到，也就收录不了。光交 sitemap 不够：哥飞说 sitemap 对谷歌只是建议，它更爱顺着链接爬。<span class="st hf">哥飞原话</span>`,
+        link: ['s6-links.html#k1', '内链 5 条'],
+      },
+      {
+        t: '每一页都能一步回首页', max: 20, pts: Math.round(20 * (9 - notBack.length) / 9),
+        good: '每一页都有链接回首页，力量全汇到首页。哥飞说这样「就能够把每一个内页的权重传递到首页」。<span class="st hf">哥飞原话</span>',
+        bad: `有 ${notBack.length} 页没有直接回首页的链接：${notBack.map(name).join('、')}。点「所有页加回首页链接」最省事。<span class="st hf">哥飞原话</span>`,
+        link: ['s6-links.html#k1', '内链 5 条'],
+      },
+      {
+        t: '首页链到今天新发的教程', max: 15, pts: E.has(`home>${NEWEST}`) ? 15 : 0,
+        good: '首页直接链到了新教程。哥飞的做法是首页不断列出最新内容，还说要在首页最显眼的位置给内页留入口。<span class="st hf">哥飞原话</span>',
+        bad: '首页没有直接链到今天新发的教程。新页要从首页一步就能点到，爬虫一来首页就能发现它。<span class="st hf">哥飞原话</span>',
+        link: ['s6-links.html#k1', '内链 5 条'],
+      },
+      {
+        t: '链接上写关键词，不写「点击这里」', max: 15, pts: Math.max(0, 15 - 5 * clicks.length),
+        good: '链接上都写了对方那页的关键词或名字。这几个字告诉谷歌：那一页讲的是什么。<span class="st tl">推出来的</span>',
+        bad: `还有 ${clicks.length} 条写着「点击这里」：${clicks.map(e => `${name(e.from)} → ${name(e.to)}`).join('、')}（每条扣 5 分）。点下面那条链接，改成对方那页的关键词。<span class="st tl">推出来的</span>`,
+        link: ['s6-links.html#k2', '链接上写什么字'],
+      },
+      {
+        t: '两个功能页各有 3 个以上入口', max: 10, pts: 5 * (KEYPAGES.length - weakKey.length),
+        good: '图生视频、文生视频都有 3 个以上入口。哥飞：「对于重要的内页，可以在各个重要目录多给入口」。<span class="st hf">哥飞原话</span>',
+        bad: `${weakKey.map(name).join('、')} 的入口不到 3 个。功能页是用户来干活、你来收钱的页，放进顶部导航，入口一下就多了。<span class="st hf">哥飞原话</span>`,
+        link: ['s6-links.html#k1', '内链 5 条'],
+      },
+    ];
+    const score = items.reduce((s, x) => s + x.pts, 0);
+    SIM.save('sim-6', score, 100, { islands: islands.length, clickLinks: clicks.length });
+    countUp($('#s6-pts'), score);
+    $('#s6-prev').textContent = '';
+    const card = $('#s6-card');
+    card.classList.toggle('meh', score < 80);
+    const sc = $('#s6-score');
+    sc.dataset.val = 0;
+    $('#s6-verdict').textContent = score === 100 ? '满分！爬虫走遍全站，力量全回到了首页，链接上的字也都说清了每一页讲什么。'
+      : score >= 80 ? '连得不错，还差一点点，看看下面哪一条没做到。'
+        : score >= 50 ? '爬虫能走大半个站，但还有坑。照下面改一改，再放一次。'
+          : '这张网还漏得厉害：爬虫走不到的页，谷歌根本不知道。照下面改一改，再放一次。';
+    const ul = $('#s6-check');
+    ul.textContent = '';
+    items.forEach(x => {
+      const ok = x.pts === x.max;
+      ul.appendChild(el('li', { class: ok ? 'ok' : 'miss' }, `<i>${ok ? '✓' : '✕'}</i><span><b>${x.t}</b>${ok ? x.good : x.bad} <a href="${x.link[0]}">回看讲解：${x.link[1]}</a></span><em>${x.pts} / ${x.max}</em>`));
+    });
+    const end = $('#s6-end');
+    end.hidden = false;
+    setTimeout(() => {
+      end.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+      countUp(sc, score, 1100);
+      if (score === 100) setTimeout(() => confetti(card), reduce ? 0 : 400);
+    }, reduce ? 0 : 700);
+  }
+  $('#s6-again').addEventListener('click', () => $('#s6-play').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' }));
+  $('#s6-replay').addEventListener('click', () => {
+    store.del('quiz.sim-6');
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    scrollTo(0, 0);
+    location.reload();
+  });
+
+  // ---------- 开局 ----------
+  resetState();
+  changed();
+  const stage0 = $('#s6-stage');
+  if (stage0.scrollWidth > stage0.clientWidth) stage0.scrollLeft = (stage0.scrollWidth - stage0.clientWidth) / 2;
+  const prev = SIM.load('sim-6');
+  if (prev) $('#s6-prev').textContent = `上次 ${prev.score} 分`;
+})();
+</script>
+</body>
+</html>

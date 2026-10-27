@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>第 8 关 上线快进 3 个月 · 站长模拟器 · AI 新词站白话课</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<style>
+/* 第 8 关：上线快进 3 个月。类名一律 s8- 开头 */
+.s8-stick { position: sticky; top: 53px; z-index: 30; box-shadow: 0 6px 18px rgba(17, 24, 39, .07); margin-top: 18px; }
+main > .kp, #s8-gsc { scroll-margin-top: 118px; }
+.s8-weeks { display: grid; grid-template-columns: repeat(13, 1fr); gap: 4px; }
+.s8-weeks span { font-family: var(--font-mono); font-size: 11.5px; text-align: center; padding: 4px 0; border-radius: 6px; background: var(--bg); color: var(--muted); border: 1px solid transparent; transition: background .3s, color .3s; }
+.s8-weeks span.done { background: var(--indigo-soft); color: var(--indigo); }
+.s8-weeks span.cur { background: var(--indigo); color: var(--on-indigo); }
+.s8-weeks span.ev { border-color: var(--amber); }
+
+.s8-gsc-top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; align-items: baseline; }
+.s8-gsc-top b { font-size: 15px; }
+.s8-gsc-top span { font-size: 13px; color: var(--muted); }
+.s8-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); }
+.s8-tile { padding: 10px 12px; display: grid; gap: 2px; background: var(--surface); border-left: 1px solid var(--line); }
+.s8-tile:first-child { border-left: 0; }
+.s8-tile span { font-size: 12.5px; color: var(--muted); }
+.s8-tile b { font-family: var(--font-mono); font-size: 22px; line-height: 1.2; }
+.s8-tile em { font-style: normal; font-family: var(--font-mono); font-size: 12px; color: var(--muted); min-height: 1.2em; }
+.s8-tile em.up { color: var(--green); }
+.s8-tile em.down { color: var(--amber); }
+.s8-tile.impr { border-top: 3px solid var(--indigo); }
+.s8-tile.clk { border-top: 3px solid var(--green); }
+.s8-tile.pos { border-top: 3px solid var(--amber); }
+.s8-tile.words { border-top: 3px solid var(--muted); }
+.s8-chart { background: var(--bg); border-radius: 12px; padding: 6px 4px 2px; }
+#s8-svg text { font-family: var(--font-body); }
+.s8-axis { stroke: var(--line); stroke-width: 1; }
+.s8-wk { fill: var(--muted); font-size: 11px; font-family: var(--font-mono) !important; }
+.s8-l-impr { fill: none; stroke: var(--indigo); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+.s8-l-clk { fill: none; stroke: var(--green); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+.s8-dot-impr { fill: var(--indigo); }
+.s8-dot-clk { fill: var(--green); }
+.s8-mark { stroke: var(--amber); stroke-width: 1.4; stroke-dasharray: 4 4; }
+.s8-mark-t { fill: var(--amber); font-size: 11px; font-weight: 700; }
+.s8-empty { fill: var(--muted); font-size: 13px; }
+.s8-health { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.s8-health div { background: var(--bg); border-radius: 10px; padding: 8px 10px; display: grid; gap: 1px; }
+.s8-health span { font-size: 12px; color: var(--muted); }
+.s8-health b { font-family: var(--font-mono); font-size: 16px; }
+.s8-health .bad b { color: var(--amber); }
+.s8-health .good b { color: var(--green); }
+.s8-notes { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.s8-notes li { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: baseline; font-size: 14.5px; line-height: 1.6; padding: 8px 12px; border-radius: 10px; background: var(--indigo-soft); animation: rise .35s both; }
+.s8-notes li::before { content: "通知"; font-size: 11.5px; font-weight: 700; color: var(--indigo); }
+.s8-notes li.warn { background: var(--amber-soft); }
+.s8-notes li.warn::before { content: "注意"; color: var(--amber); }
+.s8-notes li.good { background: var(--green-soft); }
+.s8-notes li.good::before { content: "好消息"; color: var(--green); }
+
+.s8-submit { display: grid; gap: 8px; padding: 14px; border-radius: 14px; border: 2px dashed var(--amber); background: var(--amber-soft); }
+.s8-submit.done { border: 1.5px solid var(--green); background: var(--green-soft); }
+.s8-submit p { font-size: 15px; }
+.s8-submit ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-family: var(--font-mono); font-size: 13.5px; color: var(--green); }
+.s8-submit ol li { animation: rise .3s both; }
+.s8-opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.s8-opt {
+  font: inherit; text-align: left; cursor: pointer; display: grid; gap: 4px; align-content: start;
+  padding: 12px 14px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink);
+  transition: border-color .2s, box-shadow .2s, transform .2s;
+}
+.s8-opt:hover:not(:disabled) { border-color: var(--indigo); transform: translateY(-2px); }
+.s8-opt[aria-pressed="true"] { border-color: var(--indigo); background: var(--indigo-soft); box-shadow: 0 0 0 3px color-mix(in srgb, var(--indigo) 22%, transparent); }
+.s8-opt b { font-size: 15.5px; }
+.s8-opt span { font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+.s8-opt.enter { animation: rise .35s both; }
+.s8-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.s8-idle[aria-pressed="true"] { background: var(--indigo); color: var(--on-indigo); border-color: var(--indigo); }
+.s8-words { display: flex; flex-wrap: wrap; gap: 6px; }
+.s8-words button { font: inherit; font-family: var(--font-mono); font-size: 13px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.s8-words button small { color: var(--muted); }
+.s8-words button[aria-pressed="true"] { border-color: var(--indigo); background: var(--indigo); color: var(--on-indigo); }
+.s8-words button[aria-pressed="true"] small { color: inherit; }
+.s8-review { display: grid; gap: 6px; }
+.s8-review b.wk { font-family: var(--font-mono); }
+details.s8-hist { background: var(--bg); border-radius: 12px; padding: 10px 14px; font-size: 14px; }
+details.s8-hist summary { cursor: pointer; font-weight: 650; }
+.s8-hist ol { margin: 8px 0 0; padding-left: 1.6em; display: grid; gap: 4px; }
+.s8-hist li::marker { font-family: var(--font-mono); color: var(--muted); }
+
+.s8-final { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.s8-final div { background: var(--surface); border-radius: 12px; padding: 10px 12px; display: grid; }
+.s8-final span { font-size: 12.5px; color: var(--muted); }
+.s8-final b { font-family: var(--font-mono); font-size: 22px; line-height: 1.25; }
+.s8-check { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.s8-check li { display: grid; grid-template-columns: 26px 1fr auto; gap: 4px 10px; align-items: start; background: var(--surface); border-radius: 12px; padding: 10px 12px; font-size: 14.5px; line-height: 1.65; }
+.s8-check li > i { font-style: normal; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 13px; margin-top: 2px; }
+.s8-check li.ok > i { background: var(--green-soft); color: var(--green); }
+.s8-check li.miss > i { background: var(--amber-soft); color: var(--amber); }
+.s8-check li > em { font-style: normal; font-family: var(--font-mono); font-weight: 600; white-space: nowrap; }
+.s8-check li.ok > em { color: var(--green); }
+.s8-check li.miss > em { color: var(--amber); }
+.s8-check b { display: block; }
+.s8-check a { font-size: 13.5px; }
+.s8-endbtns { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (max-width: 560px) {
+  .s8-tiles { grid-template-columns: repeat(2, 1fr); }
+  .s8-tile:nth-child(3) { border-left: 0; }
+  .s8-tile b { font-size: 19px; }
+  .s8-health, .s8-final { grid-template-columns: repeat(2, 1fr); }
+  .s8-weeks span { font-size: 10px; }
+}
+@media (max-width: 480px) {
+  .s8-stick { font-size: 13px; gap: 4px 12px; padding: 8px 12px; }
+  .s8-stick .s8-site { display: none; }
+  .s8-check li { grid-template-columns: 24px 1fr; }
+  .s8-check li > em { grid-column: 2; }
+  .s8-final b { font-size: 18px; }
+}
+</style>
+</head>
+<body data-page="sim-8">
+<header id="topbar"></header>
+
+<div class="ph"><div class="wrap">
+  <span class="eyebrow">站长模拟器 · 第 8 关 / 共 8 关</span>
+  <h1>上线快进 3 个月：一周一周看后台</h1>
+  <p class="lead">FramePop 今天上线。接下来 12 周，你每周只能做一件事，然后点「过一周」，看谷歌后台的数字怎么变。规则是照哥飞和群友的经验写死的，同样的选择永远是同样的结果；所有数字都是 <span class="st sy">示意</span></p>
+  <div class="sim-task"><span class="lab">本关任务</span><p>第 0 天先把网站交给谷歌；之后 12 周，让核心词排进前 10、出词越来越多、开始有人付钱；第 6 周热度回落、第 8 周有同行来抢词，要稳住。陷阱不少，满分 100。</p></div>
+</div></div>
+
+<main class="wrap">
+  <div class="sim-hud s8-stick"><span class="lv">第 8 关</span><span class="s8-site">站：FramePop（示意）</span><span id="s8-hud-wk">第 0 天</span><span id="s8-prev" class="muted"></span><span class="pts">得分 <b id="s8-pts">—</b> / 100</span></div>
+
+  <section class="kp" id="s8-play">
+    <div class="kp-head"><span class="kp-no">快进 · 12 周</span><h2>上线了！每周做一个决定，然后「过一周」</h2></div>
+    <p class="kp-say">上面这块是 <button type="button" class="term" data-t="gsc">GSC</button>（谷歌给站长的后台）。四个数：<button type="button" class="term" data-t="impr">曝光</button>、<button type="button" class="term" data-t="click">点击</button>、<button type="button" class="term" data-t="position">平均排名</button>、<button type="button" class="term" data-t="chuci">出词</button>数。哥飞说上线后「三五天之后，就应该在 GSC 看到一点效果了。三五周之后，就应该有不错的排名了」。<span class="st hf">哥飞原话</span></p>
+    <p class="muted" style="font-size:14.5px" id="s8-price-note"></p>
+
+    <div class="viz" id="s8-gsc">
+      <div class="viz-head"><span class="viz-label">GSC 后台 · 示意</span><p class="viz-title">framepop.com 的效果报表</p></div>
+      <div class="s8-weeks" id="s8-weeks" aria-label="第几周"></div>
+      <div class="s8-gsc-top"><b id="s8-wk-title">第 0 天：网站刚上线</b><span>数字都是「这一周」的</span></div>
+      <div class="viz-say s8-review" id="s8-review" aria-live="polite">网站刚上线，后台还是空的。先在下面提交 GSC，再选这周做什么。</div>
+      <div class="s8-tiles">
+        <div class="s8-tile impr"><span>曝光</span><b id="s8-t-impr">0</b><em id="s8-d-impr"></em></div>
+        <div class="s8-tile clk"><span>点击</span><b id="s8-t-clk">0</b><em id="s8-d-clk"></em></div>
+        <div class="s8-tile pos"><span>平均排名</span><b id="s8-t-pos">—</b><em id="s8-d-pos"></em></div>
+        <div class="s8-tile words"><span>出词数</span><b id="s8-t-words">0</b><em id="s8-d-words"></em></div>
+      </div>
+      <div class="s8-chart"><svg id="s8-svg" viewBox="0 0 720 210" role="img" aria-label="每周曝光和点击的折线（示意）"></svg></div>
+      <div class="legend-row"><span><span class="sw ours"></span>曝光</span><span><span class="sw good"></span>点击（两条线各用各的刻度，跟 GSC 一样）</span></div>
+      <div class="s8-health">
+        <div id="s8-h-idx"><span>谷歌发现的页</span><b>0</b></div>
+        <div id="s8-h-bl"><span>外链网站</span><b>0</b></div>
+        <div id="s8-h-pg"><span>新做的精品内页</span><b>0</b></div>
+        <div id="s8-h-q"><span>及格线（有曝光页 ÷ 发现页）</span><b>—</b></div>
+        <div id="s8-h-pay"><span>付费用户（累计）</span><b>0</b></div>
+        <div id="s8-h-tree"><span>果园（另开的新站）</span><b>0 棵</b></div>
+      </div>
+      <ul class="s8-notes" id="s8-notes" aria-live="polite"><li>FramePop 今天上线：首页、图生视频、文生视频、定价、关于、隐私、条款，一共 7 页。</li></ul>
+    </div>
+
+    <div class="viz" id="s8-act">
+      <div class="viz-head"><span class="viz-label">你的决定</span><p class="viz-title" id="s8-act-title">第 0 天：上线当天</p></div>
+      <div class="s8-submit" id="s8-submit">
+        <p id="s8-submit-say"><b>上线第一步：把网站交给谷歌。</b>不交，谷歌不知道你上线了。这一步不占用每周的那一个决定。</p>
+        <div class="s8-row"><button type="button" class="btn primary" id="s8-submit-btn">提交网站到 GSC + 提交 sitemap</button></div>
+        <ol id="s8-submit-log"></ol>
+      </div>
+      <p style="font-size:14px;font-weight:650;color:var(--muted)">这周做什么？（选一个）</p>
+      <div class="s8-opts" id="s8-opts"></div>
+      <div class="s8-words" id="s8-words" hidden></div>
+      <div class="s8-row">
+        <button type="button" class="btn s8-idle" id="s8-idle" aria-pressed="false">这周什么都不做</button>
+        <button type="button" class="btn primary big" id="s8-next" disabled>过一周 →</button>
+      </div>
+      <p class="viz-say" id="s8-hint" aria-live="polite">选一张卡，再点「过一周」。</p>
+      <details class="s8-hist" id="s8-hist-box"><summary>这 12 周的日记</summary><ol id="s8-hist"></ol></details>
+    </div>
+  </section>
+
+  <section class="kp" id="s8-end" hidden>
+    <div class="kp-head"><span class="kp-no">第 12 周 · 结算</span><h2>三个月过去了，FramePop 怎么样？</h2></div>
+    <div class="sim-result" id="s8-card">
+      <h3>本关得分 <span class="big-num" id="s8-score">0</span> / 100</h3>
+      <p id="s8-verdict"></p>
+      <div class="s8-final">
+        <div><span>12 周总曝光</span><b id="s8-f-impr">0</b></div>
+        <div><span>12 周总点击</span><b id="s8-f-clk">0</b></div>
+        <div><span>付费用户</span><b id="s8-f-pay">0</b></div>
+        <div><span>收入（按首月算）</span><b id="s8-f-rev">$0</b></div>
+        <div><span>第 12 周平均排名</span><b id="s8-f-pos">—</b></div>
+        <div><span>果园</span><b id="s8-f-tree">1 棵</b></div>
+      </div>
+      <ul class="s8-check" id="s8-check"></ul>
+      <div class="s8-endbtns">
+        <button type="button" class="btn" id="s8-replay">重玩这一关</button>
+        <a class="btn primary" href="sim-end.html" style="text-decoration:none">去看成绩单 →</a>
+      </div>
+    </div>
+    <div class="quiz" data-answer="C">
+      <span class="q-tag">复盘题</span>
+      <p class="q-title">上线第 4 周，核心词已经排到第 9 名。AI 建议把首页 H1 改成一句更好听的口号。怎么办？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">改，口号更吸引人，点击率会更高</button>
+        <button class="q-opt" data-l="B">改，掉了再改回来就行</button>
+        <button class="q-opt" data-l="C">先别动已经排上去的 H1，这周去加外链或做精品内页</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>孟健的 H1 被 AI 换成一句漂亮话，全站先出的词反而是它，主词被稀释了；8 月比赛第 3 名热度下降时改了首页，已经排上去的词明显掉了。Niko 也没照 AI 的建议改，他说改了标题和描述，重新排名起码要半个月。上线后只干两件事：加精品页、加外链。<span class="st sq">社群经验</span> <span class="st hf">哥飞原话</span></p></div>
+    </div>
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://new.web.cafe/tutorial/detail/sk5je1bj0f">《上站之后要做什么》</a><span class="meta">哥飞 · 2025-01-20 · 收录、出词、只干两件事</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/9sox64g7o9">《Google Search Console 使用入门讲解》</a><span class="meta">哥飞 · 2025-01-16 · 提交 sitemap、外链插队</span></li>
+      <li><a href="https://mp.weixin.qq.com/s/oAmrfRXrIWAMBVS0uB6C8Q">《新手只需要去追热点追新词就行》</a><span class="meta">哥飞 · 公众号 2025-02-28 · 三五天、三五周</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/feoogz15ou">《保小图大》</a><span class="meta">哥飞 · 公众号文章，2023 年 9 月 · 兄弟词、父词</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/lqxrxz4wux">《再聊内链和内页》</a><span class="meta">哥飞 · 2025-01-15 · 网站及格线</span></li>
+      <li><a href="https://mp.weixin.qq.com/s/X4lIBRE_tjjLNMhU1jfQdA">《新站批量化上页面，必死》</a><span class="meta">哥飞 · 公众号 2025-03-20</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/xlft7pezkb">《2025.9.8 案例拆解》</a><span class="meta">哥飞 · 2025-10-13 · Woy.ai 被砍到只剩首页</span></li>
+      <li><a href="https://new.web.cafe/topic/6dx0cbme8c">《2026 年 8 月新词大赛第三名经验分享》</a><span class="meta">运气选手走得远 · 2026-09-23 · 改首页后排名掉了</span></li>
+      <li><a href="https://new.web.cafe/topic/bh3di61bwx">《复盘：第一个 AI 出海站，我做错了哪些事？》</a><span class="meta">孟健 · 2025-10-03 · H1 被 AI 改了</span></li>
+      <li><a href="https://new.web.cafe/topic/rpg62z89h8">《新词 7 天冲到谷歌前五的完整实战复盘》</a><span class="meta">Niko · 2025-10-08 · 外链、专注</span></li>
+      <li><a href="https://mp.weixin.qq.com/s/L9BOyFrisy-xsw-NPWlPJQ">《放弃一站发思维，先从练手站做起》</a><span class="meta">哥飞 · 公众号 2024-12-02</span></li>
+    </ul></div>
+  </section>
+</main>
+
+<nav id="pager"></nav>
+<footer id="foot"></footer>
+<script src="assets/kit.js"></script>
+<script>
+(() => {
+  const { $, $$, svgEl, el, tween, sleep, countUp, SIM, store, reduce, confetti, fmt } = KIT;
+  const money = x => '$' + fmt(x);
+
+  // ---------- 接第 7 关的价格 ----------
+  const s7 = SIM.load('sim-7');
+  const PRICE = s7 && s7.price ? s7.price : 19.99;
+  $('#s8-price-note').textContent = s7 && s7.price
+    ? `FramePop 的价格用你第 7 关定的：月付 $${PRICE.toFixed(2)}。付费要等有了流量才会来。`
+    : `第 7 关还没玩，价格先按默认的月付 $${PRICE.toFixed(2)} 算（示意）。付费要等有了流量才会来。`;
+
+  // ---------- 写死的规则（示意） ----------
+  const HEAT = [0, .55, .85, 1, 1, .95, .8, .66, .56, .48, .42, .38, .35];
+  const DAY1 = SIM.pages.filter(p => p.day1).length;
+  const DAY1_VOL = ['lumibo image to video', 'lumibo text to video'].reduce((s, w) => s + SIM.words.find(x => x.w === w).v, 0);
+  const isGood = x => x.bucket === 'own' || (x.ok || []).includes('own');
+  const PAGE_WORDS = SIM.words.filter(x => (isGood(x) && !['lumibo image to video', 'lumibo text to video'].includes(x.w)) || x.w === 'lumibo 2 download');
+  const VARIANTS = ['free lumibo video generator', 'lumibo ai video generator'].filter(w => SIM.words.some(x => x.w === w));
+  const vis = p => 1 / (1 + Math.pow(p / 10, 2.2));
+  const ctr = p => .32 / (1 + (p - 1) / 2.2);
+
+  const S = {
+    w: 0, submitted: null, indexW: null, varW: null, batchSeen: null, bl: 0, blFrom: null, pages: [], variants: null, h1: null, batch: null, cleaned: null,
+    brother: null, parent: null, parentValid: false, trees: 0, earlyTrees: 0, idle: 0,
+    hist: [], payers: 0, revenue: 0, firstPay: null, choice: null, word: null, done: false, lastPos: null,
+  };
+
+  // 批量页被谷歌发现（batchSeen）以后的下一周开始受罚
+  function penaltyMult(W) {
+    if (S.batchSeen == null || W < S.batchSeen + 1) return 1;
+    if (S.cleaned == null || W <= S.cleaned) return .25;
+    return [.5, .7, .85][Math.min(W - S.cleaned - 1, 2)];
+  }
+  function metrics(W) {
+    const live = S.pages.filter(p => W > p.w);
+    const goodLive = live.filter(p => p.good).length, badLive = live.length - goodLive;
+    const batchLive = S.batch != null && W > S.batch && !(S.cleaned != null && W > S.cleaned);
+    const discovered = S.indexW != null && W >= S.indexW ? DAY1 + live.length + (S.brother != null && W > S.brother ? 1 : 0) + (batchLive ? 500 : 0) : 0;
+    if (S.indexW == null || W < S.indexW) return { W, impr: 0, clk: 0, pos: null, words: 0, discovered: 0, withImpr: 0, goodLive };
+    const age = W - S.indexW + 1;
+    const pm = penaltyMult(W);
+    const strong = S.bl >= 20 && goodLive >= 2;
+    let pos = 1.5 + 70 * Math.pow(.5, age) + 28 / (1 + S.bl / 4);
+    if (S.h1 != null) pos += Math.max(5, 16 - 2 * (W - S.h1 - 1));
+    if (W >= 8) pos += strong ? 1.5 : 6;
+    pos += (1 - pm) * 26;
+    pos = Math.min(98, Math.max(1.2, pos));
+    const heat = HEAT[W];
+    const parts = [
+      [heat * 8500 * vis(pos) * (S.variants != null && W > S.variants ? 1.1 : 1), pos, 1],
+      [heat * DAY1_VOL / 4 * vis(pos + 6), pos + 6, 1],
+    ];
+    live.forEach(p => parts.push([heat * p.v / 4 * vis(pos + 4) * (p.good ? 1 : .6), pos + 4, p.good ? 1 : .3]));
+    if (S.brother != null && W > S.brother) parts.push([1800 * vis(pos + 4), pos + 4, 1]);
+    if (S.parentValid && W > S.parent) parts.push([112500 * vis(pos + 32), pos + 32, 1]);
+    if (batchLive) parts.push([1200 * heat, 60, 1]);
+    const boost = (S.variants != null && W > S.variants ? 1.15 : 1) * (S.h1 != null ? .85 : 1);
+    let impr = 0, clk = 0;
+    parts.forEach(([i, p, q]) => { impr += i * pm; clk += i * pm * ctr(p) * q * boost; });
+    let words = 6 + 3 * Math.min(age, 5) + 7 * goodLive + 3 * badLive
+      + (S.variants != null && W > S.variants ? 4 : 0) + (S.brother != null && W > S.brother ? 6 : 0)
+      + (S.parentValid && W > S.parent ? 10 : 0) + (batchLive ? 25 : 0) - (S.h1 != null ? 6 : 0);
+    words = Math.round(words * Math.max(pm, .4));
+    let withImpr = 3 + live.length + (S.brother != null && W > S.brother ? 1 : 0) + (batchLive ? 8 : 0);
+    if (pm <= .25) withImpr = 1; else if (pm < 1) withImpr = Math.max(1, Math.round(withImpr * pm));
+    return { W, impr: Math.round(impr), clk: Math.round(clk), pos: Math.round(pos * 10) / 10, words, discovered, withImpr, goodLive };
+  }
+
+  // ---------- 每周的选项 ----------
+  const PLAN = [
+    ['links', 'page', 'batch'], ['links', 'page', 'h1'], ['links', 'page', 'tree'], ['links', 'variants', 'batch'],
+    ['links', 'page', 'h1'], ['links', 'page', 'variants'], ['brother', 'links', 'page'], ['tree', 'parent', 'h1'],
+    ['links', 'page', 'batch'], ['parent', 'links', 'tree'], ['brother', 'parent', 'links'], ['tree', 'links', 'page'],
+  ];
+  const usedWords = () => new Set(S.pages.map(p => p.word));
+  function available(a, w) {
+    if (a === 'variants') return S.variants == null && S.varW != null && w >= S.varW;
+    if (a === 'h1') return S.h1 == null;
+    if (a === 'batch') return S.batch == null;
+    if (a === 'brother') return S.brother == null;
+    if (a === 'parent') return S.parent == null;
+    if (a === 'page') return PAGE_WORDS.some(x => !usedWords().has(x.w));
+    if (a === 'clean') return S.batch != null && S.cleaned == null;
+    return true;
+  }
+  function optionsFor(w) {
+    const list = PLAN[w].filter(a => available(a, w));
+    ['links', 'page', 'tree'].forEach(a => { if (list.length < 3 && !list.includes(a) && available(a, w)) list.push(a); });
+    return (S.batchSeen != null && available('clean', w) ? ['clean'] : []).concat(list.slice(0, 3));
+  }
+  function actText(a, w) {
+    return {
+      links: ['发外链', '去 V2EX 发帖介绍、交几个导航站、发博客评论：这周 +5 个外链网站。'],
+      page: ['新做一个精品内页', '从词表里挑一个词，认真做一页（选了以后在下面挑词）。'],
+      variants: ['把冒出的变体词加进首页标题', `后台冒出了 ${VARIANTS.slice(0, 2).join('、')} 这些变体，写进首页标题和正文。`],
+      h1: ['把首页 H1 改成一句口号', 'AI 建议：「Bring Your Ideas to Life」听着更高级。'],
+      batch: ['一口气生成 500 页', w >= 8 ? '同行有 300 多页，你也来：每个提示词套模板生成一页，半小时搞定。' : '每个提示词套一个模板生成一页，半小时搞定，页面多了流量就多？'],
+      tree: w < 6 ? ['去追另一个更热的新模型', '推特上又冒出一个新模型，比 Lumibo 2 还火，要不要马上开个新站？'] : ['开下一个新词站（种第二棵树）', 'FramePop 留着继续养，分一部分精力去下一个新词。'],
+      brother: ['做兄弟词', '把和 lumibo video generator 同一层的兄弟词（同类视频模型的生成器词，示意）加进首页标题，再做一个内页。'],
+      parent: ['开始打父词 ai video generator', '首页标题加上 ai video generator，再加一段父词解释。'],
+      clean: ['把那 500 页设成不让谷歌收录', '先停下来，处理掉那批模板页（设成 noindex）。'],
+      idle: ['这周什么都不做', ''],
+    }[a];
+  }
+
+  // ---------- 画 GSC ----------
+  const weeksBox = $('#s8-weeks');
+  for (let i = 0; i <= 12; i++) weeksBox.appendChild(el('span', { title: i ? `第 ${i} 周` : '第 0 天' }, i ? String(i) : '0'));
+  function paintWeeks() {
+    $$('span', weeksBox).forEach((s, i) => {
+      s.classList.toggle('done', i < S.w);
+      s.classList.toggle('cur', i === S.w);
+      s.classList.toggle('ev', (i === 6 || i === 8) && i <= S.w);
+    });
+    $('#s8-hud-wk').textContent = S.w ? `第 ${S.w} 周` : '第 0 天';
+  }
+  const svg = $('#s8-svg');
+  const X = W => 46 + (W - 1) * 60;
+  function drawChart(animate) {
+    svg.textContent = '';
+    svgEl('line', { class: 's8-axis', x1: 30, y1: 182, x2: 712, y2: 182 }, svg);
+    for (let W = 1; W <= 12; W++) { const t = svgEl('text', { class: 's8-wk', x: X(W), y: 200, 'text-anchor': 'middle' }, svg); t.textContent = W; }
+    const hs = S.hist;
+    [[6, '热度回落'], [8, '同行抢词']].forEach(([W, txt]) => {
+      if (hs.length < W) return;
+      svgEl('line', { class: 's8-mark', x1: X(W), y1: 16, x2: X(W), y2: 182 }, svg);
+      const t = svgEl('text', { class: 's8-mark-t', x: X(W) + 4, y: 14 }, svg);
+      t.textContent = txt;
+    });
+    if (!hs.length || hs.every(h => !h.impr)) {
+      const t = svgEl('text', { class: 's8-empty', x: 371, y: 100, 'text-anchor': 'middle' }, svg);
+      t.textContent = hs.length ? '还没有曝光：谷歌还没收录你的站' : '过一周以后，这里会长出曝光和点击的折线';
+      if (!hs.length) return;
+    }
+    const mi = Math.max(1000, ...hs.map(h => h.impr)), mc = Math.max(40, ...hs.map(h => h.clk));
+    const Y = (v, m) => 176 - v / m * 150;
+    [['impr', mi], ['clk', mc]].forEach(([k, m]) => {
+      const pts = hs.map(h => [X(h.W), Y(h[k], m)]);
+      if (pts.length > 1) {
+        const p = svgEl('path', { class: 's8-l-' + k, d: 'M' + pts.map(q => q.map(n => n.toFixed(1)).join(' ')).join(' L') }, svg);
+        if (animate && !reduce) {
+          const prev = svgEl('path', { d: 'M' + pts.slice(0, -1).map(q => q.join(' ')).join(' L') }, svg);
+          const from = pts.length > 2 ? prev.getTotalLength() : 0;
+          prev.remove();
+          const len = p.getTotalLength();
+          p.style.strokeDasharray = len;
+          p.style.strokeDashoffset = len - from;
+          tween(650, t => { p.style.strokeDashoffset = (len - from) * (1 - t); });
+        }
+      }
+      const last = pts[pts.length - 1];
+      svgEl('circle', { class: 's8-dot-' + k, cx: last[0], cy: last[1], r: 4.5 }, svg);
+    });
+  }
+
+  function setNum(id, v, text, animate) {
+    const n = $(id);
+    if (animate && typeof v === 'number') countUp(n, v, 800, text || fmt);
+    else { n.textContent = text ? text(v) : fmt(v); n.dataset.val = v; }
+  }
+  function delta(id, now, before, lowerIsBetter) {
+    const e = $(id);
+    if (before == null || now == null) { e.textContent = ''; e.className = ''; return; }
+    const d = now - before;
+    if (Math.abs(d) < (lowerIsBetter ? .05 : .5)) { e.textContent = '持平'; e.className = ''; return; }
+    const good = lowerIsBetter ? d < 0 : d > 0;
+    e.textContent = (d > 0 ? '+' : '−') + (lowerIsBetter ? Math.abs(d).toFixed(1) : fmt(Math.abs(d)));
+    e.className = good ? 'up' : 'down';
+  }
+  function paintGsc(m, prev, animate) {
+    setNum('#s8-t-impr', m.impr, null, animate);
+    setNum('#s8-t-clk', m.clk, null, animate);
+    if (m.pos == null) $('#s8-t-pos').textContent = '—';
+    else setNum('#s8-t-pos', m.pos, x => x.toFixed(1), animate && prev && prev.pos != null);
+    setNum('#s8-t-words', m.words, null, animate);
+    delta('#s8-d-impr', m.impr, prev && prev.impr);
+    delta('#s8-d-clk', m.clk, prev && prev.clk);
+    delta('#s8-d-pos', m.pos, prev && prev.pos, true);
+    delta('#s8-d-words', m.words, prev && prev.words);
+    const ratio = m.discovered ? m.withImpr / m.discovered : null;
+    const H = (id, txt, tone) => { const d = $(id); $('b', d).textContent = txt; d.className = tone || ''; };
+    H('#s8-h-idx', fmt(m.discovered));
+    H('#s8-h-bl', fmt(S.bl), S.bl >= 20 ? 'good' : '');
+    H('#s8-h-pg', `${m.goodLive} 页`, m.goodLive >= 2 ? 'good' : '');
+    H('#s8-h-q', ratio == null ? '—' : (ratio * 100).toFixed(ratio < .1 ? 2 : 0) + '%', ratio == null ? '' : ratio < .01 ? 'bad' : 'good');
+    H('#s8-h-pay', fmt(S.payers) + ' 人', S.payers ? 'good' : '');
+    H('#s8-h-tree', `${S.trees + S.earlyTrees} 棵`, S.trees ? 'good' : '');
+  }
+
+  // ---------- 第 0 天：提交 GSC ----------
+  $('#s8-submit-btn').addEventListener('click', async () => {
+    if (S.submitted != null || S.done) return;
+    S.submitted = S.w;
+    const b = $('#s8-submit-btn');
+    b.disabled = true;
+    const log = $('#s8-submit-log');
+    for (const t of ['验证域名 framepop.com ……成功', '提交 framepop.com/sitemap.xml ……成功', `站点地图已读取，发现 ${DAY1} 个网址`]) {
+      log.appendChild(el('li', {}, '✓ ' + t));
+      await sleep(380);
+    }
+    $('#s8-submit').classList.add('done');
+    b.textContent = '已提交';
+    $('#s8-submit-say').innerHTML = S.w === 0
+      ? '<b>交好了。</b>哥飞说页面内容没问题的话，一般 24 小时内就收录；有外链带着，最快 2 小时。<span class="st hf">哥飞原话</span>'
+      : `<b>第 ${S.w} 周才交上。</b>白白耽误了 ${S.w} 周：没提交，谷歌只能等外链偶然把爬虫带过来。<span class="st hf">哥飞原话</span>`;
+    paintChoice();
+  });
+
+  // ---------- 选这周做什么 ----------
+  const optsBox = $('#s8-opts'), wordsBox = $('#s8-words');
+  function paintOpts() {
+    optsBox.textContent = '';
+    optionsFor(S.w).forEach(a => {
+      const [t, d] = actText(a, S.w);
+      const b = el('button', { type: 'button', class: 's8-opt enter', 'aria-pressed': 'false', 'data-a': a }, `<b>${t}</b><span>${d}</span>`);
+      b.addEventListener('click', () => choose(a));
+      optsBox.appendChild(b);
+    });
+    $('#s8-idle').setAttribute('aria-pressed', 'false');
+    wordsBox.hidden = true;
+    S.choice = null; S.word = null;
+    $('#s8-act-title').textContent = S.w ? `第 ${S.w} 周：这周做什么？` : '第 0 天：上线当天';
+    if (S.submitted != null && S.w > S.submitted) $('#s8-submit').hidden = true;
+    paintChoice();
+  }
+  function choose(a) {
+    if (S.done) return;
+    S.choice = a; S.word = null;
+    $$('.s8-opt', optsBox).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.a === a)));
+    $('#s8-idle').setAttribute('aria-pressed', String(a === 'idle'));
+    wordsBox.hidden = a !== 'page';
+    if (a === 'page') {
+      wordsBox.textContent = '';
+      const used = usedWords();
+      PAGE_WORDS.filter(x => !used.has(x.w)).forEach(x => {
+        const b = el('button', { type: 'button', 'aria-pressed': 'false' }, `${x.w} <small>${fmt(x.v)}/月</small>`);
+        b.addEventListener('click', () => {
+          S.word = x;
+          $$('button', wordsBox).forEach(y => y.setAttribute('aria-pressed', String(y === b)));
+          paintChoice();
+        });
+        wordsBox.appendChild(b);
+      });
+    }
+    paintChoice();
+  }
+  $('#s8-idle').addEventListener('click', () => choose('idle'));
+  function paintChoice() {
+    const next = $('#s8-next');
+    const ready = S.choice && (S.choice !== 'page' || S.word);
+    next.disabled = !ready || S.done;
+    next.textContent = S.w === 11 ? '过完最后一周，结算 →' : `过一周 → 第 ${S.w + 1} 周`;
+    const hint = $('#s8-hint');
+    hint.className = 'viz-say';
+    if (S.done) hint.textContent = '12 周过完了，往下看结算。';
+    else if (S.submitted == null && S.choice) { hint.className = 'viz-say bad'; hint.textContent = '提醒：你还没提交 GSC。也可以不交直接过一周，看看会怎样。'; }
+    else if (S.choice === 'page' && !S.word) hint.textContent = '在上面挑一个词，给它单独做一页。';
+    else if (S.choice) hint.textContent = `选好了。点「${next.textContent.replace(' →', '')}」，到上面看后台怎么变。`;
+    else hint.textContent = '选一张卡，再点「过一周」。';
+  }
+
+  // ---------- 过一周 ----------
+  function apply(w) {
+    const a = S.choice, rows = [];
+    const posNow = S.lastPos;
+    if (a === 'links') {
+      S.bl += 5;
+      if (S.blFrom == null) S.blFrom = w;
+      rows.push(`外链 +5，现在有 ${S.bl} 个外链网站。新站「质量再差的外链，也比没有外链好」，排名会一点点往前爬。<span class="st hf">哥飞原话</span>`);
+    } else if (a === 'page') {
+      const x = S.word, good = isGood(x);
+      S.pages.push({ w, word: x.w, v: x.v, good });
+      rows.push(good
+        ? `新做了「${x.w}」这一页。上线后只干两件事：加精品页面、加外链。它下周开始出词。<span class="st hf">哥飞原话</span>`
+        : `做了「${x.w}」：搜它的人想下载官方 App，你给不了。会有一点曝光，但出的词不是你想要的，算不上精品页。<span class="st hf">哥飞原话</span>`);
+    } else if (a === 'variants') {
+      S.variants = w;
+      rows.push('把变体词写进了首页标题和正文。主词的变体不用新做页面，加进首页就行；标题更贴近大家搜的词，点击率会涨一点。<span class="st tl">推出来的</span>');
+    } else if (a === 'h1') {
+      S.h1 = w;
+      rows.push('H1 改成了口号。孟健的 H1 被 AI 换成一句漂亮话，全站先出的词反而是它，主词被稀释；8 月比赛第 3 名改了首页，已经排上去的词明显掉了。<span class="st sq">社群经验</span>');
+    } else if (a === 'batch') {
+      S.batch = w;
+      rows.push('生成了 500 页。哥飞说得很直白：「新站搞海量页面必死」。看看接下来两周会发生什么。<span class="st hf">哥飞原话</span>');
+    } else if (a === 'clean') {
+      S.cleaned = w;
+      rows.push('把 500 页设成不让谷歌收录。哥飞说及格线低于 1% 就该立即停止生成新页面，先处理老页面。曝光会慢慢回来，但要几周。<span class="st hf">哥飞原话</span>');
+    } else if (a === 'tree') {
+      if (w < 6) { S.earlyTrees++; rows.push('你跑去追另一个新模型，这周 FramePop 没人管。Niko 上线两天后也碰上更热的新模型，他没去追，继续做手上的站。<span class="st sq">社群经验</span>'); }
+      else { S.trees++; rows.push('种下了第二棵树。热度过去站还在，余量能吃很久；「一个，两个，三个，不断的上线网站，一年半载之后回头看，你就会发现，积少成多。」<span class="st hf">哥飞原话</span>'); }
+    } else if (a === 'brother') {
+      S.brother = w;
+      rows.push('做了兄弟词：标题加兄弟词，首页加兄弟词的解释，再做一页。这就是「保小图大」的第二步。<span class="st hf">哥飞原话</span> 兄弟词有自己的热度，不跟着 Lumibo 2 一起掉。<span class="st tl">推出来的</span>');
+    } else if (a === 'parent') {
+      S.parent = w;
+      S.parentValid = S.brother != null && S.brother < w && posNow != null && posNow <= 15;
+      rows.push(S.parentValid
+        ? '开始打父词 ai video generator。兄弟词站稳了，哥飞说这时「你去搜索父词汇，一般也能够搜索到你」。排名还很靠后，但曝光一下多了不少。<span class="st hf">哥飞原话</span>'
+        : `太早了：${S.brother == null ? '兄弟词还没做' : '核心词还没站稳（现在 ' + (posNow == null ? '没排名' : posNow + ' 名') + '）'}，搜父词根本找不到你。保小图大要一步步来：小词站稳 → 兄弟词 → 父词。<span class="st hf">哥飞原话</span>`);
+    } else {
+      S.idle++;
+      rows.push('这周什么都没做。上线后其实只有两件事：加精品页面、加外链。<span class="st hf">哥飞原话</span>');
+    }
+    // 收录：提交了 GSC，下一周就收录；没提交但发了外链，晚两周才被爬虫顺着外链找到
+    if (S.indexW == null) {
+      if (S.submitted != null) S.indexW = w + 1;
+      else if (S.blFrom != null && w >= S.blFrom + 1) S.indexW = w + 1;
+    }
+    return rows;
+  }
+  function eventsFor(W, m, prev) {
+    const ev = [];
+    if (W === S.indexW) {
+      ev.push(['good', S.submitted != null ? `收录了 ${m.discovered} 页（提交以后 24 小时内）。` : `谷歌顺着外链找到了你，收录了 ${m.discovered} 页。比提交 GSC 慢了好几天。`]);
+      ev.push(['good', `出词了：GSC 里开始有曝光，${m.words} 个词。出词就说明进了前 200 名，刚开始排八九十名很正常。`]);
+    } else if (S.indexW == null) ev.push(['warn', S.submitted == null ? '还没收录：谷歌不知道你上线了。没提交 GSC，也没有外链把爬虫带过来。' : '还在等收录。']);
+    if (W === S.varW) ev.push(['', `后台冒出了变体词：${VARIANTS.join('、')}。它们是主词换个说法，不是新的事。`]);
+    if (W === 6) ev.push(['warn', '热度开始回落：谷歌趋势里 Lumibo 2 的线往下走了。']);
+    if (W === 8) ev.push(['warn', S.bl >= 20 && m.goodLive >= 2 ? '同行抢词：一个外链 300 多的老站也做了 lumibo video generator。你外链和内页够多，只被挤下去一点点。' : '同行抢词：一个外链 300 多的老站也做了 lumibo video generator，你的排名被挤下去好几名。']);
+    if (W === S.batchSeen) ev.push(['warn', `谷歌发现了 ${m.discovered} 个页面，多出来的 500 个模板页几乎没有曝光。`]);
+    if (S.batchSeen != null && W === S.batchSeen + 1 && (S.cleaned == null || S.cleaned >= W)) ev.push(['warn', '曝光断崖：有曝光的页面 ÷ 发现的页面跌破 1%，谷歌把整个站都看低了，老页面也一起掉。Woy.ai 就是批量上低质量页面，被砍到只剩首页。']);
+    if (S.h1 != null && W === S.h1 + 1 && prev && prev.pos != null) ev.push(['warn', `已经排上去的核心词掉了：从 ${prev.pos} 名掉到 ${m.pos} 名。`]);
+    if (S.firstPay === W) ev.push(['good', `第一单！有人付了 $${PRICE.toFixed(2)}。哥飞早期说第一版不用接支付，先上线拿流量。`]);
+    return ev;
+  }
+  function advance() {
+    if (S.done || !S.choice || (S.choice === 'page' && !S.word)) return;
+    const w = S.w, a = S.choice, word = S.word;
+    const rows = apply(w);
+    const W = w + 1;
+    const prev = S.hist[S.hist.length - 1];
+    if (S.batch != null && S.batchSeen == null && S.cleaned == null && S.indexW != null && W >= S.indexW && W > S.batch) S.batchSeen = W;
+    const m = metrics(W);
+    if (S.varW == null && S.indexW != null && W >= Math.max(3, S.indexW + 2)) S.varW = W;
+    if (m.clk >= 300) {
+      const n = Math.max(1, Math.round(m.clk * .005));
+      if (!S.payers) S.firstPay = W;
+      S.payers += n; S.revenue += n * PRICE;
+    }
+    S.lastPos = m.pos;
+    S.hist.push(Object.assign({ act: a, word: word ? word.w : null }, m));
+    S.w = W;
+    const ev = eventsFor(W, m, prev);
+    paintWeeks();
+    $('#s8-wk-title').textContent = `第 ${W} 周` + (W === 6 ? '：热度开始回落' : W === 8 ? '：同行来抢词' : '');
+    paintGsc(m, prev, true);
+    drawChart(true);
+    const notes = $('#s8-notes');
+    notes.textContent = '';
+    (ev.length ? ev : [['', '这周风平浪静。']]).forEach(([tone, t]) => notes.appendChild(el('li', tone ? { class: tone } : {}, t)));
+    const [t] = actText(a, w);
+    const rv = $('#s8-review');
+    rv.className = 'viz-say s8-review' + (['h1', 'batch'].includes(a) || (a === 'tree' && w < 6) || (a === 'parent' && !S.parentValid) || (a === 'page' && word && !isGood(word)) ? ' bad' : a === 'idle' ? '' : ' good');
+    rv.innerHTML = `<p><b class="wk">${w ? '第 ' + w + ' 周' : '第 0 天'}</b>你选了「${t}${word ? '：' + word.w : ''}」。</p><p>${rows.join(' ')}</p>`;
+    $('#s8-hist').appendChild(el('li', {}, `${w ? '第 ' + w + ' 周' : '第 0 天'}：${t}${word ? '（' + word.w + '）' : ''} → 下周曝光 ${fmt(m.impr)}、点击 ${fmt(m.clk)}、排名 ${m.pos == null ? '—' : m.pos}`));
+    if (S.submitted == null && W >= 1) $('#s8-submit-say').innerHTML = `<b>还没提交！</b>已经过去 ${W} 周了，谷歌还不知道你上线了。这一步不占用每周的决定，现在就交。`;
+    if (W >= 12) { finish(); return; }
+    paintOpts();
+    $('#s8-gsc').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+  }
+  $('#s8-next').addEventListener('click', advance);
+
+  // ---------- 结算 ----------
+  function finish() {
+    S.done = true;
+    $('#s8-next').disabled = true;
+    $('#s8-idle').disabled = true;
+    $('#s8-submit-btn').disabled = true;
+    optsBox.textContent = '';
+    wordsBox.hidden = true;
+    $('#s8-act-title').textContent = '12 周过完了';
+    const last = S.hist[S.hist.length - 1];
+    const goodPages = S.pages.filter(p => p.good).length;
+    const stab = (S.brother != null ? 1 : 0) + (S.parentValid ? 1 : 0) + (S.trees ? 1 : 0);
+    const items = [
+      { t: '第 0 天就提交 GSC 和 sitemap', max: 10, pts: S.submitted === 0 ? 10 : S.submitted != null && S.submitted <= 2 ? 5 : 0,
+        ok: '上线当天就交了，第 1 周就收录、出词。', bad: S.submitted == null ? '一直没提交，全靠外链偶然把爬虫带来。' : `第 ${S.submitted} 周才提交，白等了 ${S.submitted} 周。`, link: ['s8-launch.html#k1', '第一周'] },
+      { t: '持续发外链（20 个外链网站算满分）', max: 15, pts: Math.round(15 * Math.min(S.bl, 20) / 20),
+        ok: `一共 ${S.bl} 个外链网站。新词站外链「有就行」：Niko 只有 14 个外链网站，平均排名就到了 4.6。`, bad: `只有 ${S.bl} 个外链网站。新站排名靠外链往上推，前几周每周都该发一点。`, link: ['s6-links.html#k3', '外链插队'] },
+      { t: '加了几个精品内页（3 个算满分）', max: 15, pts: Math.min(goodPages, 3) * 5,
+        ok: `做了 ${goodPages} 个精品内页，出词跟着变多。`, bad: `只做了 ${goodPages} 个精品内页${S.pages.length > goodPages ? '（下载那页不算：出的词不是你想要的）' : ''}。加精品页是上线后的两件事之一。`, link: ['s8-launch.html#k3', '看后台'] },
+      { t: '没乱改已经排上去的 H1', max: 10, pts: S.h1 == null ? 10 : 0,
+        ok: '首页 H1 一直是核心词，排名没被自己折腾掉。', bad: `第 ${S.h1} 周把 H1 改成了口号：主词被稀释，排名一直被拖在后面。`, link: ['s5-page.html#k5', 'H1 被 AI 改了'] },
+      { t: '没一口气生成 500 页', max: 15, pts: S.batch == null ? 15 : S.cleaned != null ? 5 : 0,
+        ok: '一页一页加，及格线一直很健康。', bad: S.cleaned != null ? '生成了 500 页，及格线跌破 1% 被惩罚；后来清掉了，曝光慢慢回来（给 5 分）。' : '生成了 500 页，及格线跌破 1%，到最后都没处理。', link: ['s4-structure.html#k4', '别一口气铺页面'] },
+      { t: '热度回落后稳住（兄弟词、父词、开新站，做到 3 样满分）', max: 15, pts: stab * 5,
+        ok: '兄弟词、父词、第二棵树都安排上了。', bad: `做到了 ${stab} 样：${[S.brother != null ? '兄弟词 ✓' : '兄弟词 ✕', S.parentValid ? '父词 ✓' : (S.parent != null ? '父词打早了 ✕' : '父词 ✕'), S.trees ? '新站 ✓' : '新站 ✕'].join('、')}。热度掉了不关站，转去做兄弟词、父词，同时开下一个新词站。`, link: ['s8-launch.html#k4', '热度掉了'] },
+      { t: '把变体词加进首页标题', max: 5, pts: S.variants != null ? 5 : 0,
+        ok: '后台冒出的变体词写进了首页，没另开新页。', bad: '后台冒出的变体词没用上。是主词的变体，就加进首页标题和正文。', link: ['s8-launch.html#k3', '看后台'] },
+      { t: '第 12 周核心词进前 10', max: 10, pts: last.pos != null && last.pos <= 10 ? 10 : last.pos != null && last.pos <= 20 ? 5 : 0,
+        ok: `第 12 周平均排名 ${last.pos}，稳在第一页。`, bad: last.pos == null ? '到最后都没有排名。' : `第 12 周平均排名 ${last.pos}${last.pos <= 20 ? '，在第二页（给 5 分）' : ''}。`, link: ['s8-launch.html#k2', '出词 = 前 200 名'] },
+      { t: '没被更热的新词分心', max: 5, pts: S.earlyTrees ? 0 : 5,
+        ok: '前 5 周专心做 FramePop。', bad: '热度还在涨的时候跑去追别的词，FramePop 少做了一周。', link: ['s8-launch.html#k4', '热度掉了'] },
+    ];
+    const score = items.reduce((s, x) => s + x.pts, 0);
+    SIM.save('sim-8', score, 100, { weeks: S.hist.map(h => [h.W, h.impr, h.clk, h.pos, h.words, h.act]), payers: S.payers, revenue: Math.round(S.revenue), price: PRICE });
+    countUp($('#s8-pts'), score, 900);
+    const card = $('#s8-card');
+    card.classList.toggle('meh', score < 80);
+    $('#s8-verdict').textContent = score === 100 ? '满分！排名稳在第一页，热度回落也接住了，还种下了第二棵树。'
+      : score >= 80 ? '这三个月过得不错，有一两步可以更稳。'
+        : score >= 50 ? '站活下来了，但有几步走岔了，看看下面哪里丢分。'
+          : '这三个月踩了不少坑。别灰心，哥飞说新手就该一个、两个、三个练手站做下去。';
+    $('#s8-check').innerHTML = items.map(x => {
+      const ok = x.pts === x.max;
+      return `<li class="${ok ? 'ok' : 'miss'}"><i>${ok ? '✓' : '✕'}</i><span><b>${x.t}</b>${ok ? x.ok : x.bad} <a href="${x.link[0]}">回看讲解：${x.link[1]}</a></span><em>${x.pts} / ${x.max}</em></li>`;
+    }).join('');
+    const end = $('#s8-end');
+    end.hidden = false;
+    paintChoice();
+    setTimeout(() => {
+      end.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+      countUp($('#s8-score'), score, 1100);
+      countUp($('#s8-f-impr'), S.hist.reduce((s, h) => s + h.impr, 0), 1100);
+      countUp($('#s8-f-clk'), S.hist.reduce((s, h) => s + h.clk, 0), 1100);
+      countUp($('#s8-f-pay'), S.payers, 1100);
+      countUp($('#s8-f-rev'), Math.round(S.revenue), 1100, money);
+      $('#s8-f-pos').textContent = last.pos == null ? '—' : last.pos.toFixed(1);
+      $('#s8-f-tree').textContent = `${1 + S.trees + S.earlyTrees} 棵`;
+      if (score === 100) setTimeout(() => confetti(card), reduce ? 0 : 400);
+    }, reduce ? 0 : 500);
+  }
+  $('#s8-replay').addEventListener('click', () => {
+    store.del('quiz.sim-8');
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    scrollTo(0, 0);
+    location.reload();
+  });
+
+  // ---------- 开局 ----------
+  paintWeeks();
+  drawChart(false);
+  paintGsc({ impr: 0, clk: 0, pos: null, words: 0, discovered: 0, withImpr: 0, goodLive: 0 }, null, false);
+  paintOpts();
+  const prevSave = SIM.load('sim-8');
+  if (prevSave) $('#s8-prev').textContent = `上次 ${prevSave.score} 分`;
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,963 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>第 6 步 内链、外链 · AI 新词站白话课</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<style>
+/* ---------- 知识点 1：内链图 ---------- */
+.s6-rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 8px; }
+.s6-rule {
+  font: inherit; text-align: left; cursor: pointer; touch-action: manipulation;
+  display: grid; grid-template-columns: auto 1fr; gap: 0 8px; align-items: start;
+  padding: 9px 11px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--bg); color: var(--ink);
+  font-size: 14px; line-height: 1.45; transition: border-color .2s, background .2s;
+}
+.s6-rule:hover { border-color: var(--indigo); }
+.s6-rule i {
+  grid-row: span 2; font-style: normal; font-family: var(--font-mono); font-size: 12px;
+  width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; margin-top: 1px;
+  background: var(--surface); border: 1.5px solid var(--line); color: var(--muted);
+}
+.s6-rule b { font-weight: 650; }
+.s6-rule small { font-size: 12px; color: var(--muted); }
+.s6-rule[aria-pressed="true"] { border-color: var(--indigo); background: var(--indigo-soft); }
+.s6-rule[aria-pressed="true"] i { background: var(--indigo); border-color: var(--indigo); color: var(--on-indigo); }
+.s6-map-stage { overflow-x: auto; background: var(--bg); border-radius: 14px; padding: 4px; scrollbar-width: thin; }
+.s6-map-stage svg { min-width: 600px; }
+.s6-swipe { display: none; }
+@media (max-width: 680px) { .s6-swipe { display: block; } }
+#s6-map-svg text { font-family: var(--font-body); }
+.s6-node rect { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; transition: fill .3s, stroke .3s; }
+.s6-node.home rect { fill: var(--indigo); stroke: var(--indigo); }
+.s6-node text { fill: var(--ink); font-size: 12.5px; font-weight: 650; }
+.s6-node text.u { fill: var(--muted); font-size: 10px; font-weight: 500; }
+#s6-map-svg .s6-node text.u { font-family: var(--font-mono); }
+.s6-node.home text, .s6-node.home text.u { fill: var(--on-indigo); }
+.s6-node rect.s6-strip { fill: var(--indigo); stroke: none; opacity: 0; transition: opacity .35s; }
+.s6-node.home rect.s6-strip { fill: var(--on-indigo); }
+.s6-nav-on .s6-node rect.s6-strip { opacity: .75; }
+.s6-node.found rect:first-child { stroke: var(--green); stroke-width: 2.5; fill: var(--green-soft); }
+.s6-node.home.found rect:first-child { fill: var(--indigo); }
+.s6-node.visit rect:first-child { stroke-width: 4; }
+.s6-node.orphan rect:first-child { stroke: var(--amber); fill: var(--amber-soft); stroke-width: 2; stroke-dasharray: 5 4; }
+#s6-map-svg .s6-node.orphan text.u { fill: var(--amber); font-family: var(--font-body); font-weight: 700; font-size: 10.5px; }
+.s6-edge { fill: none; stroke: var(--indigo); stroke-width: 2; stroke-linecap: round; transition: opacity .25s; }
+.s6-edge.down { opacity: .5; }
+.s6-edge.hot { stroke: var(--green); }
+.s6-edge.off { opacity: 0; }
+.s6-arr-i { fill: var(--indigo); }
+.s6-arr-gr { fill: var(--green); }
+.s6-ball { fill: var(--indigo); }
+.s6-ball.hot { fill: var(--green); }
+.s6-badge circle { fill: var(--green); stroke: var(--surface); stroke-width: 2; }
+.s6-badge text { fill: var(--surface); font-size: 11.5px; font-weight: 700; }
+.s6-pop { animation: pop .35s; transform-box: fill-box; transform-origin: center; }
+.s6-bot circle { fill: var(--amber); stroke: var(--surface); stroke-width: 2; }
+.s6-bot text { fill: var(--surface); font-size: 10.5px; font-weight: 700; }
+.s6-sw-box { display: inline-block; width: 16px; height: 11px; border-radius: 3px; border: 2px solid var(--green); background: var(--green-soft); flex: none; }
+.s6-sw-box.orph { border-color: var(--amber); border-style: dashed; background: var(--amber-soft); }
+
+/* ---------- 知识点 2：锚文本、链接位置 ---------- */
+.s6-anc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+.s6-anc-box { display: grid; gap: 8px; align-content: start; padding: 12px 14px; border-radius: 12px; background: var(--bg); font-size: 15px; line-height: 1.65; min-width: 0; }
+.s6-cap { font-size: 12.5px; font-weight: 700; color: var(--muted); letter-spacing: .04em; }
+.s6-anc-link { color: var(--indigo); text-decoration: underline; text-underline-offset: 3px; font-weight: 650; font-family: var(--font-mono); font-size: 14px; overflow-wrap: anywhere; }
+#s6-anc.bad .s6-anc-link { color: var(--amber); font-family: var(--font-body); font-size: 15px; }
+.s6-anc-notes { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.s6-anc-notes li { display: grid; gap: 2px; padding: 8px 10px; border-radius: 10px; background: var(--surface); border: 1.5px solid var(--line); font-size: 14px; transition: opacity .3s; }
+.s6-anc-notes li code { justify-self: start; }
+.s6-anc-notes li.ok { border-color: var(--green); }
+.s6-anc-notes li.ok b { color: var(--green); font-family: var(--font-mono); font-size: 13.5px; }
+.s6-anc-notes li.bad { border-color: var(--amber); color: var(--amber); }
+.s6-anc-notes li.s6-wait { opacity: .35; }
+.s6-pos { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (max-width: 620px) { .s6-pos { grid-template-columns: 1fr; } }
+.s6-pos-page { display: grid; gap: 8px; padding: 10px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--surface); }
+.s6-pos-page .dd-zone { min-height: 58px; }
+#s6-pos .dd-item { color: var(--indigo); border-color: var(--indigo); text-decoration: underline; text-underline-offset: 3px; font-weight: 600; }
+.s6-pos-fill { display: grid; gap: 7px; padding: 6px 8px; }
+.s6-pos-fill i { display: block; height: 8px; border-radius: 4px; background: var(--line); }
+.s6-pos-fill i:nth-child(2) { width: 82%; }
+.s6-pos-fill i:nth-child(3) { width: 64%; }
+.s6-pos-side { display: grid; gap: 10px; align-content: start; }
+.s6-pos-meter { display: grid; gap: 6px; padding: 12px 14px; border-radius: 12px; background: var(--bg); }
+.s6-pos-meter .meter { height: 14px; border-radius: 7px; }
+.s6-pos-meter .meter > i { border-radius: 7px; }
+.s6-pos-meter .row { display: flex; justify-content: space-between; align-items: baseline; font-size: 13.5px; color: var(--muted); }
+.s6-pos-meter .row b { font-size: 20px; color: var(--indigo); }
+
+/* ---------- 知识点 3：待抓名单 ---------- */
+.s6-q-bot { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 12px; background: var(--amber-soft); color: var(--amber); font-size: 14.5px; }
+.s6-q-bot i { width: 16px; height: 16px; border-radius: 50%; background: var(--amber); flex: none; animation: pulse 1.8s infinite; }
+.s6-q-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+.s6-q-row { display: grid; grid-template-columns: 46px 1fr auto; gap: 10px; align-items: center; padding: 6px 12px; border-radius: 10px; background: var(--bg); border: 1px solid var(--line); font-size: 14.5px; line-height: 1.5; }
+.s6-q-row .no { font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); }
+.s6-q-row .nm { color: var(--muted); min-width: 0; overflow-wrap: anywhere; }
+.s6-q-row .lk { font-family: var(--font-mono); font-size: 12.5px; color: var(--indigo); white-space: nowrap; }
+.s6-q-row.me { background: var(--indigo-soft); border: 1.5px solid var(--indigo); }
+.s6-q-row.me .nm { color: var(--indigo); font-weight: 650; font-family: var(--font-mono); }
+.s6-q-row.me .no { color: var(--indigo); }
+.s6-q-row.got { background: var(--green-soft); border-color: var(--green); }
+.s6-q-row.got .nm, .s6-q-row.got .lk, .s6-q-row.got .no { color: var(--green); }
+.s6-q-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.s6-q-acts .btn.s6-trap { border-style: dashed; border-color: var(--amber); color: var(--amber); }
+.s6-q-fly { display: inline-block; width: 16px; height: 16px; border-radius: 50%; background: var(--amber); }
+.s6-shake { animation: shake .45s; }
+
+/* ---------- 知识点 4：抄同行作业 ---------- */
+.s6-hw-peers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 620px) { .s6-hw-peers { grid-template-columns: 1fr; } }
+.s6-peer { display: grid; gap: 6px; align-content: start; padding: 10px 12px; border-radius: 12px; background: var(--bg); transition: opacity .4s; min-width: 0; }
+.s6-peer b { font-size: 14.5px; }
+.s6-peer .rk { font-size: 12px; color: var(--amber); font-family: var(--font-mono); }
+.s6-peer ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 5px; }
+.s6-peer li { font-size: 12.5px; line-height: 1.5; padding: 3px 9px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); }
+#s6-hw.merged .s6-peer { opacity: .38; }
+.s6-hw-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.s6-hw-item { display: grid; grid-template-columns: 1fr auto auto; gap: 8px 10px; align-items: center; padding: 7px 10px 7px 12px; border-radius: 10px; background: var(--surface); border: 1.5px solid var(--line); font-size: 14.5px; line-height: 1.5; transition: opacity .35s, transform .35s, border-color .3s, background .3s; }
+.s6-hw-item .cnt { font-family: var(--font-mono); font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--bg); color: var(--muted); white-space: nowrap; }
+.s6-hw-item.c3 .cnt { background: var(--green-soft); color: var(--green); }
+.s6-hw-item.c2 .cnt { background: var(--indigo-soft); color: var(--indigo); }
+.s6-hw-item .btn { font-size: 13px; padding: 5px 12px; }
+.s6-hw-item.done { border-color: var(--green); background: var(--green-soft); }
+.s6-hw-item.s6-pre { opacity: 0; transform: translateY(6px); }
+@media (max-width: 480px) { .s6-hw-item { grid-template-columns: 1fr auto; } .s6-hw-item .cnt { grid-row: 2; justify-self: start; } .s6-hw-item .btn { grid-row: span 2; } }
+.s6-me { display: flex; flex-wrap: wrap; gap: 6px 26px; padding: 12px 16px; border-radius: 12px; background: var(--indigo-soft); align-items: end; }
+.s6-me > div { display: grid; gap: 0; }
+.s6-me .k { font-size: 12.5px; color: var(--muted); }
+.s6-me .v { font-family: var(--font-mono); font-size: 26px; font-weight: 600; color: var(--indigo); line-height: 1.2; }
+.s6-me .who { font-family: var(--font-mono); font-weight: 650; color: var(--indigo); font-size: 14px; align-self: center; }
+.s6-where { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; }
+.s6-where li { display: grid; gap: 2px; padding: 10px 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); font-size: 14.5px; line-height: 1.65; }
+.s6-where li b { font-size: 15px; }
+
+/* ---------- 知识点 5：锚文本分布 ---------- */
+.s6-mix-rows { display: grid; gap: 9px; }
+.s6-mix-row { display: grid; grid-template-columns: minmax(0, 200px) 1fr 30px; gap: 4px 10px; align-items: center; }
+.s6-mix-row .lab { font-family: var(--font-mono); font-size: 13px; line-height: 1.4; overflow-wrap: anywhere; }
+.s6-mix-row .trk { display: grid; grid-template-columns: repeat(30, minmax(0, 1fr)); gap: 2px; min-height: 20px; padding: 3px; border-radius: 6px; background: var(--bg); }
+.s6-mix-row .n { font-family: var(--font-mono); font-size: 13.5px; text-align: right; color: var(--muted); }
+.s6-blk { display: block; height: 14px; border-radius: 3px; background: var(--green); }
+#s6-mix.same .s6-blk { background: var(--amber); }
+@media (max-width: 560px) { .s6-mix-row { grid-template-columns: 1fr 30px; } .s6-mix-row .lab { grid-column: 1 / -1; } }
+</style>
+</head>
+<body data-page="s6">
+<header id="topbar"></header>
+
+<div class="ph"><div class="wrap">
+  <span class="eyebrow">第 6 步 / 共 8 步</span>
+  <h1>内链连成一张网，外链请谷歌进门</h1>
+  <p class="lead">网站不止一页。自己的页面互相指来指去的链接叫内链，别的网站指向你的链接叫外链。内链管谷歌能不能走遍你的站、力量往哪汇；外链管谷歌多快找到你、排名能往上爬多少。例子还是 FramePop。</p>
+  <ul class="asks">
+    <li><a href="#k1">页面之间怎么连？导航、面包屑、正文里的链接各管什么？</a></li>
+    <li><a href="#k2">链接上写什么字？同一条链接放导航和放页脚，有区别吗？</a></li>
+    <li><a href="#k3">外链有什么用？新站发外链要不要挑质量？</a></li>
+    <li><a href="#k4">外链去哪发、要多少？新词站要不要外链？</a></li>
+    <li><a href="#k5">一个页面有 30 个外链，链接上的字怎么写？</a></li>
+  </ul>
+  <div class="gist"><span class="lab">一句话答案</span><p>每页链回首页、导航放重要目录、加面包屑、每页列出同级和下级、重要页多给入口，链接上写对方那页的词，全站的力量就汇到首页那个词上。外链让谷歌早点来：新站什么外链都比没有强，最省事的是抄同行作业，链接上的字换着写。</p></div>
+</div></div>
+
+<main class="wrap">
+
+  <!-- 知识点 1 -->
+  <section class="kp" id="k1">
+    <div class="kp-head"><span class="kp-no">知识点 1</span><h2>内链 5 条：让爬虫走遍每一页，力量汇到首页</h2></div>
+    <p class="kp-say"><button type="button" class="term" data-t="internal">内链</button>就是你网站里一页指向另一页的链接。谷歌的<button type="button" class="term" data-t="crawler">爬虫</button>顺着链接一页页走，走不到的页面就是<button type="button" class="term" data-t="orphan">孤岛页</button>。链接还会传<button type="button" class="term" data-t="weight">权重</button>：每个内页都链回首页，全站的力量就汇到首页那个词上。哥飞给了 <b>5 条连法</b>。<span class="st hf">哥飞原话</span></p>
+    <blockquote class="said"><p>「每一级页面，最好列出来同级的页面有哪些，下一级页面有哪些。」</p><span class="who">哥飞 · 2025-01-15《再聊内链和内页》</span></blockquote>
+
+    <div class="viz" id="s6-map">
+      <div class="viz-head"><span class="viz-label">动手玩 · 打开开关，再放爬虫</span><p class="viz-title">FramePop 的 8 个页面，用哪几条规则连起来</p></div>
+      <div class="s6-rules">
+        <button type="button" class="s6-rule" data-r="A" aria-pressed="false"><i>1</i><b>每页都链回首页</b><small>Logo 或「首页」两个字</small></button>
+        <button type="button" class="s6-rule" data-r="B" aria-pressed="false"><i>2</i><b>顶部导航放重要目录</b><small>每页最上面那一排</small></button>
+        <button type="button" class="s6-rule" data-r="C" aria-pressed="false"><i>3</i><b>面包屑</b><small>首页 › 博客 › 本页</small></button>
+        <button type="button" class="s6-rule" data-r="D" aria-pressed="false"><i>4</i><b>每页列出同级和下级</b><small>正文里、页面下方</small></button>
+        <button type="button" class="s6-rule" data-r="E" aria-pressed="false"><i>5</i><b>重要页多给入口</b><small>图生视频页最重要</small></button>
+      </div>
+      <p class="viz-note s6-swipe">手机上这张图比屏幕宽，可以左右滑着看；放爬虫时画面会自己跟着滑。</p>
+      <div class="s6-map-stage"><svg id="s6-map-svg" viewBox="0 0 720 336" role="img" aria-label="FramePop 网站图：首页在上，第二层是用途目录、文生视频页、图生视频页、提示词模板页、博客目录，第三层是 TikTok 用途页和教程"></svg></div>
+      <div class="viz-controls">
+        <button type="button" class="btn primary" id="s6-crawl">放爬虫</button>
+        <button type="button" class="btn" id="s6-pour">放力量小球</button>
+        <button type="button" class="btn" id="s6-all">5 条全开</button>
+        <button type="button" class="btn" id="s6-none">全关</button>
+      </div>
+      <div class="legend-row">
+        <span><i class="sw ours"></i>内链，箭头指向被链接的页</span>
+        <span><i class="sw good"></i>给重要页的额外入口</span>
+        <span><i class="s6-sw-box"></i>爬虫到过</span>
+        <span><i class="s6-sw-box orph"></i>孤岛页</span>
+      </div>
+      <p class="viz-say" id="s6-map-say" aria-live="polite">现在 8 个页面谁也不连谁。一条条打开上面 5 个开关，看链接一根根画出来；再点「放爬虫」，看它能走到哪几页。</p>
+    </div>
+
+    <div class="box analogy"><span class="lab">打个比方</span><p>内链像商场里的指示牌：顶部导航是每层电梯口的楼层图，面包屑是「你在这里」那个小点，每页列出同级和下级，就像每家店门口写着「隔壁还有……楼上还有……」。</p></div>
+    <div class="box warn"><span class="lab">补充提醒（不是原文内容）</span><p>交了 <button type="button" class="term" data-t="sitemap">sitemap</button> 还要不要内链？要。sitemap 只是一份名单，告诉谷歌有这些页；内链除了带路，还决定力量往哪传、哪一页更重要。<span class="st bc">补充提醒</span></p></div>
+
+    <div class="quiz" data-answer="C">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">5 条里先只开 1 条，开哪一条，爬虫从首页出发就能走到每一页？（可以在上面的图里试）</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">① 每页都链回首页</button>
+        <button class="q-opt" data-l="B">② 顶部导航放重要目录</button>
+        <button class="q-opt" data-l="C">④ 每页列出同级和下级</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>① 和面包屑的箭头都朝上，爬虫从首页下不去；导航只列了第一层目录，TikTok 用途页、教程还是孤岛。④ 让每一层都把下一层列出来，一层层就走到底了。<span class="st hf">哥飞原话</span>不过力量要汇回首页，还得靠 ①，5 条最好一起做。</p></div>
+    </div>
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://new.web.cafe/tutorial/detail/lqxrxz4wux">《再聊内链和内页，以及如何做好一个内容型工具站》</a><span class="meta">哥飞 · 2025-01-15 · 第 ②～⑤ 条的出处</span></li>
+      <li><a href="https://mp.weixin.qq.com/s/X95UZmPEKHZZ4rNoBcaoJg">《养网站防老第 5 步：内页和内链建设》</a><span class="meta">哥飞 · 公众号 2023-10-19</span></li>
+      <li><span>第 ① 条「就能够把每一个内页的权重传递到首页」：2025-03-02 群聊，经哥飞 SEO Agent 转述，无单独文章</span></li>
+    </ul></div>
+  </section>
+
+  <!-- 知识点 2 -->
+  <section class="kp" id="k2">
+    <div class="kp-head"><span class="kp-no">知识点 2</span><h2>链接上写对方那页的词，放在显眼的地方</h2></div>
+    <p class="kp-say">链接上显示的那几个字叫<button type="button" class="term" data-t="anchor">锚文本</button>。写成<b>对方那页主打的词</b>，谷歌一看就知道那一页讲什么；写「点击这里」，等于什么都没说。<span class="st tl">推出来的</span>哥飞给首页加内页入口时，也是「锚文本就用这个小词」。<span class="st hf">哥飞原话</span></p>
+
+    <div class="viz" id="s6-anc">
+      <div class="viz-head"><span class="viz-label">动手玩 · 换一种写法</span><p class="viz-title">首页的 3 条链接，谷歌读到了什么</p></div>
+      <div class="seg" id="s6-anc-seg"><button type="button" data-v="click" aria-pressed="true">都写「点击这里」</button><button type="button" data-v="kw" aria-pressed="false">写对方那页的词</button></div>
+      <div class="s6-anc-grid">
+        <div class="s6-anc-box">
+          <span class="s6-cap">framepop.com 首页（示意）</span>
+          <p>想把一张照片变成视频？<span class="s6-anc-link">点击这里</span></p>
+          <p>只想打几个字就出视频？<span class="s6-anc-link">点击这里</span></p>
+          <p>不知道提示词怎么写？<span class="s6-anc-link">点击这里</span></p>
+        </div>
+        <div class="s6-anc-box">
+          <span class="s6-cap">谷歌的小本子</span>
+          <ol class="s6-anc-notes" id="s6-anc-notes">
+            <li><code>/image-to-video</code><span></span></li>
+            <li><code>/text-to-video</code><span></span></li>
+            <li><code>/prompts</code><span></span></li>
+          </ol>
+        </div>
+      </div>
+      <p class="viz-say" id="s6-anc-say" aria-live="polite"></p>
+    </div>
+
+    <p class="kp-say">同一条链接放在哪，也有讲究：<b>显眼位置的分量比不起眼的位置重</b>。哥飞拿首页导航和<button type="button" class="term" data-t="s6foot">页脚</button>举过例子。<span class="st hf">哥飞原话</span></p>
+    <div class="viz" id="s6-pos">
+      <div class="viz-head"><span class="viz-label">动手玩 · 拖一拖</span><p class="viz-title">同一条链接，放在首页哪里更有分量</p></div>
+      <p class="dd-hint">把蓝色那条链接拖到页面的别的位置。拖不动的话，先点一下它，再点想放的位置。</p>
+      <div class="s6-pos">
+        <div class="s6-pos-page">
+          <div class="dd-zone" data-z="nav"><span class="dd-zone-head">顶部导航</span></div>
+          <div class="dd-zone" data-z="hero"><span class="dd-zone-head">首屏正文，最显眼的地方</span></div>
+          <div class="s6-pos-fill" aria-hidden="true"><i></i><i></i><i></i></div>
+          <div class="dd-zone" data-z="foot"><span class="dd-zone-head">页脚</span><button type="button" class="dd-item">lumibo image to video</button></div>
+        </div>
+        <div class="s6-pos-side">
+          <div class="s6-pos-meter">
+            <div class="row"><span>这条链接的分量（示意）</span><b id="s6-pos-lab">低</b></div>
+            <div class="meter ours"><i id="s6-pos-bar"></i></div>
+          </div>
+          <p class="viz-say" id="s6-pos-say" aria-live="polite"></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="quiz" data-answer="B">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">FramePop 首页要给图生视频页加一条链接，链接上的字写什么最好？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">「点击这里」，用户一看就知道要点</button>
+        <button class="q-opt" data-l="B">lumibo image to video，就是那一页主打的词</button>
+        <button class="q-opt" data-l="C">「Learn more（了解更多）」，看着更像大网站</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>链接上的字是在替那一页报名字。「点击这里」「了解更多」谷歌读不出那页讲什么，写成那页主打的词才有用。<span class="st tl">推出来的</span>哥飞在首页给内页留入口，「锚文本就用这个小词」。<span class="st hf">哥飞原话</span></p></div>
+    </div>
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://new.web.cafe/experience/hq96hlfs02">《图解内链、外链、反链、正向链接》</a><span class="meta">哥飞 · 2025-08-15</span></li>
+      <li><a href="https://mp.weixin.qq.com/s/X95UZmPEKHZZ4rNoBcaoJg">《养网站防老第 5 步：内页和内链建设》</a><span class="meta">哥飞 · 公众号 2023-10-19 · 首页链接上写的都是内页的词</span></li>
+      <li><span>「锚文本就用这个小词」：2025-04-27 群聊；导航和页脚「权重会有不同的」：2025-03-02 群聊。都经哥飞 SEO Agent 转述，无单独文章</span></li>
+    </ul></div>
+  </section>
+
+  <!-- 知识点 3 -->
+  <section class="kp" id="k3">
+    <div class="kp-head"><span class="kp-no">知识点 3</span><h2>外链让谷歌早点来：新站什么外链都比没有强</h2></div>
+    <p class="kp-say"><button type="button" class="term" data-t="external">外链</button>是别的网站指向你的链接。新站上线后谷歌不会马上来：它每天发现很多新网站，先排进一个<button type="button" class="term" data-t="s6queue">待抓名单</button>，平平无奇的排后面。怎么插队？哥飞的答案是「多加几个外链」。<span class="st hf">哥飞原话</span></p>
+
+    <div class="viz" id="s6-q">
+      <div class="viz-head"><span class="viz-label">看动画 · 点按钮发外链</span><p class="viz-title">谷歌的待抓名单：framepop.com 排在最后</p></div>
+      <div class="s6-q-bot" id="s6-q-bot"><i aria-hidden="true"></i><b>谷歌爬虫：先抓排第 1 的</b></div>
+      <ol class="s6-q-list" id="s6-q-list"></ol>
+      <div class="s6-q-acts">
+        <button type="button" class="btn" data-a="v2ex">在 V2EX 发帖介绍</button>
+        <button type="button" class="btn" data-a="blog">去博客文章下留评论</button>
+        <button type="button" class="btn" data-a="old">老站给新站加链接</button>
+        <button type="button" class="btn s6-trap" data-a="buy">花钱买 1000 条垃圾外链</button>
+        <button type="button" class="btn" id="s6-q-reset">重来</button>
+      </div>
+      <p class="viz-note">往前插几位是示意，不是真实规则。</p>
+      <p class="viz-say" id="s6-q-say" aria-live="polite"></p>
+    </div>
+
+    <blockquote class="said"><p>「对于你一个全新上线，权重为0 的网站，质量再差的外链，也比没有外链好，因为有了外链，就是零的突破。」</p><span class="who">哥飞 · 2025-01-20《上站之后要做什么》</span></blockquote>
+    <div class="box warn"><span class="lab">两句话怎么一起看</span><p>同一篇里哥飞还说，外链「越多越好，但不要去买垃圾外链」。两句不打架：自己能发的外链，哪怕不起眼，也别挑三拣四；花钱批量买来的垃圾外链，别碰。<span class="st tl">推出来的</span></p></div>
+
+    <div class="quiz" data-answer="A">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">FramePop 刚上线，权重是 0。有人劝你：外链要挑，不起眼的小网站一律别发。你怎么看？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">不用挑：新站什么外链都比没有强，能发就发，只是别花钱买垃圾外链</button>
+        <button class="q-opt" data-l="B">要挑：差的外链会拖累新站，宁可一条不发</button>
+        <button class="q-opt" data-l="C">既然不用挑，那就花钱一次买 1000 条，最省事</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>哥飞说权重为 0 的新站「质量再差的外链，也比没有外链好」，有了外链就是零的突破；但他也说「不要去买垃圾外链」。<span class="st hf">哥飞原话</span>越到后面想提权重，才越需要质量高的外链。</p></div>
+    </div>
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://new.web.cafe/tutorial/detail/sk5je1bj0f">《上站之后要做什么；再次详解谷歌搜索排名》</a><span class="meta">哥飞 · 2025-01-20</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/9sox64g7o9">《Google Search Console 使用入门讲解》</a><span class="meta">哥飞 · 2025-01-16 归档 · 待抓名单、V2EX 发帖</span></li>
+      <li><span>老站给新站加外链：2025-04-26 群聊，经哥飞 SEO Agent 转述，无单独文章</span></li>
+    </ul></div>
+  </section>
+
+  <!-- 知识点 4 -->
+  <section class="kp" id="k4">
+    <div class="kp-head"><span class="kp-no">知识点 4</span><h2>外链去哪发：抄同行作业；新词站有就行</h2></div>
+    <p class="kp-say">哥飞说，最好也最轻松的外链策略，就是<b>抄同行的作业</b>：排名靠前的同行在哪有外链，你就去哪发。他们能排上去，说明那些外链「至少是无害的」。<span class="st hf">哥飞原话</span></p>
+    <p class="kp-say">做法：用 <button type="button" class="term" data-t="ahrefs">Ahrefs</button> 或 <button type="button" class="term" data-t="semrush">Semrush</button> 导出几家同行的外链，<b>合在一起去掉重复，几家都有的先发</b>，说明好拿。<span class="st hf">哥飞原话</span></p>
+
+    <div class="viz" id="s6-hw">
+      <div class="viz-head"><span class="viz-label">动手玩 · 抄作业</span><p class="viz-title">3 家同行的外链，合成你的待发清单</p></div>
+      <div class="s6-hw-peers" id="s6-hw-peers"></div>
+      <div class="viz-controls">
+        <button type="button" class="btn primary" id="s6-hw-merge">合在一起，按几家都有排序</button>
+        <button type="button" class="btn" id="s6-hw-reset">重来</button>
+      </div>
+      <div class="s6-me" id="s6-me">
+        <span class="who">framepop.com</span>
+        <div><span class="k"><button type="button" class="term" data-t="refdomain">引荐域名</button></span><b class="v" id="s6-me-rd" data-val="0">0</b></div>
+        <div><span class="k"><button type="button" class="term" data-t="dr">DR</button></span><b class="v">0</b></div>
+        <div><span class="k">核心词排第几（示意）</span><b class="v" id="s6-me-rank" data-val="86">86</b></div>
+      </div>
+      <p class="viz-say" id="s6-hw-say" aria-live="polite">FramePop 刚<button type="button" class="term" data-t="chuci">出词</button>，排第 86 名。哥飞说一开始排八九十名是正常的，持续加外链就会往上爬。先点「合在一起」。</p>
+      <ol class="s6-hw-list" id="s6-hw-list" hidden></ol>
+    </div>
+
+    <div class="box analogy"><span class="lab">还有这几处，哥飞和群友常提</span>
+      <ul class="s6-where">
+        <li><b><button type="button" class="term" data-t="s6v2ex">V2EX</button> 等社区发帖</b><span>介绍你的产品，留下网址。<span class="st hf">哥飞原话</span></span></li>
+        <li><b>博客评论</b><span>在相关博客文章下留言，名字或个人主页那栏带网址。哥飞说「博客评论外链依然还有用」。<span class="st hf">哥飞原话</span></span></li>
+        <li><b>老站带新站</b><span>有老站的话，老域名给新域名加外链，顺便导点流量。<span class="st hf">哥飞原话</span></span></li>
+        <li><b>每天发一点</b><span>群友的经验：一天加两三个就好；博客评论每天少量发，别一天发一大堆。<span class="st sq">社群经验</span></span></li>
+      </ul>
+    </div>
+    <div class="box case"><span class="lab">真实案例 · Niko 新词 7 天冲进前五</span><p>2025 年 10 月 2 日，Niko 的站在 Ahrefs 上只有 <b>14 个引荐域名、DR 0</b>；接下来 24 小时，后台显示平均排名 <b>4.6</b>，点击 150、曝光 955。他每天手动找同行的外链挨个提交，以前看不上的 V2EX 和中文导航站也有用。<span class="st sq">社群经验</span></p><p>他的原话：「对于新词来说，不需要高质量的外链，只要有一些外链，很快就能给你的网站带来排名的提升」。想长期提权重，才需要高质量外链。</p></div>
+    <div class="box warn"><span class="lab">要多少？看词有多难</span><p>新词对手少，有一些外链就能往上走（上面的 Niko）。竞争大的词就不一样：有群友说小游戏新站也要发 200 个外链；哥飞拆过的 sprunkin.com，有 878 个网站给它外链。<span class="st sq">社群经验</span><span class="st hf">哥飞原话</span></p></div>
+    <div class="box warn"><span class="lab">补充提醒 · 别把灰色技巧当主力</span><p>哥飞在《再聊反链》里讲过「借别人网站的跳转链接蹭外链」的原理；评论区有人说时灵时不灵，还可能被谷歌惩罚。新手知道就行。反过来，自己网站上会自动生成外部链接的地方，记得加 nofollow，别被人拿来蹭。<span class="st sq">社群经验</span><span class="st tl">推出来的</span></p></div>
+
+    <div class="quiz" data-answer="B">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">哥飞说的「最好的也是最轻松可以实现的外链策略」，是哪一个？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">花钱买一个「高权重外链套餐」，一步到位</button>
+        <button class="q-opt" data-l="B">抄同行的作业：排名靠前的同行在哪有外链，你就去哪发</button>
+        <button class="q-opt" data-l="C">先把网站做好，等用户自己分享，外链自然就有了</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>同行能拿到排名，说明他们的外链「至少是无害的」；几家都有的先发，说明好拿。<span class="st hf">哥飞原话</span>新站等用户自然分享太慢，买来的外链又容易是垃圾。</p></div>
+    </div>
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://new.web.cafe/tutorial/detail/sk5je1bj0f">《上站之后要做什么》</a><span class="meta">哥飞 · 2025-01-20 · 抄作业取并集、出词后排八九十名正常</span></li>
+      <li><a href="https://new.web.cafe/experience/ao30ki8tzk">《博客评论外链》</a><span class="meta">web.cafe 经验帖 · 哥飞《新人入门学习指南》推荐</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/pvkumobpkh">《再聊反链：一个很有趣的外链小技巧》</a><span class="meta">哥飞 · 2025-01-12</span></li>
+      <li><a href="https://new.web.cafe/topic/rpg62z89h8">《新词 7 天冲到谷歌前五的完整实战复盘》</a><span class="meta">Niko · 2025-10-08</span></li>
+      <li><a href="https://new.web.cafe/topic/74ldgiww0g">《新词文章阅读笔记分享》</a><span class="meta">浩承yang · 2026-06-21 · 小游戏站 200 个外链、老站带新站</span></li>
+      <li><span>「最轻松的外链策略，就是抄同行的作业」：2025-03-02 群聊，经哥飞 SEO Agent 转述</span></li>
+    </ul></div>
+  </section>
+
+  <!-- 知识点 5 -->
+  <section class="kp" id="k5">
+    <div class="kp-head"><span class="kp-no">知识点 5</span><h2>同一页的外链，链接上的字换着写</h2></div>
+    <p class="kp-say">外链多了以后，<b>链接上的字别全写成一样</b>。哥飞举过例子：同一个页面的外链，可以写 AI Video、Create AI Video、Make Video With AI，「换着来」。<span class="st hf">哥飞原话</span></p>
+    <blockquote class="said"><p>「假设这个页面你有 30 个外链……至少需要有好几种锚文本，换着来。」</p><span class="who">哥飞 · 2025-11-14 群聊，经哥飞 SEO Agent 转述</span></blockquote>
+
+    <div class="viz" id="s6-mix">
+      <div class="viz-head"><span class="viz-label">动手玩 · 切换写法</span><p class="viz-title">FramePop 首页的 30 个外链，链接上都写了什么（示意）</p></div>
+      <div class="seg" id="s6-mix-seg"><button type="button" data-v="same" aria-pressed="true">30 个全写一样</button><button type="button" data-v="mix" aria-pressed="false">换着写</button></div>
+      <div class="s6-mix-rows" id="s6-mix-rows"></div>
+      <p class="viz-note">一个小方块 = 一个外链。</p>
+      <p class="viz-say" id="s6-mix-say" aria-live="polite"></p>
+    </div>
+
+    <div class="box analogy"><span class="lab">为什么要换着写</span><p>30 个网站各自推荐你，本来就会用不同的说法；30 条一字不差，更像是一个人刷出来的。再说，每种说法都在替这一页投票：哥飞在《养网站防老》里，就是从首页用两种不同的字链向同一个内页。<span class="st tl">推出来的</span></p></div>
+    <div class="box good"><span class="lab">发博客评论时顺手换</span><p>博客评论里你留的名字，一般就变成了链接上的字。围绕核心词准备一小组说法，每次换一个填。<span class="st sq">社群经验</span></p></div>
+    <div class="box case"><span class="lab">最后把内链、外链串起来</span><p>外链大多指向首页，首页再用内链把力量分给要冲的内页；内页拿到的外链，又顺着「内页 → 首页」的内链汇回首页。两头一接，全站往同一个方向使劲。<span class="st tl">推出来的</span>哥飞也说，「仅仅靠外链是不够的，你还需要有内页」。<span class="st hf">哥飞原话</span></p></div>
+
+    <div class="quiz" data-answer="C">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">FramePop 首页攒了 30 个外链，链接上的字怎么写？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">30 个全写 lumibo video generator，力量最集中</button>
+        <button class="q-opt" data-l="B">每个都写不相干的词，越乱越像自然推荐</button>
+        <button class="q-opt" data-l="C">围绕核心词换好几种说法，比如 lumibo video generator、create lumibo video、make video with lumibo</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>哥飞的原话是「至少需要有好几种锚文本，换着来」，他举的例子都围绕同一件事（AI 做视频）。<span class="st hf">哥飞原话</span>说法换着来，但都得跟这一页的词有关，写不相干的词就白给了。<span class="st tl">推出来的</span></p></div>
+    </div>
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><span>「换着来」那段：2025-11-14 群聊，经哥飞 SEO Agent 转述，无单独文章</span></li>
+      <li><a href="https://new.web.cafe/topic/6dx0cbme8c">《2026 年 8 月新词大赛分享：第三名经验》</a><span class="meta">运气选手走得远 · 2026-09-23 · 锚文本词簇轮换、评论名字变成锚文本</span></li>
+      <li><a href="https://mp.weixin.qq.com/s/X95UZmPEKHZZ4rNoBcaoJg">《养网站防老第 5 步：内页和内链建设》</a><span class="meta">哥飞 · 公众号 2023-10-19 · 两种写法链向同一页</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/lqxrxz4wux">《再聊内链和内页》</a><span class="meta">哥飞 · 2025-01-15 · 光靠外链不够</span></li>
+    </ul></div>
+  </section>
+
+  <!-- 小结 -->
+  <section class="kp" id="recap">
+    <div class="kp-head"><span class="kp-no">小结</span><h2>这一步记住 5 件事</h2></div>
+    <div class="recap"><ol>
+      <li><b>内链 5 条</b>：每页链回首页、顶部导航放重要目录、面包屑、每页列出同级和下级、重要页多给入口。没有链接通向的页面，就是孤岛页。</li>
+      <li><b>链接上写对方那页的词</b>，别写「点击这里」。同一条链接，放导航、首屏显眼处，比放页脚分量重。</li>
+      <li><b>外链让谷歌早点来</b>：内容没问题一般 24 小时内收录，有外链最快 2 小时。新站什么外链都比没有强，但别花钱买垃圾外链。</li>
+      <li><b>抄同行作业最轻松</b>，几家都有的先发。新词站外链有就行：Niko 14 个引荐域名、DR 0，平均排名 4.6。</li>
+      <li><b>外链上的字换着写</b>：围绕核心词准备好几种说法，30 个外链别一字不差。</li>
+    </ol></div>
+    <div class="scorebar" data-scorebar></div>
+    <h3>这一步该读的原文（按顺序）</h3>
+    <ol class="readlist">
+      <li><a href="https://new.web.cafe/experience/hq96hlfs02">《图解内链、外链、反链、正向链接》</a><label><input type="checkbox">读过了</label><span class="why">同一条链接，站在不同网站的角度叫法不一样。先把这几个名字分清。</span><span class="meta">哥飞 · 2025-08-15</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/lqxrxz4wux">《再聊内链和内页，以及如何做好一个内容型工具站》</a><label><input type="checkbox">读过了</label><span class="why">内链几条规则的出处，还讲了为什么光有外链不够、还要有内页。</span><span class="meta">哥飞 · 2025-01-15</span></li>
+      <li><a href="https://mp.weixin.qq.com/s/X95UZmPEKHZZ4rNoBcaoJg">《养网站防老第 5 步：内页和内链建设》</a><label><input type="checkbox">读过了</label><span class="why">手把手的例子：首页给每个内页放两条写法不同的链接，内页再链回首页。</span><span class="meta">哥飞 · 公众号 2023-10-19</span></li>
+      <li><a href="https://new.web.cafe/experience/ao30ki8tzk">《博客评论外链》</a><label><input type="checkbox">读过了</label><span class="why">从同行外链里找能留评论的博客，评论里怎么带上自己的网址。</span><span class="meta">web.cafe 经验帖</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/pvkumobpkh">《再聊反链：一个很有趣的外链小技巧》</a><label><input type="checkbox">读过了</label><span class="why">查反链能发现别人的生意；顺带看懂一个灰色外链技巧，和自己网站为什么要加 nofollow。</span><span class="meta">哥飞 · 2025-01-12</span></li>
+    </ol>
+  </section>
+
+</main>
+
+<nav id="pager"></nav>
+<footer id="foot"></footer>
+<script src="assets/kit.js"></script>
+<script>
+(() => {
+  const { $, $$, svgEl, bindSeg, tween, sleep, fmt, replay, countUp, flip, flyTo, dnd, reduce, SIM, addTerms, confetti } = KIT;
+
+  addTerms({
+    s6nav: ['顶部导航', '每一页最上面那一排链接。全站每页都有，等于每一页都给导航里的页面加了一条内链。'],
+    s6foot: ['页脚', '每一页最底下那一块。常放关于、隐私政策，也可以分门别类列出全站重要页面。'],
+    s6queue: ['待抓名单', '谷歌爬虫每天发现很多新网站，先排进一个名单，再一个个去抓。平平无奇的排在后面，多几个外链就能往前插。'],
+    s6v2ex: ['V2EX', '一个中文技术社区，也叫 V 站。哥飞说在上面发帖介绍产品、留下网址，能让谷歌更快发现新网站。'],
+    s6blogcmt: ['博客评论外链', '在别人的博客文章下面留言，名字或个人主页那一栏填上你的网址，就成了一条外链。'],
+  });
+
+  const P = Object.fromEntries(SIM.pages.map(p => [p.id, p]));
+  ['home', 'i2v', 't2v', 'prompts', 'tiktok', 'howto'].forEach(id => { if (!P[id]) throw new Error(`KIT.SIM.pages 里没有页面 ${id}`); });
+  const volOf = kw => {
+    const w = SIM.words.find(x => x.w === kw);
+    if (!w) throw new Error(`KIT.SIM.words 里没有这个词：${kw}`);
+    return w.v;
+  };
+
+  // ================= 知识点 1：内链 5 条 =================
+  const map = $('#s6-map');
+  const svg = $('#s6-map-svg');
+  const W = 104, H = 48;
+  // 页面来自 KIT.SIM.pages；两个目录页（/for/、/blog/）是这些网址的上一层
+  const N = {
+    home: { x: 360, y: 48, w: 236, name: P.home.name, sub: P.home.kw },
+    for: { x: 92, y: 170, name: '用途目录', sub: '/for/' },
+    t2v: { x: 226, y: 170, name: P.t2v.name, sub: P.t2v.path },
+    i2v: { x: 360, y: 170, name: P.i2v.name, sub: P.i2v.path },
+    prompts: { x: 494, y: 170, name: P.prompts.name, sub: P.prompts.path },
+    blog: { x: 628, y: 170, name: '博客目录', sub: '/blog/' },
+    tiktok: { x: 92, y: 300, name: 'TikTok ' + P.tiktok.name, sub: P.tiktok.path },
+    howto: { x: 628, y: 300, name: P.howto.name, sub: '/blog/how-to-use…' },
+  };
+  const NAME = { home: '首页', for: '用途目录', t2v: '文生视频页', i2v: '图生视频页', prompts: '提示词模板页', blog: '博客目录', tiktok: 'TikTok 用途页', howto: '教程' };
+  const vcurve = (sx, sy, ex, ey) => { const my = (sy + ey) / 2; return `M${sx},${sy} C${sx},${my} ${ex},${my} ${ex},${ey}`; };
+  const L1 = ['for', 't2v', 'i2v', 'prompts', 'blog'];
+  // rules：哪几条规则会加上这条链接。A ① 链回首页 B ② 导航 C ③ 面包屑 D ④ 同级下级 E ⑤ 重要页多入口
+  const E = [];
+  L1.forEach(id => {
+    const bx = N[id].x, hx = 360 + (bx - 360) * 0.42;
+    E.push({ from: 'home', to: id, rules: 'BD', kind: 'down', d: vcurve(hx - 7, 72, bx - 9, 145) });
+    E.push({ from: id, to: 'home', rules: 'AC', kind: 'up', d: vcurve(bx + 9, 146, hx + 7, 73) });
+  });
+  for (let i = 0; i < L1.length - 1; i++) {
+    const a = N[L1[i]], b = N[L1[i + 1]];
+    E.push({ from: L1[i], to: L1[i + 1], both: true, rules: 'D', kind: 'side', d: `M${a.x + W / 2 + 3},170 L${b.x - W / 2 - 3},170` });
+  }
+  [['for', 'tiktok'], ['blog', 'howto']].forEach(([hub, leaf]) => {
+    const x = N[hub].x;
+    E.push({ from: hub, to: leaf, rules: 'D', kind: 'down', d: `M${x - 8},194 L${x - 8},275` });
+    E.push({ from: leaf, to: hub, rules: 'C', kind: 'up', d: `M${x + 8},276 L${x + 8},195` });
+  });
+  E.push({ from: 'tiktok', to: 'home', rules: 'AC', kind: 'up', d: 'M40,300 H26 Q16,300 16,290 V58 Q16,48 26,48 H241' });
+  E.push({ from: 'howto', to: 'home', rules: 'AC', kind: 'up', d: 'M680,300 H694 Q704,300 704,290 V58 Q704,48 694,48 H479' });
+  E.push({ from: 'for', to: 'i2v', rules: 'E', kind: 'hot', d: 'M124,194 C124,238 336,240 340,197' });
+  E.push({ from: 'blog', to: 'i2v', rules: 'E', kind: 'hot', d: 'M596,194 C596,238 384,240 380,197' });
+  E.push({ from: 'tiktok', to: 'i2v', rules: 'E', kind: 'hot', d: 'M144,300 C280,300 352,262 352,197' });
+  E.push({ from: 'howto', to: 'i2v', rules: 'E', kind: 'hot', d: 'M576,300 C440,300 368,262 368,197' });
+
+  const defs = svgEl('defs', {}, svg);
+  [['s6-arr', 's6-arr-i'], ['s6-arr-g', 's6-arr-gr']].forEach(([id, cls]) => {
+    const m = svgEl('marker', { id, viewBox: '0 0 8 8', refX: 7, refY: 4, markerWidth: 8, markerHeight: 8, markerUnits: 'userSpaceOnUse', orient: 'auto-start-reverse' }, defs);
+    svgEl('path', { d: 'M0,0 L8,4 L0,8 z', class: cls }, m);
+  });
+  const gEdges = svgEl('g', {}, svg), gNodes = svgEl('g', {}, svg), gFx = svgEl('g', {}, svg);
+  E.forEach(e => {
+    e.path = svgEl('path', { d: e.d, class: `s6-edge ${e.kind} off` }, gEdges);
+    e.len = e.path.getTotalLength();
+    e.live = false;
+  });
+  const nodeEl = {};
+  Object.entries(N).forEach(([id, n]) => {
+    const w = n.w || W;
+    const g = svgEl('g', { class: 's6-node' + (id === 'home' ? ' home' : '') }, gNodes);
+    svgEl('rect', { x: n.x - w / 2, y: n.y - H / 2, width: w, height: H, rx: 10 }, g);
+    svgEl('rect', { class: 's6-strip', x: n.x - w / 2 + 9, y: n.y - H / 2 + 5, width: w - 18, height: 3, rx: 1.5 }, g);
+    svgEl('text', { x: n.x, y: n.y - 1, 'text-anchor': 'middle' }, g).textContent = n.name;
+    const u = svgEl('text', { x: n.x, y: n.y + 15, 'text-anchor': 'middle', class: 'u' }, g);
+    u.textContent = n.sub;
+    nodeEl[id] = { g, u, w, badge: null };
+  });
+  const bot = svgEl('g', { class: 's6-bot', opacity: 0 }, gFx);
+  svgEl('circle', { r: 10 }, bot);
+  svgEl('text', { y: 4, 'text-anchor': 'middle' }, bot).textContent = '爬';
+
+  function setEdge(e, live, delay, animate) {
+    e.live = live;
+    const p = e.path;
+    clearTimeout(e.timer);
+    if (!live) {
+      p.style.transition = '';
+      p.style.strokeDasharray = '';
+      p.style.strokeDashoffset = '';
+      p.classList.add('off');
+      p.removeAttribute('marker-end');
+      p.removeAttribute('marker-start');
+      return;
+    }
+    const arrows = () => {
+      const m = `url(#${e.kind === 'hot' ? 's6-arr-g' : 's6-arr'})`;
+      p.setAttribute('marker-end', m);
+      if (e.both) p.setAttribute('marker-start', m);
+    };
+    p.classList.remove('off');
+    if (!animate || reduce) { arrows(); return; }
+    p.style.transition = 'none';
+    p.style.strokeDasharray = e.len;
+    p.style.strokeDashoffset = e.len;
+    p.getBoundingClientRect();
+    p.style.transition = `stroke-dashoffset .55s ease ${delay}ms`;
+    p.style.strokeDashoffset = 0;
+    e.timer = setTimeout(() => {
+      p.style.transition = '';
+      p.style.strokeDasharray = '';
+      p.style.strokeDashoffset = '';
+      arrows();
+    }, delay + 580);
+  }
+
+  const ruleBtns = $$('.s6-rule', map);
+  const rulesOn = () => new Set(ruleBtns.filter(b => b.getAttribute('aria-pressed') === 'true').map(b => b.dataset.r));
+  const RULE_SAY = {
+    A: '① 每个页面都放一个回首页的链接（Logo 或「首页」两个字）。哥飞说，这样「就能够把每一个内页的权重传递到首页」。注意箭头全朝上：力量能回首页，爬虫从首页还下不去。',
+    B: '② 顶部<button type="button" class="term" data-t="s6nav">导航</button>放 5 个最重要的目录。导航每一页都有，等于全站每页都给这 5 页加了内链。图上只画了首页那一份，每个方块顶上的小横条就是导航。',
+    C: '③ <button type="button" class="term" data-t="breadcrumb">面包屑</button>：教程页顶上那一行「首页 › 博客 › How to use Lumibo 2」，每一格都能点。它让每一页都指回上一级，再指回首页。',
+    D: '④ 每页列出同级和下级：首页列出 5 个目录，两个目录页列出下面的页面，同一层的页面互相指一指。',
+    E: `⑤ 图生视频页是最想排上去的内页（${P.i2v.kw}，每月约 ${fmt(volOf(P.i2v.kw))} 次搜索 <span class="st sy">示意</span>）。在用途目录、博客目录、TikTok 页、教程页都给它留个入口，就是那 4 根绿线。`,
+  };
+  const NO = '①②③④⑤';
+  const mapSay = $('#s6-map-say');
+  let crawlRun = 0, powerRun = 0;
+
+  function resetMarks() {
+    crawlRun++; powerRun++;
+    bot.setAttribute('opacity', 0);
+    Object.entries(nodeEl).forEach(([id, n]) => {
+      n.g.classList.remove('found', 'orphan', 'visit');
+      n.u.textContent = N[id].sub;
+      if (n.badge) { n.badge.remove(); n.badge = null; }
+    });
+    $$('.s6-ball', gFx).forEach(b => b.remove());
+  }
+  function paintEdges(animate) {
+    const r = rulesOn();
+    let k = 0;
+    E.forEach(e => {
+      const live = [...e.rules].some(x => r.has(x));
+      if (live && !e.live) setEdge(e, true, animate ? (k++) * 110 : 0, animate);
+      else if (!live && e.live) setEdge(e, false);
+    });
+    svg.classList.toggle('s6-nav-on', r.has('B'));
+    return r;
+  }
+  function sayMap(html, tone) {
+    mapSay.className = 'viz-say' + (tone ? ' ' + tone : '');
+    mapSay.innerHTML = html;
+  }
+  ruleBtns.forEach(b => b.addEventListener('click', () => {
+    const turnOn = b.getAttribute('aria-pressed') !== 'true';
+    b.setAttribute('aria-pressed', String(turnOn));
+    resetMarks();
+    const r = paintEdges(true);
+    const head = turnOn ? RULE_SAY[b.dataset.r] : `关掉了第 ${NO['ABCDE'.indexOf(b.dataset.r)]} 条。`;
+    sayMap(`${head} 现在开着 <b>${r.size} / 5</b> 条，点「放爬虫」看它能走到几页。`);
+  }));
+  function setAll(v) {
+    ruleBtns.forEach(b => b.setAttribute('aria-pressed', String(v)));
+    resetMarks();
+    paintEdges(true);
+    sayMap(v ? '5 条全开了。点「放爬虫」看它能不能走遍 8 页，再点「放力量小球」看力量往哪汇。' : '全关了：8 个页面谁也不连谁。');
+  }
+  $('#s6-all').addEventListener('click', () => setAll(true));
+  $('#s6-none').addEventListener('click', () => setAll(false));
+
+  // 爬虫：从首页出发，顺着开着的链接一层层走（同级链接两个方向都能走）
+  function reach() {
+    const live = E.filter(e => e.live);
+    const seen = new Set(['home']), order = [], queue = ['home'];
+    while (queue.length) {
+      const cur = queue.shift();
+      live.forEach(e => {
+        const hops = [[e.from, e.to, false]];
+        if (e.both) hops.push([e.to, e.from, true]);
+        hops.forEach(([a, b, rev]) => {
+          if (a === cur && !seen.has(b)) { seen.add(b); queue.push(b); order.push({ e, to: b, rev }); }
+        });
+      });
+    }
+    return { seen, order };
+  }
+  const stage = $('.s6-map-stage', map);
+  function focusX(x) {
+    const room = stage.scrollWidth - stage.clientWidth;
+    if (room <= 0) return;
+    const sc = svg.getBoundingClientRect().width / 720;
+    stage.scrollTo({ left: Math.max(0, Math.min(room, x * sc - stage.clientWidth / 2)), behavior: reduce ? 'auto' : 'smooth' });
+  }
+  const placeBot = (x, y) => bot.setAttribute('transform', `translate(${x},${y})`);
+  function ride(e, rev, run) {
+    return new Promise(res => tween(620, k => {
+      if (run !== crawlRun) return;
+      const p = e.path.getPointAtLength((rev ? 1 - k : k) * e.len);
+      placeBot(p.x, p.y);
+    }, res));
+  }
+  function flash(id) {
+    const g = nodeEl[id].g;
+    g.classList.add('visit');
+    setTimeout(() => g.classList.remove('visit'), 380);
+  }
+  async function crawl() {
+    resetMarks();
+    const run = crawlRun;
+    const { seen, order } = reach();
+    sayMap('爬虫从首页进门，顺着链接一页页走……');
+    focusX(360);
+    bot.setAttribute('opacity', 1);
+    await new Promise(res => tween(450, k => { if (run === crawlRun) placeBot(360, -12 + k * 60); }, res));
+    if (run !== crawlRun) return;
+    nodeEl.home.g.classList.add('found');
+    flash('home');
+    for (const step of order) {
+      focusX(N[step.to].x);
+      await ride(step.e, step.rev, run);
+      if (run !== crawlRun) return;
+      nodeEl[step.to].g.classList.add('found');
+      flash(step.to);
+    }
+    await sleep(350);
+    if (run !== crawlRun) return;
+    bot.setAttribute('opacity', 0);
+    const orph = Object.keys(N).filter(id => !seen.has(id));
+    orph.forEach(id => { nodeEl[id].g.classList.add('orphan'); nodeEl[id].u.textContent = '孤岛页：走不到'; });
+    const total = Object.keys(N).length;
+    if (!orph.length) {
+      sayMap(`爬虫从首页出发，走遍了 <b>${total} / ${total}</b> 个页面，一个孤岛页都没有。`, 'good');
+      return;
+    }
+    const r = rulesOn();
+    let s = `爬虫只走到 <b>${seen.size} / ${total}</b> 个页面。黄框的 ${orph.length} 个是<b>孤岛页</b>（${orph.map(id => NAME[id]).join('、')}）：从首页出发，没有一条链接通向它们。`;
+    if (seen.size === 1) s += '首页上没有一条往下的链接，爬虫哪也去不了。';
+    else if (!r.has('D')) s += '导航只到第一层目录，目录下面的页面没人列出来。打开 ④ 试试。';
+    sayMap(s, 'bad');
+  }
+  $('#s6-crawl').addEventListener('click', crawl);
+
+  // 力量小球：每条开着的链接送出一份力量，顺着箭头流过去
+  function badge(id, n) {
+    const ne = nodeEl[id], d = N[id];
+    if (!ne.badge) {
+      ne.badge = svgEl('g', { class: 's6-badge' }, gFx);
+      const bx = d.x + ne.w / 2 - 6, by = d.y - H / 2 + 1;
+      svgEl('circle', { cx: bx, cy: by, r: 11 }, ne.badge);
+      svgEl('text', { x: bx, y: by + 4, 'text-anchor': 'middle' }, ne.badge);
+    }
+    $('text', ne.badge).textContent = n;
+    replay(ne.badge, 's6-pop');
+  }
+  function ball(e, rev, run, got) {
+    const c = svgEl('circle', { r: 4.5, class: 's6-ball' + (e.kind === 'hot' ? ' hot' : '') }, gFx);
+    return new Promise(res => tween(1000, k => {
+      if (run !== powerRun) return;
+      const p = e.path.getPointAtLength((rev ? 1 - k : k) * e.len);
+      c.setAttribute('cx', p.x);
+      c.setAttribute('cy', p.y);
+    }, () => {
+      c.remove();
+      if (run === powerRun) {
+        const to = rev ? e.from : e.to;
+        got[to] = (got[to] || 0) + 1;
+        badge(to, got[to]);
+      }
+      res();
+    }));
+  }
+  async function pour() {
+    resetMarks();
+    const run = powerRun;
+    const live = E.filter(e => e.live);
+    if (!live.length) { sayMap('一条链接都没有，力量哪也去不了。先打开上面几个开关。', 'bad'); return; }
+    // 一根线可能是好几条规则各加的一条链接（比如 Logo 和面包屑都指回首页），开着几条就送几份
+    const r0 = rulesOn();
+    const trips = [];
+    live.forEach(e => {
+      const times = [...e.rules].filter(x => r0.has(x)).length;
+      for (let t = 0; t < times; t++) { trips.push([e, false]); if (e.both) trips.push([e, true]); }
+    });
+    const got = {};
+    sayMap('每条链接都送出一份力量，顺着箭头流过去……');
+    await Promise.all(trips.map(([e, rev], i) => sleep(i * 45).then(() => (run === powerRun ? ball(e, rev, run, got) : null))));
+    if (run !== powerRun) return;
+    const r = rulesOn();
+    let s = `首页收到 <b>${got.home || 0}</b> 份力量，图生视频页收到 <b>${got.i2v || 0}</b> 份。<span class="st sy">示意</span> `;
+    if (!r.has('A') && !r.has('C')) s += '没开 ① 或 ③，内页的力量回不到首页。';
+    else if (r.has('A') && r.has('C')) s += '每个内页的 Logo 和面包屑各指回首页一次，全站的力量就往首页那个词上汇。';
+    else s += '每个内页都指回首页，全站的力量就往首页那个词上汇。';
+    if (r.has('E')) s += '⑤ 让图生视频页也多收了好几份，它是你最想排上去的内页。';
+    sayMap(s, (r.has('A') || r.has('C')) ? 'good' : 'bad');
+  }
+  $('#s6-pour').addEventListener('click', pour);
+
+  // ================= 知识点 2：链接上写什么字 =================
+  const anc = $('#s6-anc');
+  const ANC = ['i2v', 't2v', 'prompts'].map(id => P[id]);
+  const ancLinks = $$('.s6-anc-link', anc), ancRows = $$('#s6-anc-notes li', anc), ancSay = $('#s6-anc-say');
+  let ancRun = 0;
+  async function paintAnc(v, animate) {
+    const run = ++ancRun;
+    const bad = v === 'click';
+    anc.classList.toggle('bad', bad);
+    ancLinks.forEach((a, i) => { a.textContent = bad ? '点击这里' : ANC[i].kw; });
+    if (animate) {
+      ancRows.forEach(li => li.classList.add('s6-wait'));
+      ancSay.className = 'viz-say';
+      ancSay.textContent = '谷歌顺着链接记笔记……';
+    }
+    for (let i = 0; i < ANC.length; i++) {
+      if (animate) await flyTo(ancLinks[i], ancRows[i], { html: ancLinks[i].textContent, cls: 'chip ' + (bad ? 'bad' : 'ours'), ms: 520 });
+      if (run !== ancRun) return;
+      const li = ancRows[i];
+      li.className = bad ? 'bad' : 'ok';
+      $('span', li).innerHTML = bad ? '这页讲的是……「点击这里」？' : `这页讲的是 <b>${ANC[i].kw}</b>`;
+      if (animate) replay(li);
+    }
+    ancSay.className = 'viz-say ' + (bad ? 'bad' : 'good');
+    ancSay.innerHTML = bad
+      ? '三条链接都写「点击这里」，谷歌的小本子上三页全叫「点击这里」，<b>分不清谁讲什么</b>。用户扫一眼，也不知道点进去是什么。'
+      : '链接上的字写成对方那页的词，就是在<b>替那一页报名字</b>：谷歌一看就知道 /image-to-video 讲的是 lumibo image to video。';
+  }
+  bindSeg($('#s6-anc-seg'), v => paintAnc(v, true));
+  paintAnc('click', false);
+
+  // 同一条链接放在哪：拖进不同位置
+  const pos = $('#s6-pos');
+  const POS = {
+    nav: { v: 86, lab: '高', tone: 'good', say: '放进<b>顶部导航</b>：位置显眼，而且全站每一页都带着它。哥飞说，首页导航里加链接，跟在页脚加链接，「其实权重会有不同的」。' },
+    hero: { v: 86, lab: '高', tone: 'good', say: '放在<b>首页最显眼的地方</b>：这正是哥飞教的做法，「在主页最显眼的位置，增加一个指向到内页的链接，锚文本就用这个小词」。' },
+    foot: { v: 30, lab: '低', tone: '', say: '放在<b>页脚</b>：也算一条内链，页脚适合分门别类列出全站页面。但同样一条链接，位置不起眼，分量就小一些。拖到上面试试。' },
+  };
+  const posBar = $('#s6-pos-bar'), posLab = $('#s6-pos-lab'), posSay = $('#s6-pos-say');
+  function paintPos(z) {
+    const p = POS[z];
+    if (!p) throw new Error(`没有这个位置：${z}`);
+    posBar.style.width = p.v + '%';
+    posLab.textContent = p.lab;
+    posSay.className = 'viz-say' + (p.tone ? ' ' + p.tone : '');
+    posSay.innerHTML = p.say;
+  }
+  dnd(pos, { onMove: (item, zone) => paintPos(zone.dataset.z) });
+  paintPos('foot');
+
+  // ================= 知识点 3：待抓名单 =================
+  const qBox = $('#s6-q'), qList = $('#s6-q-list'), qSay = $('#s6-q-say'), qBot = $('#s6-q-bot');
+  const OTHERS = 'ABCDEFGH'.split('').map(c => `别人的新站 ${c}`);
+  const JUMP = { v2ex: 3, blog: 2, old: 3 };
+  const Q_SAY = {
+    v2ex: n => `在 <button type="button" class="term" data-t="s6v2ex">V2EX</button> 发帖介绍 FramePop、留下网址：往前插了 ${n} 位。哥飞说这招「10 年前就有用，现在更有用了」，因为 V 站在谷歌的权重更高了。`,
+    blog: n => `去相关的博客文章下面留评论，名字那栏带上网址，就是一条<button type="button" class="term" data-t="s6blogcmt">博客评论外链</button>：往前插了 ${n} 位。`,
+    old: n => `有老站的话，让老站给新站加个链接、顺便导点流量，这是哥飞的建议：往前插了 ${n} 位。`,
+  };
+  const qBtns = $$('[data-a]', qBox);
+  let qLinks = 0, qDone = false, qBusy = false;
+  function renumQ() { $$('.s6-q-row', qList).forEach((r, i) => { $('.no', r).textContent = '第 ' + (i + 1); }); }
+  function buildQ() {
+    qList.innerHTML = OTHERS.map(n => `<li class="s6-q-row"><span class="no"></span><span class="nm">${n}</span><span class="lk"></span></li>`).join('')
+      + `<li class="s6-q-row me"><span class="no"></span><span class="nm">${SIM.domain}（你）</span><span class="lk">外链 0 条</span></li>`;
+    renumQ();
+    qLinks = 0; qDone = false; qBusy = false;
+    qBtns.forEach(b => { b.disabled = false; });
+    $('b', qBot).textContent = '谷歌爬虫：先抓排第 1 的';
+    qSay.className = 'viz-say';
+    qSay.innerHTML = `你的 ${SIM.domain} 刚上线，排在名单最后。点下面的按钮发外链，看它怎么往前插队。`;
+  }
+  async function qAct(b) {
+    const a = b.dataset.a;
+    if (a === 'buy') {
+      b.classList.remove('s6-shake'); void b.offsetWidth; b.classList.add('s6-shake');
+      qSay.className = 'viz-say bad';
+      qSay.innerHTML = '这一下不算数。哥飞说外链「越多越好，但不要去买垃圾外链」。';
+      return;
+    }
+    if (qDone || qBusy || b.disabled) return;
+    qBusy = true;
+    b.disabled = true;
+    const row = $('.s6-q-row.me', qList);
+    await flyTo(b, row, { html: '外链 +1', cls: 'chip good', ms: 600 });
+    qLinks += 1;
+    $('.lk', row).textContent = `外链 ${qLinks} 条`;
+    const rows = $$('.s6-q-row', qList);
+    const idx = rows.indexOf(row), to = Math.max(0, idx - JUMP[a]);
+    flip(rows, () => qList.insertBefore(row, rows[to]), 650);
+    renumQ();
+    qSay.className = 'viz-say';
+    qSay.innerHTML = `${Q_SAY[a](idx - to)} 现在排<b>第 ${to + 1}</b>。`;
+    if (to === 0) {
+      qDone = true;
+      await sleep(800);
+      await flyTo($('i', qBot), row, { html: '', cls: 's6-q-fly', ms: 700 });
+      row.classList.add('got');
+      $('.lk', row).textContent = '已收录';
+      $('b', qBot).textContent = `谷歌爬虫：抓到 ${SIM.domain} 了`;
+      qSay.className = 'viz-say good';
+      qSay.innerHTML = `排到第一个，爬虫马上来抓：<b>收录了</b>。哥飞说内容没问题的话，一般 24 小时内收录；「在合适的外链刺激下，最快可以2小时被谷歌收录」。`;
+      confetti(qBox);
+    }
+    qBusy = false;
+  }
+  qBtns.forEach(b => b.addEventListener('click', () => qAct(b)));
+  $('#s6-q-reset').addEventListener('click', buildQ);
+  buildQ();
+
+  // ================= 知识点 4：抄同行作业 =================
+  const hw = $('#s6-hw');
+  const SRC = {
+    nav1: 'AI 工具导航站「甲」',
+    v2ex: 'V2EX 帖子',
+    blogc: '一篇短视频博客的评论区',
+    prof: '设计社区的个人资料页',
+    forum: '视频剪辑论坛的帖子',
+    gh: 'GitHub 仓库介绍',
+    nav2: 'AI 工具导航站「乙」',
+    media: '科技媒体报道',
+  };
+  const PEERS = [
+    { name: '同行 A', rank: 1, src: ['nav1', 'v2ex', 'blogc', 'prof', 'media'] },
+    { name: '同行 B', rank: 2, src: ['nav1', 'v2ex', 'blogc', 'forum', 'gh'] },
+    { name: '同行 C', rank: 3, src: ['nav1', 'v2ex', 'prof', 'nav2'] },
+  ];
+  const RANKS = [86, 52, 30, 18, 11, 8, 6, 5, 4];
+  const MERGED = Object.keys(SRC).map(s => ({ s, n: PEERS.filter(p => p.src.includes(s)).length })).sort((a, b) => b.n - a.n);
+  $('#s6-hw-peers').innerHTML = PEERS.map(p => `<div class="s6-peer"><b>${p.name}（示意）</b><span class="rk">${SIM.core} 排第 ${p.rank}</span><ul>${p.src.map(s => `<li data-s="${s}">${SRC[s]}</li>`).join('')}</ul></div>`).join('');
+  const hwList = $('#s6-hw-list'), hwSay = $('#s6-hw-say'), hwMerge = $('#s6-hw-merge');
+  const rdEl = $('#s6-me-rd'), rankEl = $('#s6-me-rank');
+  const HW_START = hwSay.innerHTML;
+  let sent = 0;
+  async function mergeHw() {
+    hwMerge.disabled = true;
+    hwList.innerHTML = MERGED.map(m => `<li class="s6-hw-item c${m.n} s6-pre" data-s="${m.s}"><span>${SRC[m.s]}</span><span class="cnt">${m.n === 1 ? '只有 1 家' : m.n + ' 家都有'}</span><button type="button" class="btn soft s6-send">去发</button></li>`).join('');
+    hwList.hidden = false;
+    hw.classList.add('merged');
+    const chips = $$('.s6-peer li', hw);
+    await Promise.all(chips.map((c, i) => sleep(i * 60).then(() => flyTo(c, $(`.s6-hw-item[data-s="${c.dataset.s}"]`, hwList), { html: c.textContent, cls: 'chip ours', ms: 600 }))));
+    $$('.s6-hw-item', hwList).forEach((li, i) => setTimeout(() => li.classList.remove('s6-pre'), reduce ? 0 : i * 70));
+    hwSay.className = 'viz-say';
+    hwSay.innerHTML = `${chips.length} 条外链去掉重复，剩 <b>${MERGED.length}</b> 个地方。<b>3 家都有的排最前</b>：说明好拿，先发。点每一行的「去发」。`;
+  }
+  hwMerge.addEventListener('click', mergeHw);
+  hwList.addEventListener('click', async e => {
+    const b = e.target.closest('.s6-send');
+    if (!b || b.disabled) return;
+    const li = b.closest('li');
+    const m = MERGED.find(x => x.s === li.dataset.s);
+    b.disabled = true;
+    b.textContent = '已发';
+    li.classList.add('done');
+    await flyTo(li.firstElementChild, $('#s6-me'), { html: li.firstElementChild.textContent, cls: 'chip good', ms: 650 });
+    sent += 1;
+    countUp(rdEl, sent, 500);
+    countUp(rankEl, RANKS[sent], 800);
+    if (sent === MERGED.length) {
+      hwSay.className = 'viz-say good';
+      hwSay.innerHTML = `${sent} 个外链网站，DR 还是 0，排名从 86 爬到第 ${RANKS[sent]}。<span class="st sy">示意</span> 真实的 Niko 也差不多：14 个引荐域名、DR 0，平均排名 4.6。`;
+      confetti(hw);
+      return;
+    }
+    hwSay.className = 'viz-say';
+    hwSay.innerHTML = m.n === 1
+      ? `这条只有 1 家同行有，多半是人家专门争取来的，不太好拿；几家都有的更容易。现在排第 <b>${RANKS[sent]}</b>。<span class="st sy">示意</span>`
+      : `发了 ${sent} 个外链网站，排名爬到第 <b>${RANKS[sent]}</b>。<span class="st sy">示意</span> DR 还是 0：新词的对手大多也是新站，有一些外链就能往上走。`;
+  });
+  $('#s6-hw-reset').addEventListener('click', () => {
+    sent = 0;
+    hwList.innerHTML = '';
+    hwList.hidden = true;
+    hw.classList.remove('merged');
+    hwMerge.disabled = false;
+    rdEl.textContent = '0'; rdEl.dataset.val = 0;
+    rankEl.textContent = String(RANKS[0]); rankEl.dataset.val = RANKS[0];
+    hwSay.className = 'viz-say';
+    hwSay.innerHTML = HW_START;
+  });
+
+  // ================= 知识点 5：30 个外链的锚文本 =================
+  const mix = $('#s6-mix'), mixRows = $('#s6-mix-rows'), mixSay = $('#s6-mix-say');
+  const MIX = [
+    [SIM.core, 9],
+    ['lumibo ai video generator', 6],
+    ['create lumibo video', 5],
+    ['make video with lumibo', 4],
+    ['free lumibo video generator', 3],
+    ['lumibo video maker', 3],
+  ];
+  const TOTAL = MIX.reduce((s, m) => s + m[1], 0);
+  if (TOTAL !== 30) throw new Error(`锚文本分布加起来应该是 30，现在是 ${TOTAL}`);
+  mixRows.innerHTML = MIX.map(m => `<div class="s6-mix-row"><span class="lab">${m[0]}</span><span class="trk"></span><span class="n">0</span></div>`).join('');
+  const rowEls = $$('.s6-mix-row', mixRows).map(r => ({ trk: $('.trk', r), n: $('.n', r) }));
+  const blocks = Array.from({ length: TOTAL }, () => { const b = document.createElement('i'); b.className = 's6-blk'; return b; });
+  function paintMix(mode, animate) {
+    const counts = mode === 'same' ? MIX.map((_, i) => (i === 0 ? TOTAL : 0)) : MIX.map(m => m[1]);
+    const place = () => {
+      let k = 0;
+      rowEls.forEach((r, i) => {
+        for (let j = 0; j < counts[i]; j++) r.trk.appendChild(blocks[k++]);
+        r.n.textContent = counts[i];
+      });
+    };
+    if (animate) flip(blocks, place, 750); else place();
+    mix.classList.toggle('same', mode === 'same');
+    mixSay.className = 'viz-say ' + (mode === 'same' ? 'bad' : 'good');
+    mixSay.innerHTML = mode === 'same'
+      ? `30 个网站推荐你，用的字<b>一模一样</b>，都是 ${SIM.core}。不像是 30 个人各自推荐，倒像一个人刷出来的；别的说法一票都没有。`
+      : `换着写：核心词还是最多，其余用好几种相近的说法，都围绕「用 Lumibo 做视频」这件事。哥飞举的例子是 AI Video、Create AI Video、Make Video With AI，换成 Lumibo 就是上面这几种。`;
+  }
+  bindSeg($('#s6-mix-seg'), v => paintMix(v, true));
+  paintMix('same', false);
+})();
+</script>
+</body>
+</html>

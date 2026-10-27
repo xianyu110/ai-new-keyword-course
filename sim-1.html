@@ -1,0 +1,921 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>第 1 关 找词 · AI 新词站白话课</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<style>
+/* 第 1 关 找词：信息流 → 5 道门 → 定核心词和域名 → 结算 */
+.sim1-toprow { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.sim1-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.sim1-steps li { font-size: 13px; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); background: var(--surface); }
+.sim1-steps li.on { border-color: var(--amber); color: var(--amber); font-weight: 700; background: var(--amber-soft); }
+.sim1-steps li.done { border-color: color-mix(in srgb, var(--green) 50%, var(--line)); color: var(--green); }
+.sim1-lock { padding: 22px 18px; border-radius: 16px; border: 2px dashed var(--line); color: var(--muted); text-align: center; font-size: 15px; background: var(--surface); }
+.sim1-lock b { display: block; color: var(--ink); font-size: 16px; margin-bottom: 4px; }
+.sim1-body { display: grid; gap: 16px; }
+
+/* 第一段：信息流 */
+.sim1-feedbar { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; font-size: 14px; }
+.sim1-feedbar b { font-family: var(--font-mono); }
+.sim1-feedgrid { display: grid; grid-template-columns: minmax(0, 1fr) 220px; gap: 14px; align-items: start; }
+.sim1-pool { order: 2; position: sticky; top: 64px; display: grid; gap: 8px; padding: 12px; border-radius: 14px; border: 2px dashed var(--indigo); background: var(--indigo-soft); min-height: 120px; align-content: start; }
+.sim1-pool-head { font-size: 13px; font-weight: 700; color: var(--indigo); }
+.sim1-pool-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.sim1-pool .chip { background: var(--surface); }
+.sim1-pool .chip.auto { border-style: dashed; color: var(--muted); }
+.sim1-pool .chip small { font-family: var(--font-body); font-size: 11px; }
+.sim1-pool .chip em { font-style: normal; font-size: 11px; font-weight: 700; background: var(--indigo); color: var(--on-indigo); border-radius: 999px; padding: 0 6px; }
+.sim1-bump { animation: pop .4s; }
+.sim1-nudge { animation: shake .45s; }
+.sim1-empty { font-size: 13px; color: var(--muted); }
+.sim1-stream { order: 1; display: grid; gap: 10px; min-width: 0; }
+.sim1-msg { display: grid; gap: 8px; padding: 14px 16px; border-radius: 14px; background: var(--bg); border: 1.5px solid var(--line); }
+.sim1-msg.in { animation: sim1In .45s cubic-bezier(.3, .7, .3, 1) both; }
+@keyframes sim1In { from { opacity: 0; transform: translateY(22px) scale(.98); } }
+.sim1-msg header { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: 13px; color: var(--muted); }
+.sim1-src { font-weight: 700; font-size: 12.5px; padding: 2px 9px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); color: var(--ink); white-space: nowrap; }
+.sim1-time { margin-left: auto; font-family: var(--font-mono); font-size: 12px; }
+.sim1-msg p { font-size: 16.5px; line-height: 1.75; }
+.sim1-msg mark { background: var(--indigo-soft); color: var(--indigo); font-weight: 700; padding: 0 4px; border-radius: 4px; font-family: var(--font-mono); font-size: .92em; }
+.sim1-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.sim1-msg.good { border-color: var(--green); background: var(--green-soft); }
+.sim1-msg.bad { border-color: var(--amber); background: var(--amber-soft); animation: shake .45s; }
+.sim1-done { display: grid; gap: 4px; padding: 16px; border-radius: 14px; background: var(--green-soft); }
+.sim1-hist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 300px; overflow-y: auto; }
+.sim1-hist li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 13.5px; padding: 6px 10px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); animation: rise .3s both; }
+.sim1-hist li > span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+.sim1-hist li > b { font-size: 12px; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.sim1-hist li.good > b { background: var(--green-soft); color: var(--green); }
+.sim1-hist li.bad > b { background: var(--amber-soft); color: var(--amber); }
+@media (max-width: 640px) {
+  .sim1-feedgrid { grid-template-columns: 1fr; }
+  .sim1-pool { order: 0; position: static; min-height: 0; }
+}
+
+/* 第二段：5 道门 */
+.sim1-trackwrap { overflow-x: auto; scrollbar-width: thin; }
+.sim1-track { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(90px, 1fr)); gap: 6px; min-width: 580px; }
+.sim1-track > li { display: grid; gap: 6px; align-content: start; padding: 8px; border-radius: 12px; background: var(--bg); border: 1.5px solid var(--line); min-height: 108px; transition: background .3s, border-color .3s; }
+.sim1-track > li.on { border-color: var(--amber); background: var(--amber-soft); }
+.sim1-track > li.past .sim1-gname { color: var(--green); }
+.sim1-track > li.goal { border-style: dashed; border-color: var(--green); }
+.sim1-gname { font-size: 12.5px; font-weight: 700; color: var(--muted); }
+.sim1-track > li.on .sim1-gname { color: var(--amber); }
+.sim1-slot { display: flex; flex-direction: column; gap: 5px; align-items: flex-start; }
+.sim1-runner { font-size: 12.5px; padding: 3px 9px; }
+.sim1-runner.fall { animation: sim1Fall .6s ease-in both; }
+@keyframes sim1Fall { to { transform: translateY(28px) rotate(12deg); opacity: 0; } }
+.sim1-outrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13.5px; color: var(--muted); min-height: 34px; }
+.sim1-outrow .sim1-slot { flex-direction: row; flex-wrap: wrap; }
+.sim1-gatehead { display: grid; gap: 4px; }
+.sim1-gatehead h3 { margin: 0; }
+.sim1-gatehead p { font-size: 15px; color: var(--muted); }
+.sim1-evs { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.sim1-ev.wide { grid-column: 1 / -1; }
+.sim1-ev { display: grid; gap: 10px; align-content: start; padding: 14px; border-radius: 14px; background: var(--bg); border: 1.5px solid var(--line); min-width: 0; }
+.sim1-ev.good { border-color: var(--green); }
+.sim1-ev.bad { border-color: var(--amber); }
+.sim1-ev-head { display: flex; flex-wrap: wrap; gap: 2px 10px; align-items: baseline; }
+.sim1-ev-head b { font-family: var(--font-mono); font-size: 16px; color: var(--indigo); }
+.sim1-ev-head span { font-size: 13px; color: var(--muted); }
+.sim1-chart svg { display: block; width: 100%; height: auto; background: var(--surface); border-radius: 10px; overflow: visible; }
+.sim1-chart svg text { font-family: var(--font-body); }
+.sim1-ax { stroke: var(--line); stroke-width: 1.5; }
+.sim1-tx { fill: var(--muted); font-size: 11px; }
+.sim1-l { fill: none; stroke: var(--indigo); stroke-width: 2.6; stroke-linejoin: round; stroke-linecap: round; }
+.sim1-gp { fill: none; stroke: var(--muted); stroke-width: 2; stroke-dasharray: 5 4; }
+.sim1-dot { fill: var(--indigo); }
+.sim1-mk { stroke: var(--amber); stroke-width: 1.5; stroke-dasharray: 4 4; }
+.sim1-mkt { fill: var(--amber); font-size: 11.5px; font-weight: 700; }
+.sim1-ann { transition: opacity .4s; }
+.sim1-ru { stroke: var(--amber); stroke-width: 2; stroke-dasharray: 6 4; }
+.sim1-ru.hit { stroke: var(--green); stroke-dasharray: none; stroke-width: 2.5; }
+.sim1-rut { fill: var(--amber); font-size: 11.5px; font-weight: 700; paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
+.sim1-mkt { paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
+.sim1-ticks { position: relative; height: 18px; font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
+.sim1-ticks span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
+.sim1-rut.hit { fill: var(--green); }
+.sim1-q { font-size: 14.5px; font-weight: 650; }
+.sim1-read { font-size: 14px; }
+.sim1-read b { font-family: var(--font-mono); color: var(--indigo); }
+.sim1-verdict { font-size: 14.5px; line-height: 1.75; padding: 10px 12px; border-radius: 10px; animation: rise .35s both; }
+.sim1-verdict > b:first-child { display: block; }
+.sim1-verdict.good { background: var(--green-soft); }
+.sim1-verdict.good > b:first-child { color: var(--green); }
+.sim1-verdict.bad { background: var(--amber-soft); }
+.sim1-verdict.bad > b:first-child { color: var(--amber); }
+.sim1-also { display: flex; flex-wrap: wrap; gap: 6px; }
+.sim1-also .chip { font-size: 12.5px; padding: 3px 9px; background: var(--surface); }
+.sim1-front { font-size: 14px; padding: 8px 10px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); }
+.sim1-serp { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.sim1-serp li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 0 10px; align-items: center; padding: 8px 10px; border-radius: 10px; background: var(--surface); border: 1.5px solid var(--line); }
+.sim1-serp .rk { font-family: var(--font-mono); font-size: 12px; color: var(--muted); grid-row: span 2; }
+.sim1-serp .u { font-family: var(--font-mono); font-size: 13px; overflow-wrap: anywhere; line-height: 1.5; }
+.sim1-serp .tt { font-size: 13px; color: var(--muted); grid-column: 2; line-height: 1.5; }
+.sim1-serp .seg { grid-column: 3; grid-row: 1 / span 2; flex-wrap: nowrap; }
+.sim1-serp .seg button { padding: 4px 10px; font-size: 13px; }
+.sim1-serp li.fix { border-color: var(--amber); background: var(--amber-soft); }
+.sim1-serp li.fix .tt::after { content: attr(data-fix); display: block; color: var(--amber); font-weight: 700; }
+.sim1-serp li.right { border-color: color-mix(in srgb, var(--green) 55%, var(--line)); }
+.sim1-tally { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 14px; }
+.sim1-tally b { font-family: var(--font-mono); }
+@media (max-width: 480px) {
+  .sim1-serp li { grid-template-columns: 22px minmax(0, 1fr); }
+  .sim1-serp .seg { grid-column: 2; grid-row: auto; margin-top: 6px; }
+}
+
+/* 三选一卡片 */
+.sim1-opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.sim1-opt { display: grid; gap: 6px; text-align: left; padding: 14px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--bg); color: var(--ink); font: inherit; cursor: pointer; align-content: start; touch-action: manipulation; }
+.sim1-opt:hover:not(:disabled) { border-color: var(--indigo); }
+.sim1-opt:disabled { cursor: default; }
+.sim1-opt .w { font-family: var(--font-mono); font-size: 16px; font-weight: 600; color: var(--indigo); overflow-wrap: anywhere; line-height: 1.4; }
+.sim1-opt .v { font-size: 13px; color: var(--muted); }
+.sim1-opt .h { font-size: 14.5px; line-height: 1.6; }
+.sim1-opt.good { border-color: var(--green); background: var(--green-soft); }
+.sim1-opt.bad { border-color: var(--amber); background: var(--amber-soft); animation: shake .45s; }
+.sim1-opt.answer { border-color: var(--green); border-style: dashed; }
+/* 红绿灯：选完才亮，免得泄题 */
+.sim1-light { visibility: hidden; display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: var(--amber); }
+.sim1-light i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--amber); }
+.sim1-opt:disabled .sim1-light { visibility: visible; }
+.sim1-light.red i { background: var(--amber); }
+.sim1-light.half i { background: linear-gradient(90deg, var(--amber) 50%, transparent 50%); }
+.sim1-light.green { color: var(--green); }
+.sim1-light.green i { background: var(--green); border-color: var(--green); }
+.sim1-serpcard { display: grid; gap: 2px; padding: 12px 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); }
+.sim1-serpcard .d { font-size: 13px; color: var(--muted); font-family: var(--font-mono); }
+.sim1-serpcard .t { font-size: 17px; color: var(--indigo); font-weight: 600; line-height: 1.5; }
+.sim1-serpcard .n { font-size: 13.5px; color: var(--muted); }
+.sim1-dim { opacity: .45; pointer-events: none; }
+
+/* 结算 */
+.sim1-parts { display: grid; gap: 8px; }
+.sim1-part { display: grid; grid-template-columns: 7em 1fr auto; gap: 10px; align-items: center; font-size: 14.5px; }
+.sim1-part b { font-family: var(--font-mono); }
+.sim1-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.sim1-list li { display: grid; gap: 4px; padding: 12px 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); font-size: 14.5px; line-height: 1.7; }
+.sim1-list.miss li { border-left: 4px solid var(--amber); }
+.sim1-list li > b { font-size: 15px; }
+.sim1-list li > a { font-size: 13.5px; font-weight: 600; justify-self: start; }
+.sim1-list.ok li { grid-template-columns: 1fr auto; padding: 8px 12px; font-size: 14px; }
+.sim1-list.ok li > span { color: var(--green); font-family: var(--font-mono); font-weight: 600; }
+details.sim1-det summary { cursor: pointer; font-weight: 650; padding: 6px 0; }
+.sim1-endbtns { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.sim1-endbtns a.btn { text-decoration: none; display: inline-block; }
+.sim1-endbtns a.btn[aria-disabled="true"] { opacity: .5; }
+</style>
+</head>
+<body data-page="sim-1">
+<header id="topbar"></header>
+
+<div class="ph"><div class="wrap">
+  <span class="eyebrow">站长模拟器 · 第 1 关 / 共 8 关</span>
+  <h1>找词：从信息流里揪出新词</h1>
+  <p class="lead">第 0 天晚上，你刷着手机，消息一条接一条。哪条里藏着刚出生的新名字？挑出来，让它们过 5 道关，再定下首页主打的词和域名。</p>
+  <div class="gist"><span class="lab">过关要点</span><p>没见过的名字先收进来；再回<button type="button" class="term" data-t="trends">谷歌趋势</button>拉 12 个月验出生日；值不值得做，看前 10 名和用户会不会反复用；域名别带别人的<button type="button" class="term" data-t="trademark">商标</button>。</p></div>
+</div></div>
+
+<main class="wrap">
+
+  <section class="kp" id="sim1-top">
+    <div class="sim-hud"><span class="lv">第 1 关</span><span>站：FramePop（示意）</span><span id="sim1-day">第 0 天晚上</span><span class="pts">得分 <b id="sim1-pts">0</b> / 100</span></div>
+    <div class="sim-task">
+      <span class="lab">本关任务</span>
+      <p>① 刷信息流，把<b>没见过的新名字</b>收进候选池（24 分）；② 让候选词过 5 道关（46 分）；③ 定核心词、选域名（30 分）。</p>
+      <p class="muted" id="sim1-last" style="font-size:14.5px" hidden></p>
+    </div>
+    <div class="sim1-toprow">
+      <ol class="sim1-steps" id="sim1-steps"><li class="on">① 刷信息流</li><li>② 过 5 道关</li><li>③ 定词选域名</li><li>结算</li></ol>
+      <button type="button" class="btn" data-replay>重玩这一关</button>
+    </div>
+  </section>
+
+  <!-- 第一段 -->
+  <section class="kp" id="sim1-s1">
+    <div class="kp-head"><span class="kp-no">第一段 · 24 分</span><h2>刷信息流：哪条里藏着刚出生的新名字？</h2></div>
+    <p class="kp-say">看到<b>没见过的名字</b>（新模型、新产品），点「收进候选池」；一看就是老词、季节词、跟你方向不搭的，点「跳过」。<b>先收再验</b>，验是第二段的事。这些消息来源，就是哥飞说的「找词三件套」和群友常用的渠道。<span class="st hf">哥飞原话</span><span class="st sq">社群经验</span></p>
+    <div class="viz" id="sim1-feed">
+      <div class="viz-head"><span class="viz-label">动手玩 · 收还是跳过</span><p class="viz-title">第 0 天晚上的信息流（消息和名字都是编的）</p></div>
+      <div class="sim1-feedbar"><span>第 <b id="sim1-fi">1</b> / 12 条</span><span class="meter ours"><i id="sim1-fmeter"></i></span><span>这一段 <b id="sim1-fpts">0</b> / 24</span></div>
+      <div class="sim1-feedgrid">
+        <div class="sim1-pool" id="sim1-pool"><span class="sim1-pool-head">候选池</span><div class="sim1-pool-chips" id="sim1-pool-chips"><span class="sim1-empty">还空着。收进来的名字会飞到这里。</span></div></div>
+        <div class="sim1-stream">
+          <div id="sim1-now"></div>
+          <ol class="sim1-hist" id="sim1-hist" aria-label="已经处理的消息"></ol>
+        </div>
+      </div>
+      <p class="viz-say" id="sim1-fsay" aria-live="polite">每条消息都要选一下：<b>收</b>还是<b>跳过</b>。判断对一条得 2 分。</p>
+      <div class="viz-controls" id="sim1-fnext" hidden><button type="button" class="btn primary big" id="sim1-to2">带着候选词去过关 →</button></div>
+    </div>
+  </section>
+
+  <!-- 第二段 -->
+  <section class="kp" id="sim1-s2">
+    <div class="kp-head"><span class="kp-no">第二段 · 46 分</span><h2>让候选词过 5 道关</h2></div>
+    <div class="sim1-lock"><b>刷完信息流才能来</b>候选词要一个个过：出生日 → 拿 GPTs 当尺子 → 数前 10 名 → 会不会反复用 → 商标。过不了的当场掉下去。</div>
+    <div class="sim1-body" hidden>
+      <p class="kp-say">每道门先看证据、再下判断，点「开门」揭晓。判断对加分，判断错会告诉你哪里看漏了。<b>候选词能不能过，看的是事实，不看你选了什么。</b></p>
+      <div class="viz" id="sim1-gates">
+        <div class="viz-head"><span class="viz-label">动手玩 · 过关传送带</span><p class="viz-title">3 个候选词，5 道门</p></div>
+        <div class="sim1-trackwrap" id="sim1-trackwrap">
+          <ol class="sim1-track" id="sim1-track">
+            <li><span class="sim1-gname">① 出生日</span><div class="sim1-slot"></div></li>
+            <li><span class="sim1-gname">② GPTs 尺子</span><div class="sim1-slot"></div></li>
+            <li><span class="sim1-gname">③ 前 10 名</span><div class="sim1-slot"></div></li>
+            <li><span class="sim1-gname">④ 会反复用吗</span><div class="sim1-slot"></div></li>
+            <li><span class="sim1-gname">⑤ 商标</span><div class="sim1-slot"></div></li>
+            <li class="goal"><span class="sim1-gname">选定</span><div class="sim1-slot"></div></li>
+          </ol>
+        </div>
+        <div class="sim1-outrow"><span>掉下去的：</span><div class="sim1-slot" id="sim1-outslot"></div></div>
+        <div class="sim1-gatehead"><h3 id="sim1-gtitle"></h3><p id="sim1-ghint"></p></div>
+        <div class="sim1-evs" id="sim1-evs"></div>
+        <p class="viz-say" id="sim1-gsay" aria-live="polite"></p>
+        <div class="viz-controls">
+          <button type="button" class="btn primary big" id="sim1-open" disabled>开门</button>
+          <button type="button" class="btn primary big" id="sim1-gnext" hidden>去下一道门 →</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 第三段 -->
+  <section class="kp" id="sim1-s3">
+    <div class="kp-head"><span class="kp-no">第三段 · 30 分</span><h2>定核心词，选域名</h2></div>
+    <div class="sim1-lock"><b>过完 5 道关才能来</b>新词选定了，还要决定首页主打哪个说法、域名买哪个。</div>
+    <div class="sim1-body" hidden>
+      <div class="viz" id="sim1-core">
+        <div class="viz-head"><span class="viz-label">动手玩 · 三选一（10 分）</span><p class="viz-title">首页主打哪个说法？</p></div>
+        <p class="viz-note">搜索量是 Lumibo 2 发布两周后、谷歌规划师里的数（示意）。<button type="button" class="term" data-t="core">核心词</button>就是首页主打的那一个词。</p>
+        <div class="sim1-opts" id="sim1-core-opts"></div>
+        <p class="viz-say" id="sim1-core-say">三个说法都跟 Lumibo 2 有关。想一想：搜它的人，是不是想要一个能用的工具？</p>
+      </div>
+      <div class="viz sim1-dim" id="sim1-domain">
+        <div class="viz-head"><span class="viz-label">动手玩 · 三选一（20 分）</span><p class="viz-title">你的站叫 FramePop。域名买哪个？</p></div>
+        <div class="sim1-opts" id="sim1-dom-opts"></div>
+        <div class="sim1-serpcard" id="sim1-preview" aria-live="polite"><span class="d">搜索结果里会长这样（示意）</span><span class="t">先选一个域名</span><span class="n">选好以后，这里显示别人在谷歌里看到的样子。</span></div>
+        <p class="viz-say" id="sim1-dom-say">先定好上面的核心词，再来选域名。</p>
+      </div>
+      <div class="viz-controls"><button type="button" class="btn primary big" id="sim1-finish" disabled>结算本关</button></div>
+    </div>
+  </section>
+
+  <!-- 结算 -->
+  <section class="kp" id="sim1-s4">
+    <div class="kp-head"><span class="kp-no">结算</span><h2>第 1 关成绩单</h2></div>
+    <div class="sim1-lock"><b>玩完三段，这里出成绩</b>哪里做对、哪里做错、该回讲解页看哪一段，都会列出来。</div>
+    <div class="sim1-body" hidden>
+      <div class="sim-result" id="sim1-result">
+        <span class="lab" style="font-size:12.5px;font-weight:700;letter-spacing:.08em">第 1 关 · 找词</span>
+        <div class="big-num"><span id="sim1-final">0</span> / 100</div>
+        <p id="sim1-sum"></p>
+        <div class="sim1-parts" id="sim1-parts"></div>
+      </div>
+      <h3>做错的地方（点链接回讲解）</h3>
+      <ul class="sim1-list miss" id="sim1-miss"></ul>
+      <details class="sim1-det"><summary id="sim1-good-sum">做对的</summary><ul class="sim1-list ok" id="sim1-good"></ul></details>
+
+      <div class="quiz" data-answer="B">
+        <span class="q-tag">复盘题</span>
+        <p class="q-title">刷推特时看到一个没见过的名字，好多人在聊。你下一步先做什么？</p>
+        <div class="q-opts">
+          <button class="q-opt" data-l="A">马上注册一个带这个名字的域名，抢先上站</button>
+          <button class="q-opt" data-l="B">先去谷歌趋势把时间拉到 12 个月，看它是不是最近才出生</button>
+          <button class="q-opt" data-l="C">先查它在 SEO 工具里的难度（KD），低于 29 才做</button>
+        </div>
+        <div class="q-ans" hidden><p class="q-verdict"></p><p>没见过不等于新词，Pixella 就是例子。任何渠道发现的候选，都要回谷歌趋势拉一年看出生日。<span class="st hf">哥飞原话</span> 域名带别人的商标「理论上就不行」；新词刚出来，工具里常常还没有难度数据，哥飞 2026 年也说自己「一般不看KD」。<span class="st hf">哥飞原话</span></p></div>
+      </div>
+
+      <div class="sim1-endbtns">
+        <button type="button" class="btn" data-replay>重玩这一关</button>
+        <a class="btn primary big" id="sim1-next" href="sim-2.html" aria-disabled="true">去第 2 关：收词 →</a>
+      </div>
+      <p class="muted" id="sim1-next-hint" style="font-size:14.5px">先答上面的复盘题，再进下一关。</p>
+
+      <div class="src"><span class="src-lab">看原文</span><ul>
+        <li><a href="https://new.web.cafe/tutorial/detail/lxdptf3zn4">《谷歌趋势 6 大核心用法》</a><span class="meta">哥飞 · 2025-04-03 · 出生日、拿 GPTs 当尺子、Ghibli 反例</span></li>
+        <li><a href="https://new.web.cafe/tutorial/detail/k2z73gxq2h">《新词老词都可以做》</a><span class="meta">哥飞 · 2026-04-16 · 只看搜索结果里首页多不多</span></li>
+        <li><a href="https://new.web.cafe/tutorial/detail/7v7tfjneg9">《如何判断关键词是否可做》</a><span class="meta">哥飞 · 2025-01-22</span></li>
+        <li><a href="https://new.web.cafe/topic/60wmnukjzg">《哥飞找词思路汇总（28 种方法）》</a><span class="meta">梦梦.Gu 整理 · 2025-06-25 · 三类陷阱词</span></li>
+        <li><a href="https://new.web.cafe/topic/xmsohbemzf">《海外 AI 产品新手复盘》</a><span class="meta">王马扎 · 2025-09-26 · GPTs 的五分之一、付费站换品牌域名</span></li>
+        <li><span>找词三件套：2026-03-11 群聊；域名和商标：2025-09-25 群聊。都经哥飞 SEO Agent 转述，无单独文章</span></li>
+      </ul></div>
+    </div>
+  </section>
+
+</main>
+
+<nav id="pager"></nav>
+<footer id="foot"></footer>
+<script src="assets/kit.js"></script>
+<script>
+(() => {
+  const { $, $$, el, svgEl, bindSeg, tween, sleep, fmt, replay, countUp, flip, flyTo, confetti, reduce, store, SIM } = KIT;
+
+  const HF = '<span class="st hf">哥飞原话</span>', SQ = '<span class="st sq">社群经验</span>', TL = '<span class="st tl">推出来的</span>', SY = '<span class="st sy">示意</span>';
+  const LINK = {
+    new: ['s1-find.html#k1', '第 1 步 · 什么算新词'],
+    where: ['s1-find.html#k2', '第 1 步 · 去哪找'],
+    tool: ['s1-find.html#k3', '第 1 步 · 用什么工具'],
+    worth: ['s1-find.html#k4', '第 1 步 · 值不值得做'],
+    pay: ['s1-find.html#k5', '第 1 步 · 能不能收费'],
+    tm: ['s1-find.html#k6', '第 1 步 · 商标'],
+    parent: ['s2-collect.html#k5', '第 2 步 · 兄弟词、父词'],
+  };
+
+  // ---------- 计分 ----------
+  const S = { score: 0, recs: [], part: { feed: 0, gate: 0, core: 0, domain: 0 } };
+  const PART_MAX = { feed: 24, gate: 46, core: 10, domain: 20 };
+  function addRec(r) {
+    S.recs.push(r);
+    S.score += r.pts;
+    S.part[r.part] += r.pts;
+    countUp($('#sim1-pts'), S.score, 500);
+  }
+  const last = SIM.load('sim-1');
+  if (last) {
+    const p = $('#sim1-last');
+    p.hidden = false;
+    p.textContent = `你上次得了 ${last.score} / 100 分。再玩一遍，会用新成绩覆盖。`;
+  }
+  $$('[data-replay]').forEach(b => b.addEventListener('click', () => {
+    store.del('quiz.sim-1');
+    scrollTo(0, 0);
+    location.reload();
+  }));
+  const stepLis = $$('#sim1-steps li');
+  const DAY = ['第 0 天晚上', '第 1 天上午', '第 1 天下午', '第 1 天晚上'];
+  function unlock(n) {
+    const sec = $('#sim1-s' + n);
+    $('.sim1-lock', sec).hidden = true;
+    $('.sim1-body', sec).hidden = false;
+    stepLis.forEach((li, i) => { li.classList.toggle('done', i < n - 1); li.classList.toggle('on', i === n - 1); });
+    $('#sim1-day').textContent = DAY[n - 1];
+    sec.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+  }
+  const plain = h => { const d = document.createElement('div'); d.innerHTML = h; return d.textContent; };
+
+  // ---------- 第一段：信息流 ----------
+  const KIND = { sig: '没见过的新名字', old: '老词暴涨', season: '季节词', game: '老游戏攻略', direct: '谷歌直达词', big: '老词大词' };
+  const FEED = [
+    { src: '推特', who: '@AI视频观察', time: '20:41', text: '刚刷到：Lumora Labs 发布了新视频模型 <mark>Lumibo 2</mark>，生成的视频也太顺了吧！', name: 'Lumibo 2', kind: 'sig', link: 'where',
+      why: `没见过的模型名，今天刚发布。AI 新模型的名字，最早出现在 AI 公司官网、推特这些地方。${SQ}` },
+    { src: '谷歌趋势', who: '今日热门', time: '20:46', text: '<mark>halloween costume ideas</mark>（万圣节服装创意）搜索量正在上升', kind: 'season', link: 'worth',
+      why: `每年十月都涨，过了万圣节就没人搜。群友整理的哥飞找词方法里，三类陷阱词的第一类就是季节词。${SQ}` },
+    { src: 'AI 公司更新日志', who: 'Lumora Labs', time: '20:52', text: 'v2.0 更新：<mark>Lumibo 2</mark> 视频模型上线，今天起开放网页试用。', name: 'Lumibo 2', kind: 'sig', link: 'where',
+      why: `官方更新日志里冒出来的新名字，一般就是新模型。${SQ}` },
+    { src: '游戏论坛', who: '攻略区', time: '21:03', text: '老游戏 <mark>Starfall</mark> 第 12 赛季兑换码汇总', kind: 'game', link: 'pay',
+      why: `Starfall 是老游戏，名字不新；兑换码查一次就走，靠广告赚钱，跟你「AI 工具 + 按月订阅」的方向不搭。游戏词也有群友做成过，只是不适合这一局。${TL}` },
+    { src: '对手网站 sitemap', who: '某 AI 工具大站', time: '21:10', text: '和昨天比，它的网站地图里多了一行：<mark>/pixella-upscaler</mark>', name: 'Pixella', kind: 'sig', link: 'where',
+      why: `别人刚给一个陌生名字做了新页面，多半是发现了新词。这是哥飞「找词三件套」的第一件：盯别人的 sitemap（网站地图）。${HF}` },
+    { src: '推特', who: '@科技早报', time: '21:18', text: '<mark>chatgpt</mark> 今天搜索量暴涨！', kind: 'old', link: 'new',
+      why: `chatgpt 早就天天有人搜，今天只是更多。新词看的是「出生日」在不在最近一年，不看今天涨没涨。${HF}` },
+    { src: '谷歌趋势', who: '相关查询 · 飙升', time: '21:25', text: '<mark>orbi x3 price</mark>（Orbi X3 价格）后面标着「飙升」', name: 'Orbi X3', kind: 'sig', link: 'where',
+      why: `谷歌趋势「相关查询」里标着飙升的陌生名字，就点进去查。这是哥飞讲的用谷歌趋势找新词。${HF}` },
+    { src: 'SEO 工具', who: '关键词列表', time: '21:31', text: '<mark>usd to jpy</mark>（美元换日元）每月几百万次搜索，难度才 12！', kind: 'direct', link: 'worth',
+      why: `搜汇率，谷歌在结果最上面直接给出答案，没人点进网站。量大、难度却低得反常，也是陷阱词。${SQ}` },
+    { src: 'Hugging Face', who: '新上架', time: '21:40', text: '模型页 <mark>Lumibo-2</mark> 今天上线，已经 3,000 人点赞', name: 'Lumibo 2', kind: 'sig', link: 'where',
+      why: `新模型常在 Hugging Face 先上架，王马扎就靠盯它找新词。一个晚上三个地方都在说它，扩散得很快。${SQ}` },
+    { src: '外链平台', who: '最新提交', time: '21:47', text: '一排陌生域名：<mark>pixellaai.net</mark> <code>pixella-hd.com</code> <code>getpixella.app</code>', name: 'Pixella', kind: 'sig', link: 'where',
+      why: `一排陌生域名同时冒出来，等于一批新站在抢同一个词。这是「找词三件套」的第二件：盯发外链的地方。${HF}` },
+    { src: '推特', who: '@出海新人', time: '21:55', text: '<mark>photo editor</mark>（照片编辑器）每月 300 万次搜索，冲！', kind: 'big', link: 'worth',
+      why: `做了十几年的大站早把前排占满了，新站很难挤进去。新手先做新词，大家同一天起跑。${HF}` },
+    { src: '科技新闻', who: '数码频道', time: '22:06', text: '手机厂商发布新机 <mark>Orbi X3</mark>，下周开卖', name: 'Orbi X3', kind: 'sig', link: 'where',
+      why: `新产品名，也是刚出生的词，先收进来。能不能做成订阅站，第二段再看。${TL}` },
+  ];
+  const NAMES = ['Lumibo 2', 'Pixella', 'Orbi X3'];
+  FEED.forEach((m, i) => { if (m.kind === 'sig' && !NAMES.includes(m.name)) throw new Error(`第 ${i + 1} 条消息的名字 ${m.name} 不在候选名单里`); });
+
+  let fi = 0, busy = false, feedPts = 0, feedRight = 0;
+  const pool = [];
+  const now = $('#sim1-now'), hist = $('#sim1-hist'), fsay = $('#sim1-fsay'), chipsBox = $('#sim1-pool-chips');
+  function showMsg(animate) {
+    const m = FEED[fi];
+    now.innerHTML = `<article class="sim1-msg${animate ? ' in' : ''}"><header><span class="sim1-src">${m.src}</span><span>${m.who}</span><span class="sim1-time">${m.time}</span></header><p>${m.text}</p><div class="sim1-acts"><button type="button" class="btn primary" data-act="take">收进候选池</button><button type="button" class="btn" data-act="skip">跳过</button></div></article>`;
+    $('#sim1-fi').textContent = fi + 1;
+    $('#sim1-fmeter').style.width = (fi / FEED.length * 100) + '%';
+    $$('[data-act]', now).forEach(b => b.addEventListener('click', () => decide(b.dataset.act)));
+  }
+  async function addToPool(name, from, auto) {
+    const empty = $('.sim1-empty', chipsBox);
+    if (empty) empty.remove();
+    const had = pool.find(p => p.name === name);
+    if (had) {
+      had.n++;
+      const chip = $(`[data-n="${name}"]`, chipsBox);
+      if (from) await flyTo(from, chip, { html: name });
+      const em = $('em', chip);
+      em.hidden = false;
+      em.textContent = '×' + had.n;
+      replay(chip, 'sim1-bump');
+      return;
+    }
+    pool.push({ name, n: 1, auto: !!auto });
+    const chip = el('span', { class: 'chip ours' + (auto ? ' auto' : ''), 'data-n': name }, `${name}${auto ? '<small>漏掉的，系统补的</small>' : ''}<em hidden></em>`);
+    chip.style.visibility = 'hidden';
+    chipsBox.appendChild(chip);
+    if (from) await flyTo(from, chip, { html: name });
+    chip.style.visibility = '';
+    replay(chip, 'sim1-bump');
+  }
+  async function decide(act) {
+    if (busy) return;
+    busy = true;
+    const m = FEED[fi];
+    const card = $('.sim1-msg', now);
+    $$('[data-act]', now).forEach(b => { b.disabled = true; });
+    const sig = m.kind === 'sig';
+    const ok = (act === 'take') === sig;
+    const verdict = act === 'take' ? (ok ? '收对' : '收错') : (ok ? '跳对' : '漏了');
+    const pts = ok ? 2 : 0;
+    feedPts += pts;
+    if (ok) feedRight++;
+    const mk = plain($('mark', card).innerHTML);
+    addRec({ part: 'feed', ok, pts, max: 2, what: `第 ${fi + 1} 条 · ${m.src}里的「${mk}」：${verdict}`, why: `这是${KIND[m.kind]}。${m.why}`, link: LINK[m.link] });
+    card.classList.add(ok ? 'good' : 'bad');
+    const repeat = sig && pool.some(p => p.name === m.name);
+    let msg;
+    if (act === 'take' && sig) msg = `<b>收对了 +2</b>：${m.name} 进了候选池。${repeat ? '<b>同一个名字又冒出来一次</b>，说明它在扩散。' : ''}${m.why}`;
+    else if (act === 'take') msg = `<b>这条别收</b>：它是${KIND[m.kind]}。${m.why}`;
+    else if (sig) msg = `<b>漏了</b>：${m.name} 是没见过的新名字，该先收进来。${m.why}`;
+    else msg = `<b>跳得对 +2</b>：它是${KIND[m.kind]}。${m.why}`;
+    fsay.className = 'viz-say ' + (ok ? 'good' : 'bad');
+    fsay.innerHTML = msg;
+    $('#sim1-fpts').textContent = feedPts;
+    if (act === 'take' && sig) await addToPool(m.name, $('mark', card));
+    else await sleep(ok ? 650 : 1100);
+    hist.prepend(el('li', { class: ok ? 'good' : 'bad' }, `<span class="sim1-src">${m.src}</span><span>${plain(m.text)}</span><b>${verdict}</b>`));
+    fi++;
+    busy = false;
+    if (fi < FEED.length) showMsg(true); else finishFeed();
+  }
+  function finishFeed() {
+    now.innerHTML = `<div class="sim1-done"><b>信息流刷完了</b><span>12 条里判断对 ${feedRight} 条，这一段得 ${feedPts} / 24 分。</span></div>`;
+    $('#sim1-fmeter').style.width = '100%';
+    $('#sim1-fi').textContent = FEED.length;
+    const missing = NAMES.filter(n => !pool.some(p => p.name === n));
+    missing.forEach(n => addToPool(n, null, true));
+    fsay.className = 'viz-say';
+    fsay.innerHTML = `候选池里有 <b>${pool.length} 个</b>可疑的新名字：${pool.map(p => p.name).join('、')}。${missing.length ? `其中 ${missing.join('、')} 是你漏掉的，系统帮你补进来了（不加分）。` : '一个都没漏。'}收进来只是第一步，下一段让它们过 5 道关。`;
+    $('#sim1-fnext').hidden = false;
+  }
+  showMsg(false);
+
+  // ---------- 第二段：5 道门 ----------
+  const C = {
+    lumibo: { name: 'Lumibo 2', what: 'AI 视频模型（Lumora Labs，虚构）' },
+    pixella: { name: 'Pixella', what: '图片放大工具（虚构）' },
+    orbi: { name: 'Orbi X3', what: '新手机（虚构）' },
+  };
+  const ID = { 'Lumibo 2': 'lumibo', 'Pixella': 'pixella', 'Orbi X3': 'orbi' };
+  const CW = 300, CH = 140, X0 = 10, X1 = 290, Y0 = 114, Y1 = 32;
+  const xAt = (i, n) => X0 + (X1 - X0) * i / (n - 1);
+  const yAt = v => Y0 - (Y0 - Y1) * v / 100;
+  const pathOf = vals => vals.map((v, i) => `${i ? 'L' : 'M'}${xAt(i, vals.length).toFixed(1)} ${yAt(v).toFixed(1)}`).join(' ');
+  const resample = (arr, n = 40) => Array.from({ length: n }, (_, i) => {
+    const t = i / (n - 1) * (arr.length - 1), a = Math.floor(t), b = Math.min(arr.length - 1, a + 1);
+    return arr[a] + (arr[b] - arr[a]) * (t - a);
+  });
+  const txt = (parent, attrs, s) => { const t = svgEl('text', attrs, parent); t.textContent = s; return t; };
+  const zeros = n => Array(n).fill(0);
+  const pixYear = Array.from({ length: 40 }, (_, i) => [18, 20, 17, 19, 22, 18, 16, 19, 21, 20][i % 10]);
+  pixYear[38] = 55; pixYear[39] = 100;
+
+  // 第 1 道门：出生日
+  const G1 = {
+    lumibo: { d7: [0, 0, 0, 0, 0, 38, 100], y12: [...zeros(38), 14, 100], isNew: true, birth: 38,
+      ok: '一年来都贴着 0，发布当天才冒头，出生日就在眼前。标准的新词。', no: '拉到 12 个月看：之前一直是 0，发布当天才开始有人搜，它就是新词。' },
+    orbi: { d7: [52, 58, 63, 70, 78, 90, 100], y12: [...zeros(35), 5, 18, 35, 62, 100], isNew: true, birth: 35,
+      ok: '一年前没人搜，几周前官宣后才开始有，出生日在最近一年内，算新词。', no: '拉到 12 个月看：一年前没人搜，几周前官宣后才有，出生日在最近一年内，算新词。' },
+    pixella: { d7: [16, 15, 18, 17, 41, 73, 100], y12: pixYear, isNew: false,
+      ok: '拉到 12 个月：一整年都有人搜（Pixella 是个老修图软件的名字，示意），只是这几天被顶高了。热度暴涨不等于新词，哥飞讲的 Ghibli 就是这样。', no: '拉到 12 个月一看，Pixella 一整年都有人搜（老修图软件的名字，示意），只是这几天被顶高了。热度暴涨不等于新词，哥飞讲的 Ghibli 就是这样。' },
+  };
+  function g1Chart(d) {
+    const svg = svgEl('svg', { viewBox: `0 0 ${CW} ${CH}`, role: 'img', 'aria-label': '谷歌趋势曲线（示意）' });
+    svgEl('line', { class: 'sim1-ax', x1: X0, y1: Y0, x2: X1, y2: Y0 }, svg);
+    const lab0 = txt(svg, { class: 'sim1-tx', x: X0, y: 132 }, '7 天前');
+    txt(svg, { class: 'sim1-tx', x: X1, y: 132, 'text-anchor': 'end' }, '今天');
+    txt(svg, { class: 'sim1-tx', x: X0, y: 12 }, '谷歌趋势（示意）');
+    const ann = svgEl('g', { class: 'sim1-ann', opacity: 0 }, svg);
+    if (d.isNew) {
+      const x = xAt(d.birth, 40);
+      svgEl('line', { class: 'sim1-mk', x1: x, y1: Y1, x2: x, y2: Y0 }, ann);
+      txt(ann, { class: 'sim1-mkt', x: x - 5, y: Y1 + 12, 'text-anchor': 'end' }, '出生日');
+    } else {
+      svgEl('line', { class: 'sim1-mk', x1: X0, y1: yAt(19), x2: xAt(37, 40), y2: yAt(19) }, ann);
+      txt(ann, { class: 'sim1-mkt', x: X0 + 6, y: yAt(19) - 7 }, '一整年都有人搜');
+    }
+    const path = svgEl('path', { class: 'sim1-l' }, svg);
+    let cur = resample(d.d7);
+    path.setAttribute('d', pathOf(cur));
+    return {
+      svg,
+      show(mode) {
+        const to = mode === '12' ? d.y12 : resample(d.d7), from = cur.slice();
+        tween(700, k => { cur = from.map((v, i) => v + (to[i] - v) * k); path.setAttribute('d', pathOf(cur)); });
+        lab0.textContent = mode === '12' ? '12 个月前' : '7 天前';
+        ann.setAttribute('opacity', mode === '12' ? 1 : 0);
+      },
+    };
+  }
+  function buildG1(box, ids, refresh) {
+    const pick = {}, looked = {}, charts = {};
+    ids.forEach(c => {
+      const card = el('div', { class: 'sim1-ev', 'data-c': c }, `<div class="sim1-ev-head"><b>${C[c].name}</b><span>${C[c].what}</span></div><div class="seg sim1-range"><button type="button" data-v="7" aria-pressed="true">最近 7 天</button><button type="button" data-v="12" aria-pressed="false">最近 12 个月</button></div><div class="sim1-chart"></div><p class="sim1-q">它是新词吗？</p><div class="seg sim1-pick"><button type="button" data-v="new">是新词</button><button type="button" data-v="old">不是新词</button></div>`);
+      charts[c] = g1Chart(G1[c]);
+      $('.sim1-chart', card).appendChild(charts[c].svg);
+      bindSeg($('.sim1-range', card), v => { if (v === '12') looked[c] = true; charts[c].show(v); });
+      bindSeg($('.sim1-pick', card), v => { pick[c] = v; refresh(); });
+      box.appendChild(card);
+    });
+    return {
+      ready: () => ids.every(c => pick[c]),
+      judge: () => ids.map(c => {
+        const d = G1[c], ok = pick[c] === (d.isNew ? 'new' : 'old');
+        const miss = !ok && !looked[c] ? '你没切到 12 个月：只看 7 天，谁都像新词。' : '';
+        return { c, pass: d.isNew, part: 'gate', ok, pts: ok ? 4 : 0, max: 4, what: `${C[c].name} · 是不是新词`, why: `${miss}${ok ? d.ok : d.no}${HF}`, link: LINK.new };
+      }),
+      after() {
+        ids.forEach(c => {
+          const seg = $(`[data-c="${c}"] .sim1-range`, box);
+          $$('button', seg).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === '12')));
+          charts[c].show('12');
+        });
+      },
+    };
+  }
+
+  // 第 2 道门：GPTs 尺子
+  const RATIOS = [[1 / 10, '1/10'], [1 / 5, '1/5'], [1 / 4, '1/4'], [1 / 3, '1/3'], [1 / 2, '1/2'], [1, '1 倍'], [2, '2 倍'], [3, '3 倍']];
+  const G2 = {
+    lumibo: { gpts: [97, 100, 95, 98, 96, 99, 98], me: [0, 0, 0, 0, 0, 21, 25], ans: 2,
+      why: `Lumibo 2 的线大约是 GPTs 的 1/4：5,000 × 1/4 ≈ 每天 1,250 次，一个月约 3.8 万次（示意）。新词有这个量就够了：王马扎做的新词只有 GPTs 的五分之一，第二天就来了流量。${HF}${SQ}` },
+    orbi: { gpts: [50, 52, 49, 51, 50, 48, 50], me: [40, 50, 61, 70, 84, 95, 100], ans: 6,
+      why: `Orbi X3 的线是 GPTs 的 2 倍：每天约 1 万次（示意），很热。热度这一关稳过。${HF}` },
+  };
+  function g2Chart(d, name) {
+    const svg = svgEl('svg', { viewBox: `0 0 ${CW} ${CH}`, role: 'img', 'aria-label': `谷歌趋势里 ${name} 和 GPTs 的对比（示意）` });
+    svgEl('line', { class: 'sim1-ax', x1: X0, y1: Y0, x2: X1, y2: Y0 }, svg);
+    txt(svg, { class: 'sim1-tx', x: X0, y: 132 }, '7 天前');
+    txt(svg, { class: 'sim1-tx', x: X1, y: 132, 'text-anchor': 'end' }, '今天');
+    txt(svg, { class: 'sim1-tx', x: X0, y: 12 }, `谷歌趋势：GPTs 对比 ${name}（示意）`);
+    svgEl('path', { class: 'sim1-gp', d: pathOf(d.gpts) }, svg);
+    svgEl('path', { class: 'sim1-l', d: pathOf(d.me) }, svg);
+    svgEl('circle', { class: 'sim1-dot', cx: X1, cy: yAt(d.me[6]), r: 4 }, svg);
+    const ru = svgEl('line', { class: 'sim1-ru', x1: X0, x2: X1 }, svg);
+    const rt = txt(svg, { class: 'sim1-rut', x: X0 + 4 }, '');
+    let y = yAt(d.gpts[6]);
+    function place(yy) { ru.setAttribute('y1', yy); ru.setAttribute('y2', yy); rt.setAttribute('y', yy - 6 < 30 ? yy + 15 : yy - 6); }
+    return {
+      svg,
+      set(i, animate) {
+        const lvl = d.gpts[6] * RATIOS[i][0];
+        const hit = Math.abs(lvl - d.me[6]) < 3;
+        const to = yAt(Math.min(lvl, 106)), from = y;
+        y = to;
+        if (animate) tween(260, k => place(from + (to - from) * k)); else place(to);
+        ru.classList.toggle('hit', hit);
+        rt.classList.toggle('hit', hit);
+        rt.textContent = `尺子：GPTs × ${RATIOS[i][1]}${lvl > 106 ? '（比图还高）' : ''}${hit ? '，对齐了' : ''}`;
+      },
+    };
+  }
+  function buildG2(box, ids, refresh) {
+    const val = {}, touched = {};
+    ids.forEach(c => {
+      const d = G2[c];
+      const card = el('div', { class: 'sim1-ev', 'data-c': c }, `<div class="sim1-ev-head"><b>${C[c].name}</b><span>${C[c].what}</span></div><div class="sim1-chart"></div><div class="legend-row"><span><i class="sw mut"></i>GPTs（虚线）</span><span><i class="sw ours"></i>${C[c].name}</span><span><i class="sw big"></i>尺子</span></div><label class="range-wrap"><span>拖动尺子，对齐 ${C[c].name} 今天的高度：</span><input type="range" min="0" max="7" step="1" value="5" aria-label="${C[c].name} 是 GPTs 的几倍"><span class="sim1-ticks">${RATIOS.map((r, i) => `<span style="left:calc(${i} / 7 * (100% - 16px) + 8px)">${r[1].replace(' 倍', '')}</span>`).join('')}</span></label><p class="sim1-read">读数：GPTs × <b class="r">1 倍</b> ≈ 每天约 <b class="n">5,000</b> 次 ${SY}</p>`);
+      const ch = g2Chart(d, C[c].name);
+      $('.sim1-chart', card).appendChild(ch.svg);
+      const input = $('input', card);
+      val[c] = 5;
+      ch.set(5, false);
+      input.addEventListener('input', () => {
+        touched[c] = true;
+        val[c] = Number(input.value);
+        ch.set(val[c], true);
+        $('.r', card).textContent = RATIOS[val[c]][1];
+        $('.n', card).textContent = fmt(5000 * RATIOS[val[c]][0]);
+        refresh();
+      });
+      box.appendChild(card);
+    });
+    return {
+      ready: () => ids.every(c => touched[c]),
+      judge: () => ids.map(c => {
+        const d = G2[c], diff = Math.abs(val[c] - d.ans);
+        const ok = diff === 0, pts = ok ? 4 : diff === 1 ? 2 : 0;
+        const pre = ok ? '' : `你对到了「GPTs × ${RATIOS[val[c]][1]}」，${diff === 1 ? '差一格。' : '差得有点远。'}`;
+        return { c, pass: true, part: 'gate', ok, pts, max: 4, what: `${C[c].name} · 拿 GPTs 当尺子`, why: pre + d.why, link: LINK.tool };
+      }),
+    };
+  }
+
+  // 第 3 道门：数前 10 名
+  const SERP = [
+    { u: 'lumora.ai/lumibo', t: 'Lumibo 2 官方介绍页', home: false },
+    { u: 'youtube.com/watch?v=lb2demo', t: '视频：Lumibo 2 实测', home: false },
+    { u: 'bigaitools.com/models/lumibo-2', t: '某 AI 工具大站的介绍页', home: false },
+    { u: 'lumibo2video.com', t: '别人刚做的新站', home: true },
+    { u: 'reddit.com/r/aivideo/comments/lb2', t: 'Reddit 讨论帖：好用吗', home: false },
+    { u: 'technewsdaily.com/2026/lumibo-2', t: '科技新闻：Lumora 发布 Lumibo 2', home: false },
+    { u: 'aitoolsdir.com/tool/lumibo', t: 'AI 工具导航站的收录页', home: false },
+    { u: 'medium.com/@creator/lumibo-2-first-look', t: '博客文章：上手体验', home: false },
+    { u: 'x.com/lumoralabs/status/2001', t: 'Lumora Labs 的推文', home: false },
+    { u: 'videohub.com/blog/lumibo-2-guide', t: '视频大站的博客教程', home: false },
+  ];
+  function buildG3(box, ids, refresh) {
+    const tag = {};
+    let worth = null;
+    if (ids.includes('lumibo')) {
+      const card = el('div', { class: 'sim1-ev wide', 'data-c': 'lumibo' }, `<div class="sim1-ev-head"><b>lumibo video generator</b><span>谷歌前 10 名（网站名都是编的）</span></div><ol class="sim1-serp">${SERP.map((s, i) => `<li data-i="${i}"><span class="rk">${i + 1}</span><span class="u">${s.u}</span><span class="tt" data-fix="">${s.t}</span><span class="seg sim1-tag"><button type="button" data-v="home">首页</button><button type="button" data-v="inner">内页</button></span></li>`).join('')}</ol><p class="sim1-tally">首页 <b class="th">0</b><span>内页 <b class="ti">0</b></span><span>还没标 <b class="tn">10</b></span></p><div class="sim1-judge" hidden><p class="sim1-q">数完了。值不值得专门做一个站去打它？</p><div class="seg sim1-pick"><button type="button" data-v="worth">值得：用首页去打别人的内页</button><button type="button" data-v="no">不值得：大站都在，打不过</button></div></div>`);
+      $$('.sim1-serp li', card).forEach(li => bindSeg($('.sim1-tag', li), v => {
+        tag[li.dataset.i] = v;
+        const vals = Object.values(tag);
+        $('.th', card).textContent = vals.filter(x => x === 'home').length;
+        $('.ti', card).textContent = vals.filter(x => x === 'inner').length;
+        $('.tn', card).textContent = SERP.length - vals.length;
+        if (vals.length === SERP.length) $('.sim1-judge', card).hidden = false;
+        refresh();
+      }));
+      bindSeg($('.sim1-judge .sim1-pick', card), v => { worth = v; refresh(); });
+      box.appendChild(card);
+    }
+    if (ids.includes('orbi')) {
+      box.appendChild(el('div', { class: 'sim1-ev wide', 'data-c': 'orbi' }, `<div class="sim1-ev-head"><b>${C.orbi.name}</b><span>${C.orbi.what}</span></div><p class="sim1-front">搜 orbi x3，前 10 名是：1 个官网首页 + 9 个科技新闻、评测站的内页 ${SY}</p><p class="muted" style="font-size:14px">这一关它也能过，不用你数。</p>`));
+    }
+    const hasL = ids.includes('lumibo');
+    return {
+      ready: () => !hasL || (Object.keys(tag).length === SERP.length && worth),
+      judge: () => {
+        const out = [];
+        if (hasL) {
+          const wrong = SERP.filter((s, i) => (tag[i] === 'home') !== s.home).length;
+          const tp = wrong === 0 ? 6 : wrong <= 2 ? 3 : 0;
+          out.push({ c: 'lumibo', pass: true, part: 'gate', ok: wrong === 0, pts: tp, max: 6, what: 'Lumibo 2 · 数前 10 名的首页和内页',
+            why: wrong === 0 ? '10 条全标对：9 个内页，只有 1 个首页（别人刚做的新站）。' : `标错了 ${wrong} 条（标黄的那几行）。看网址：只有域名、后面没有「/…」的才是首页，这里只有 lumibo2video.com 一个。`, link: LINK.worth });
+          const ok = worth === 'worth';
+          out.push({ c: 'lumibo', pass: true, part: 'gate', ok, pts: ok ? 4 : 0, max: 4, what: 'Lumibo 2 · 值不值得打',
+            why: `${ok ? '' : '大站在不可怕，可怕的是前排全是专门做这个词的首页。'}前 10 名里 9 个是大站随手做的内页，你专门做一个站、用首页去打，就有机会。哥飞说「我一般不看KD，就只看搜索结果里网站首页多不多」。${HF}`, link: LINK.worth });
+        }
+        if (ids.includes('orbi')) out.push({ c: 'orbi', pass: true, info: true, ok: true, why: '前排都是新闻和评测的内页，这一关能过。' });
+        return out;
+      },
+      after() {
+        $$('.sim1-serp li', box).forEach(li => {
+          const s = SERP[li.dataset.i], right = (tag[li.dataset.i] === 'home') === s.home;
+          li.classList.add(right ? 'right' : 'fix');
+          if (!right) $('.tt', li).dataset.fix = `应该是：${s.home ? '首页' : '内页'}`;
+        });
+      },
+    };
+  }
+
+  // 第 4 道门：会反复用吗
+  const G4 = {
+    lumibo: { also: ['lumibo prompts', 'lumibo text to video', 'free lumibo video generator'], front: '前排已经有 2 个站接了按月订阅（每月 9.9 美元起，示意）', ans: 'again',
+      why: '做视频是一条接一条的活：今天做完，明天还要做。搜它的人还在找提示词、文生视频；前排也已经有人收费，说明有人愿意付钱。适合按月订阅。' },
+    orbi: { also: ['orbi x3 price', 'orbi x3 specs', 'orbi x3 release date', 'orbi x3 vs orbi x2'], front: '前排全是新闻和评测，没有一家收费', ans: 'once',
+      why: '查价格、看参数，买完就不再搜了。又新又热、前排也都是内页，可做不成按月订阅：要找用户会反复用的事。' },
+  };
+  function buildG4(box, ids, refresh) {
+    const pick = {};
+    ids.forEach(c => {
+      const d = G4[c];
+      const card = el('div', { class: 'sim1-ev', 'data-c': c }, `<div class="sim1-ev-head"><b>${C[c].name}</b><span>${C[c].what}</span></div><p class="sim1-q" style="font-weight:400;font-size:14px">搜它的人，接着还搜了：</p><div class="sim1-also">${d.also.map(w => `<span class="chip">${w}</span>`).join('')}</div><p class="sim1-front">${d.front}</p><p class="sim1-q">用户会反复用吗？</p><div class="seg sim1-pick"><button type="button" data-v="again">会反复用，能按月收费</button><button type="button" data-v="once">用一次就走</button></div>`);
+      bindSeg($('.sim1-pick', card), v => { pick[c] = v; refresh(); });
+      box.appendChild(card);
+    });
+    return {
+      ready: () => ids.every(c => pick[c]),
+      judge: () => ids.map(c => {
+        const d = G4[c], ok = pick[c] === d.ans;
+        return { c, pass: d.ans === 'again', part: 'gate', ok, pts: ok ? 5 : 0, max: 5, what: `${C[c].name} · 会不会反复用`, why: d.why + HF + TL, link: LINK.pay };
+      }),
+    };
+  }
+
+  // 第 5 道门：商标
+  const G5 = [
+    { v: 'A', h: '不能碰，换一个词吧', why: '不用躲。哥飞举过例子：Canva 说自己接入了 Veo 3，也没问题。页面里写「支持 Lumibo 2」是可以的。' },
+    { v: 'B', h: '能做「支持 Lumibo 2」的工具站；但不冒充官方，域名里也不带它', why: '页面里写「支持、接入某某模型」可以；域名带别人的商标、冒充官方不行：「理论上你的域名带了对方的商标名称，就不行。」' },
+    { v: 'C', h: '能，而且越像官方越好，用户更愿意点', why: `冒充官方是红线，群友的原话是「不能套壳冒充别人」。${SQ}被投诉了，站和域名都可能保不住。` },
+  ];
+  function buildG5(box, ids, refresh) {
+    let pick = null;
+    const card = el('div', { class: 'sim1-ev wide', 'data-c': 'lumibo' }, `<div class="sim1-ev-head"><b>Lumibo 2</b><span>Lumibo 是 Lumora Labs 的产品名（虚构）</span></div><p class="sim1-q">你能拿它做站吗？</p><div class="sim1-opts">${G5.map(o => `<button type="button" class="sim1-opt" data-v="${o.v}"><span class="h">${o.v}. ${o.h}</span></button>`).join('')}</div>`);
+    $$('.sim1-opt', card).forEach(b => b.addEventListener('click', () => {
+      pick = b.dataset.v;
+      $$('.sim1-opt', card).forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      $$('.sim1-opt', card).forEach(x => x.classList.toggle('picked', x === b));
+      refresh();
+    }));
+    box.appendChild(card);
+    return {
+      ready: () => !!pick,
+      judge: () => {
+        const ok = pick === 'B', o = G5.find(x => x.v === pick);
+        return [{ c: 'lumibo', pass: true, part: 'gate', ok, pts: ok ? 6 : 0, max: 6, what: 'Lumibo 2 · 商标', why: `${ok ? '' : o.why + ' '}${G5[1].why}${HF}`, link: LINK.tm }];
+      },
+      after() {
+        $$('.sim1-opt', card).forEach(x => {
+          if (x.dataset.v === 'B') x.classList.add(x.dataset.v === pick ? 'good' : 'answer');
+          else if (x.dataset.v === pick) x.classList.add('bad');
+        });
+      },
+    };
+  }
+
+  const GATES = [
+    { title: '第 1 道门：它是不是新词？', hint: '每张图默认是「最近 7 天」。切到「最近 12 个月」看看：线是不是一直贴着 0、最近才往上走？开始往上走的那天，就是<b>出生日</b>。', build: buildG1 },
+    { title: '第 2 道门：拿 GPTs 当尺子，量一量有多少人搜', hint: '新词在工具里还查不到量。谷歌趋势只给 0～100 的相对热度，把它和 <button type="button" class="term" data-t="gpts">GPTs</button>（每天约 5,000 次搜索）放一起：拖动尺子，对齐它今天的高度。', build: buildG2 },
+    { title: '第 3 道门：数一数前 10 名，首页多还是内页多', hint: '谷歌搜它的工具词 lumibo video generator。网址只有域名、后面没有「/…」的是<button type="button" class="term" data-t="home">首页</button>；带了路径的是<button type="button" class="term" data-t="inner">内页</button>。逐条标一下。', build: buildG3 },
+    { title: '第 4 道门：用户会反复用吗？能不能按月收费', hint: '看搜它的人接着还搜了什么，再看前排的网站收不收钱。', build: buildG4 },
+    { title: '第 5 道门：商标', hint: '名字是别人家的。能做，但有红线。', build: buildG5 },
+  ];
+  const track = $('#sim1-track'), slots = $$('#sim1-track > li > .sim1-slot'), evs = $('#sim1-evs'), gsay = $('#sim1-gsay');
+  const openBtn = $('#sim1-open'), nextBtn = $('#sim1-gnext');
+  let alive = [], gi = 0, gate = null;
+  function startGate(i) {
+    gi = i;
+    $$('#sim1-track > li').forEach((li, k) => { li.classList.toggle('on', k === i); li.classList.toggle('past', k < i); });
+    const li = $$('#sim1-track > li')[i], wrap = $('#sim1-trackwrap');
+    wrap.scrollTo({ left: Math.max(0, li.offsetLeft - 40), behavior: reduce ? 'auto' : 'smooth' });
+    $('#sim1-gtitle').textContent = GATES[i].title;
+    $('#sim1-ghint').innerHTML = GATES[i].hint;
+    evs.innerHTML = '';
+    gate = GATES[i].build(evs, alive.slice(), () => { openBtn.disabled = !gate.ready(); });
+    openBtn.hidden = false;
+    openBtn.disabled = true;
+    nextBtn.hidden = true;
+    gsay.className = 'viz-say';
+    gsay.innerHTML = `这道门前站着：<b>${alive.map(c => C[c].name).join('、')}</b>。看完证据、每个都下好判断，再点「开门」。`;
+  }
+  openBtn.addEventListener('click', async () => {
+    openBtn.hidden = true;
+    const res = gate.judge();
+    $$('.sim1-pick button, .sim1-tag button, .sim1-opt, input[type="range"]', evs).forEach(b => { b.disabled = true; });
+    if (gate.after) gate.after();
+    let got = 0, max = 0;
+    res.forEach(r => {
+      const card = $(`.sim1-ev[data-c="${r.c}"]`, evs);
+      if (!r.info) {
+        addRec(r);
+        got += r.pts;
+        max += r.max;
+      }
+      const head = r.info ? '这道门能过' : r.ok ? `判断对了 +${r.pts}` : r.pts ? `差一点 +${r.pts}` : '判断错了 +0';
+      card.appendChild(el('p', { class: 'sim1-verdict ' + (r.ok ? 'good' : 'bad') }, `<b>${head}</b>${r.why}`));
+    });
+    const cands = [...new Set(res.map(r => r.c))];
+    const drop = cands.filter(c => res.filter(r => r.c === c).some(r => !r.pass));
+    cands.forEach(c => $(`.sim1-ev[data-c="${c}"]`, evs).classList.add(drop.includes(c) ? 'bad' : 'good'));
+    const runners = $$('.sim1-runner').filter(r => alive.includes(r.dataset.c));
+    const fallers = runners.filter(r => drop.includes(r.dataset.c));
+    fallers.forEach(r => replay(r, 'fall'));
+    if (fallers.length) await sleep(600);
+    alive = alive.filter(c => !drop.includes(c));
+    flip(runners, () => {
+      fallers.forEach(r => { r.classList.remove('fall', 'ours'); r.classList.add('bad'); $('#sim1-outslot').appendChild(r); });
+      runners.filter(r => !drop.includes(r.dataset.c)).forEach(r => slots[gi + 1].appendChild(r));
+    });
+    const passed = alive.map(c => C[c].name).join('、');
+    gsay.className = 'viz-say ' + (got === max ? 'good' : 'bad');
+    gsay.innerHTML = `这道门你得了 <b>${got} / ${max}</b> 分。${drop.length ? `<b>${drop.map(c => C[c].name).join('、')}</b> 掉下去了；` : '没有人掉下去；'}${passed} 过了。`;
+    if (gi === GATES.length - 1) {
+      $$('#sim1-track > li').forEach((li, k) => { li.classList.toggle('on', k === 5); li.classList.toggle('past', k < 5); });
+      gsay.innerHTML += ' <b>Lumibo 2 过了全部 5 道门，就选它了！</b>';
+      confetti($('#sim1-gates'));
+      nextBtn.textContent = '去定核心词和域名 →';
+    } else nextBtn.textContent = '去下一道门 →';
+    nextBtn.hidden = false;
+  });
+  nextBtn.addEventListener('click', () => {
+    if (gi < GATES.length - 1) {
+      startGate(gi + 1);
+      $('#sim1-gates').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    } else {
+      nextBtn.hidden = true;
+      unlock(3);
+    }
+  });
+  $('#sim1-to2').addEventListener('click', () => {
+    $('#sim1-fnext').hidden = true;
+    alive = pool.map(p => ID[p.name]);
+    alive.forEach(c => slots[0].appendChild(el('span', { class: 'chip ours sim1-runner', 'data-c': c }, C[c].name)));
+    unlock(2);
+    startGate(0);
+  });
+
+  // ---------- 第三段：核心词、域名 ----------
+  const W = w => {
+    const x = SIM.words.find(o => o.w === w);
+    if (!x) throw new Error(`KIT.SIM.words 里没有这个词：${w}`);
+    return x;
+  };
+  const CORE = [
+    { w: 'lumibo 2', h: '模型名本身，量最大', ok: false, link: LINK.worth,
+      why: `光秃秃的模型名，搜的人多半想找官网，第一名一定是 Lumora 自己，量再大也抢不过。正文里写一句「支持 Lumibo 2」就够了。${TL}` },
+    { w: SIM.core, h: '模型名 + generator（生成器）', ok: true, link: LINK.worth,
+      why: `搜的人就是想要一个能用的生成工具，跟你要做的东西一模一样。首页就主打它。${TL}` },
+    { w: 'ai video generator', h: '更大的说法，量是它们的十倍以上', ok: false, link: LINK.parent,
+      why: `这是父词，十几年的大站都在抢。哥飞的路线是「保小图大」：先把小词做稳，兄弟词站住了，再往上打父词。${HF}` },
+  ];
+  const coreBox = $('#sim1-core-opts');
+  let corePick = null, domPick = null;
+  CORE.forEach(o => coreBox.appendChild(el('button', { type: 'button', class: 'sim1-opt', 'data-w': o.w }, `<span class="w">${o.w}</span><span class="v">每月约 ${fmt(W(o.w).v)} 次（示意）</span><span class="h">${o.h}</span>`)));
+  $$('.sim1-opt', coreBox).forEach(b => b.addEventListener('click', () => {
+    if (corePick) return;
+    const o = CORE.find(x => x.w === b.dataset.w);
+    corePick = o;
+    $$('.sim1-opt', coreBox).forEach(x => {
+      x.disabled = true;
+      if (x === b) x.classList.add('picked', o.ok ? 'good' : 'bad');
+      else if (CORE.find(y => y.w === x.dataset.w).ok) x.classList.add('answer');
+    });
+    addRec({ part: 'core', ok: o.ok, pts: o.ok ? 10 : 0, max: 10, what: `核心词选了「${o.w}」`, why: o.ok ? o.why : `${o.why} 该选 ${SIM.core}：搜的人就是想要一个生成工具。`, link: o.link });
+    const say = $('#sim1-core-say');
+    say.className = 'viz-say ' + (o.ok ? 'good' : 'bad');
+    say.innerHTML = `${o.ok ? '<b>选对了 +10</b>' : '<b>不太对 +0</b>'}：${o.why}${o.ok ? '' : `<br>这一局的核心词定为 <b>${SIM.core}</b>，后面几关都用它。`}`;
+    $('#sim1-domain').classList.remove('sim1-dim');
+    $('#sim1-dom-say').innerHTML = '你的站名叫 FramePop。三个域名都还能注册，选一个。';
+  }));
+
+  const DOMS = [
+    { d: 'lumibo.ai', h: '最像官方，一眼就知道是 Lumibo', light: 'red', lab: '不能用', pts: 0,
+      title: 'Lumibo 2 — Official AI Video Generator', note: '用户一看：这是官网吧？',
+      why: `最像官方的域名：用户会以为这就是 Lumora 的官网。冒充官方不行，域名带别人的商标也不行；被投诉了，域名可能保不住。${HF}` },
+    { d: 'lumibovideo.com', h: '带模型名，和关键词对得上', light: 'half', lab: '有风险', pts: 10,
+      title: 'Lumibo Video Generator | LumiboVideo', note: '关键词对得上，可名字是别人家的。',
+      why: `社群里很常见：域名和关键词对得上，有群友就是用新词注册域名先拿流量。${SQ} 但哥飞说域名带了别人的商标「理论上就不行」，有收到律师函、域名被收回的风险；热度一过，这个名字也用不上了。王马扎后来做付费站，就换成了自己的品牌域名。${HF}${SQ}` },
+    { d: SIM.domain, h: '自己的品牌名，不带 Lumibo', light: 'green', lab: '推荐', pts: 20,
+      title: 'Lumibo Video Generator — 支持 Lumibo 2 | FramePop', note: '标题里照样有关键词，域名是你自己的。',
+      why: `不带别人的商标，热度过了还能接着做别的词。标题和正文里写「支持 Lumibo 2」，关键词照样对得上，这正是哥飞说可以的做法。${HF}` },
+  ];
+  const domBox = $('#sim1-dom-opts');
+  DOMS.forEach(o => domBox.appendChild(el('button', { type: 'button', class: 'sim1-opt', 'data-d': o.d }, `<span class="w">${o.d}</span><span class="h">${o.h}</span><span class="sim1-light ${o.light}"><i></i>${o.lab}</span>`)));
+  $$('.sim1-opt', domBox).forEach(b => b.addEventListener('click', () => {
+    if (domPick || !corePick) return;
+    const o = DOMS.find(x => x.d === b.dataset.d);
+    domPick = o;
+    $$('.sim1-opt', domBox).forEach(x => {
+      x.disabled = true;
+      if (x === b) x.classList.add('picked', o.pts === 20 ? 'good' : 'bad');
+      else if (x.dataset.d === SIM.domain) x.classList.add('answer');
+    });
+    const pv = $('#sim1-preview');
+    pv.innerHTML = `<span class="d">${o.d}</span><span class="t">${o.title}</span><span class="n">${o.note}</span>`;
+    replay(pv);
+    addRec({ part: 'domain', ok: o.pts === 20, pts: o.pts, max: 20, what: `域名选了 ${o.d}`, why: o.why, link: LINK.tm });
+    const say = $('#sim1-dom-say');
+    say.className = 'viz-say ' + (o.pts === 20 ? 'good' : 'bad');
+    say.innerHTML = `<b>${o.pts === 20 ? '选得好' : o.pts ? '拿一半分' : '这个不行'} +${o.pts}</b>：${o.why}${o.pts === 20 ? '' : `<br>这一局的域名定为 <b>${SIM.domain}</b>，后面几关都用它。`}`;
+    $('#sim1-finish').disabled = false;
+  }));
+
+  // ---------- 结算 ----------
+  $('#sim1-finish').addEventListener('click', () => {
+    $('#sim1-finish').disabled = true;
+    const right = S.recs.filter(r => r.ok).length, wrong = S.recs.length - right;
+    SIM.save('sim-1', S.score, 100, { core: SIM.core, domain: SIM.domain, pickedCore: corePick.w, pickedDomain: domPick.d, right, wrong });
+    unlock(4);
+    const res = $('#sim1-result');
+    res.classList.toggle('meh', S.score < 60);
+    countUp($('#sim1-final'), S.score, 1200);
+    $('#sim1-sum').innerHTML = `一共 ${S.recs.length} 个判断：做对 <b>${right}</b> 个，做错或只对一半 <b>${wrong}</b> 个。${S.score === 100 ? '满分！你已经会像老站长一样找词了。' : S.score >= 80 ? '很稳。把下面做错的几条看一眼就行。' : S.score >= 60 ? '及格了。下面做错的，回讲解页对应的那一段看看。' : '有点吃力。建议先看第 1 步讲解，再回来重玩。'}`;
+    const NAMES_P = { feed: '刷信息流', gate: '过 5 道关', core: '定核心词', domain: '选域名' };
+    $('#sim1-parts').innerHTML = Object.keys(PART_MAX).map(k => `<div class="sim1-part"><span>${NAMES_P[k]}</span><span class="meter"><i style="width:0%" data-w="${S.part[k] / PART_MAX[k] * 100}"></i></span><b>${S.part[k]} / ${PART_MAX[k]}</b></div>`).join('');
+    requestAnimationFrame(() => requestAnimationFrame(() => $$('#sim1-parts .meter i').forEach(i => { i.style.width = i.dataset.w + '%'; })));
+    const miss = S.recs.filter(r => !r.ok), good = S.recs.filter(r => r.ok);
+    $('#sim1-miss').innerHTML = miss.length ? miss.map(r => `<li><b>${r.what}</b><span>${r.why}</span><a href="${r.link[0]}">回去看：${r.link[1]} →</a></li>`).join('') : '<li><b>一个都没错。</b></li>';
+    $('#sim1-good-sum').textContent = `做对的 ${good.length} 个（点开看）`;
+    $('#sim1-good').innerHTML = good.map(r => `<li>${r.what}<span>+${r.pts}</span></li>`).join('');
+    if (S.score === 100) confetti(res);
+  });
+  const quiz = $('#sim1-s4 .quiz'), nextA = $('#sim1-next');
+  const answered = () => !!store.get('quiz.sim-1', {})[0];
+  function paintNext() {
+    const ok = answered();
+    nextA.setAttribute('aria-disabled', String(!ok));
+    $('#sim1-next-hint').textContent = ok ? '复盘题答完了，可以去下一关。' : '先答上面的复盘题，再进下一关。';
+  }
+  quiz.addEventListener('click', e => { if (e.target.closest('.q-opt')) setTimeout(paintNext); });
+  nextA.addEventListener('click', e => {
+    if (answered()) return;
+    e.preventDefault();
+    const hint = $('#sim1-next-hint');
+    hint.style.color = 'var(--amber)';
+    replay(quiz, 'sim1-nudge');
+    quiz.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
+  });
+  paintNext();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>第 4 关 搭结构 · 站长模拟器 · AI 新词站白话课</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<style>
+/* 第 4 关：把页面卡挂到网站树上，上线检查逐条亮灯 */
+.s4-from { font-size: 14.5px; color: var(--muted); }
+.s4-last { font-size: 13px; color: var(--muted); }
+.s4-cheat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px; }
+.s4-cheat summary { cursor: pointer; font-weight: 650; color: var(--indigo); font-size: 15.5px; }
+.s4-cheat[open] summary { margin-bottom: 10px; }
+.s4-cheat ol { margin: 0; padding-left: 1.3em; display: grid; gap: 8px; font-size: 15px; line-height: 1.7; }
+.s4-cheat li::marker { color: var(--indigo); font-family: var(--font-mono); }
+.s4-cheat .s4-more { margin-top: 10px; font-size: 14px; }
+
+.s4-board { gap: 14px; }
+.s4-pool { min-height: 100px; }
+.s4-pool .dd-zone-head b { font-family: var(--font-mono); color: var(--indigo); }
+.s4-card { display: inline-grid; grid-template-columns: auto 1fr; justify-content: start; align-items: baseline; gap: 1px 8px; font-family: var(--font-body); font-size: 14.5px; padding: 7px 12px; }
+.s4-c-name { font-weight: 650; }
+.s4-c-path { font-family: var(--font-mono); font-size: 12px; color: var(--indigo); overflow-wrap: anywhere; }
+.s4-c-kw { grid-column: 1 / -1; font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
+.s4-c-tag { grid-column: 1 / -1; font-size: 11.5px; color: var(--green); }
+.s4-card.s4-visit { animation: pulse .6s; border-color: var(--indigo); }
+
+/* 开发来问：工具放哪 */
+.s4-decide { display: grid; gap: 10px; padding: 14px 16px; border-radius: 14px; background: var(--amber-soft); border: 1.5px solid var(--amber); animation: rise .35s both; }
+.s4-decide .lab { font-size: 12.5px; font-weight: 700; letter-spacing: .06em; color: var(--amber); }
+.s4-decide p { font-size: 15.5px; }
+.s4-decide .seg { display: grid; gap: 6px; }
+.s4-decide .seg button { text-align: left; border-radius: 12px; }
+
+/* 网站树 */
+.s4-treebox { display: grid; gap: 10px; padding: 14px; border-radius: 16px; background: var(--bg); border: 1px solid var(--line); }
+.s4-treehead { display: flex; flex-wrap: wrap; gap: 4px 14px; justify-content: space-between; align-items: baseline; font-size: 14px; }
+.s4-treehead b.s4-dom { font-family: var(--font-mono); color: var(--indigo); font-size: 15px; }
+.s4-count b { font-family: var(--font-mono); font-size: 16px; }
+.s4-tree { position: relative; display: grid; gap: 34px; }
+.s4-wires { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 1; }
+.s4-wires path { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.s4-wires path.off { stroke: var(--line); }
+.s4-wires path.on { stroke: var(--indigo); }
+.s4-root { max-width: 420px; width: 100%; justify-self: center; min-height: 86px; background: var(--surface); border-color: color-mix(in srgb, var(--indigo) 50%, var(--line)); }
+.s4-root .dd-zone-head b, .s4-z .dd-zone-head b, .s4-later .dd-zone-head b { color: var(--ink); font-size: 14.5px; }
+.s4-root .dd-zone-head em, .s4-z .dd-zone-head em { display: block; font-style: normal; font-weight: 500; font-size: 12.5px; line-height: 1.5; }
+.s4-branches { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.s4-z { position: relative; flex-direction: column; flex-wrap: nowrap; align-items: flex-start; padding-left: 30px; min-height: 120px; background: var(--surface); }
+.s4-z .dd-zone-head { margin-left: -20px; width: calc(100% + 20px); }
+.s4-z .s4-card, .s4-root .s4-card { position: relative; z-index: 2; }
+.s4-z .s4-card::before { content: ""; position: absolute; left: -15px; top: 50%; width: 14px; height: 2px; background: var(--indigo); transform-origin: left; }
+.s4-z .s4-card::after { content: ""; position: absolute; left: -15px; top: -9px; bottom: 0; width: 2px; background: var(--indigo); }
+.s4-z .s4-card:last-child::after { bottom: 50%; }
+.s4-z .s4-card.s4-new::before { animation: s4-twig .55s .15s both; }
+@keyframes s4-twig { from { transform: scaleX(0); } }
+.s4-later { background: var(--surface); }
+.s4-later .dd-zone-head em { font-style: normal; font-weight: 500; font-size: 12.5px; }
+
+.s4-island { display: grid; gap: 2px; padding: 12px 14px; border-radius: 14px; border: 2px dashed var(--amber); background: var(--amber-soft); animation: rise .35s both; }
+.s4-island b { font-family: var(--font-mono); color: var(--amber); }
+.s4-island span { font-size: 14px; }
+.s4-island em { font-style: normal; font-size: 13px; color: var(--amber); font-weight: 650; }
+.s4-island.s4-lost { animation: shake .5s; }
+
+.s4-btns { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+/* 上线检查：一条条亮灯 */
+.s4-check { display: grid; gap: 10px; padding: 16px; border-radius: 16px; background: var(--surface); border: 1.5px solid var(--indigo); }
+.s4-check h3 { margin: 0; }
+.s4-lights { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.s4-l { display: grid; grid-template-columns: 18px 1fr auto; gap: 10px; align-items: start; padding: 8px 10px; border-radius: 10px; background: var(--bg); animation: rise .3s both; }
+.s4-dot { width: 14px; height: 14px; border-radius: 50%; margin-top: 5px; background: var(--line); transition: background .3s, box-shadow .3s; }
+.s4-l[data-st="ok"] .s4-dot { background: var(--green); box-shadow: 0 0 0 4px var(--green-soft); }
+.s4-l[data-st="half"] .s4-dot { background: var(--amber); box-shadow: 0 0 0 4px var(--amber-soft); opacity: .7; }
+.s4-l[data-st="bad"] .s4-dot { background: var(--amber); box-shadow: 0 0 0 4px var(--amber-soft); animation: blink .5s 3; }
+.s4-l[data-st="bad"], .s4-l[data-st="half"] { background: var(--amber-soft); }
+.s4-l div { display: grid; gap: 2px; font-size: 14.5px; line-height: 1.6; }
+.s4-l div span { color: var(--muted); font-size: 13.5px; }
+.s4-l em { font-style: normal; font-family: var(--font-mono); font-size: 13px; font-weight: 600; white-space: nowrap; }
+.s4-l[data-st="ok"] em { color: var(--green); }
+.s4-l[data-st="bad"] em, .s4-l[data-st="half"] em { color: var(--amber); }
+
+/* 手机快捷条 */
+.s4-bar {
+  position: fixed; left: 12px; right: 12px; bottom: max(12px, env(safe-area-inset-bottom, 0px)); z-index: 55;
+  max-width: 780px; margin: 0 auto; background: var(--surface); border: 1.5px solid var(--indigo); border-radius: 16px;
+  box-shadow: var(--shadow); padding: 10px 12px; display: grid; gap: 8px; animation: rise .25s both;
+}
+.s4-bar-t { font-size: 14px; color: var(--muted); }
+.s4-bar-t b { color: var(--ink); }
+.s4-bar-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.s4-bar-btns .btn { padding: 6px 12px; font-size: 13.5px; }
+
+.s4-res-top { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.s4-res-num { display: flex; align-items: baseline; gap: 6px; font-family: var(--font-mono); }
+.s4-res-num span:last-child { color: var(--muted); }
+.s4-res-top h3 { font-size: 19px; }
+.s4-res-top p { font-size: 15px; }
+.s4-res-list { margin: 0; padding-left: 1.2em; display: grid; gap: 8px; font-size: 15px; line-height: 1.7; }
+.s4-res-list span { display: block; color: var(--muted); font-size: 14px; }
+.s4-next { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.s4-next a.btn { text-decoration: none; }
+
+@media (max-width: 680px) {
+  .s4-branches { grid-template-columns: 1fr; padding-left: 26px; gap: 14px; }
+  .s4-tree { gap: 20px; }
+  .s4-root { max-width: none; }
+  .s4-z { min-height: 92px; }
+}
+</style>
+</head>
+<body data-page="sim-4">
+<header id="topbar"></header>
+<div class="ph"><div class="wrap">
+  <span class="eyebrow">站长模拟器 · 第 4 关 / 共 8 关</span>
+  <h1>第 4 关：搭结构</h1>
+  <p class="lead">词分好了，该画网站这棵树了：第一天上线哪几页，各挂在哪根枝上，哪些先放架子上以后再做。</p>
+</div></div>
+
+<main class="wrap">
+  <section class="kp" id="play">
+    <div class="sim-hud"><span class="lv">第 4 关</span><span>站：FramePop（示意）</span><span class="s4-last" id="s4-last" hidden></span><span class="pts">得分 <b id="s4-pts">0</b> / 100</span></div>
+    <div class="sim-task">
+      <span class="lab">本关任务</span>
+      <p>把 12 张页面卡安排好：<b>第一天上线的</b>挂到网站树上（首页在根上，其他挂到合适的枝上），<b>以后再做的</b>放进最下面的架子。全安排好了，点「上线检查」。</p>
+      <p class="s4-from" id="s4-from">没玩第 3 关也没关系：页面卡上的绿色小字，按第 3 关的默认答案标好了。</p>
+    </div>
+
+    <details class="s4-cheat">
+      <summary>忘了规矩？打开站长小抄</summary>
+      <ol>
+        <li>网站是一棵树：<b>首页在根上</b>，主打核心词；功能页挂在下一层，首页直接链过去。<span class="st hf">哥飞原话</span></li>
+        <li>第一天要有：首页（放工具）、1 个以上功能页、定价、关于、隐私政策、服务条款。<span class="st tl">推出来的</span></li>
+        <li>用途页、模板页、对比页、博客，之后按用户想干什么慢慢加。第 3 关说“单独做一页”的词，<b>不一定第一天就上</b>。<span class="st tl">推出来的</span></li>
+        <li>新站先上 10 个左右页面，看谷歌后台数据再加。<span class="st hf">哥飞原话</span></li>
+        <li>多语言最后再做。<span class="st sq">社群经验</span></li>
+        <li>工具别单独放在 app 开头的<button type="button" class="term" data-t="subdomain">子域名</button>，和介绍文字合在一页。<span class="st hf">哥飞原话</span></li>
+      </ol>
+      <p class="s4-more">讲得更细的在讲解页：<a href="s4-structure.html#k1">树状结构</a> · <a href="s4-structure.html#k2">第一天要哪些页</a> · <a href="s4-structure.html#k3">工具放哪</a></p>
+    </details>
+
+    <div class="viz s4-board" id="s4-board">
+      <div class="viz-head"><span class="viz-label">动手玩 · 把页面挂上树</span><p class="viz-title">挂上树的页，第一天就上线</p></div>
+      <p class="dd-hint">电脑上直接拖；手机上先点一下页面卡，再点要挂的位置（或者点底下弹出来的按钮）。</p>
+      <div class="dd-zone s4-pool" id="s4-pool" data-z="pool"><span class="dd-zone-head">页面卡 · 还剩 <b id="s4-left">12</b> 张没安排</span></div>
+
+      <div class="s4-decide" id="s4-decide" hidden>
+        <span class="lab">开发跑来问你</span>
+        <p>「工具我单独做在 app.framepop.com，要登录才能用；首页用建站工具做个介绍页，加个按钮跳过去。这样好做，行吗？」</p>
+        <div class="seg" id="s4-tool">
+          <button type="button" data-v="app">行，工具放 app.framepop.com，首页只放介绍</button>
+          <button type="button" data-v="same">不行，工具和介绍文字合在首页 framepop.com 一个页面里</button>
+          <button type="button" data-v="both">两边都放一份工具，保险</button>
+        </div>
+      </div>
+
+      <div class="s4-treebox">
+        <div class="s4-treehead"><b class="s4-dom">framepop.com</b><span class="s4-count">第一天上线：<b id="s4-n">0</b> 页</span></div>
+        <div class="s4-tree" id="s4-tree">
+          <svg class="s4-wires" id="s4-wires" aria-hidden="true"></svg>
+          <div class="dd-zone s4-root" data-z="root"><span class="dd-zone-head"><b>根 /</b><em id="s4-root-em">打开 framepop.com 看到的那一页（只放 1 页）</em></span></div>
+          <div class="s4-branches">
+            <div class="dd-zone s4-z" data-z="nav"><span class="dd-zone-head"><b>第二层 · 功能页</b><em>首页顶部导航直接链过去，各接一个功能词</em></span></div>
+            <div class="dd-zone s4-z" data-z="foot"><span class="dd-zone-head"><b>第二层 · 必备页</b><em>放在每页底部的页脚，给用户和收款平台看</em></span></div>
+            <div class="dd-zone s4-z" data-z="content"><span class="dd-zone-head"><b>内容页</b><em>模板、教程、对比、用途，挂在 /blog/ /vs/ /for/ 这些目录下</em></span></div>
+          </div>
+        </div>
+        <div class="s4-island" id="s4-island" hidden><b>app.framepop.com</b><span>工具搬到这儿了，要登录才能用</span><em>和上面那棵树没连在一起</em></div>
+      </div>
+
+      <div class="dd-zone s4-later" data-z="later"><span class="dd-zone-head"><b>以后再做</b> <em>不在第一天的树上，看谷歌后台数据再一批批加</em></span></div>
+
+      <div class="s4-btns">
+        <button type="button" class="btn primary big" id="s4-go" disabled>还剩 12 张没安排</button>
+        <button type="button" class="btn" data-s4-replay>重玩这一关</button>
+      </div>
+      <p class="viz-say" id="s4-say">先找首页：打开 framepop.com 看到的那一页，挂到根上。</p>
+      <div class="s4-check" id="s4-check" hidden><h3>上线检查</h3><ol class="s4-lights" id="s4-lights"></ol></div>
+    </div>
+  </section>
+
+  <section class="kp" id="s4-after" hidden>
+    <div class="kp-head"><span class="kp-no">结果</span><h2>上线检查做完了</h2></div>
+    <div class="sim-result" id="s4-result"></div>
+    <div class="quiz" data-answer="A">
+      <span class="q-tag">复盘题</span>
+      <p class="q-title">新站 FramePop 第一天上线，哪种安排最稳？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">首页（放工具）+ 1～2 个功能页 + 定价、关于、隐私、条款，十页以内，之后看数据再加</button>
+        <button class="q-opt" data-l="B">能想到的页面一口气全上，几百页一起铺，早收录早排名</button>
+        <button class="q-opt" data-l="C">先只上一个首页，定价、隐私这些等有人付钱了再补</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>B 错在“新站铺海量页面”：哥飞的原话是「新站搞海量页面必死」<span class="st hf">哥飞原话</span>。C 错在收款审核：收款平台审核时要看定价、隐私政策和服务条款，第一天就得有。具体哪天上哪页，是按资料推出来的排期 <span class="st tl">推出来的</span>。</p></div>
+    </div>
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://mp.weixin.qq.com/s/hTokwwXY_EMJp45N06e7Og">《AI SaaS 出海 SEO 活动回顾》</a><span class="meta">哥飞公众号转载的活动分享 · 2024-07-19</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/d2bbhguqe8">《精品工具页面的思路》</a><span class="meta">哥飞 · 2025-01-16</span></li>
+      <li><a href="https://mp.weixin.qq.com/s/X4lIBRE_tjjLNMhU1jfQdA">《新站批量化上页面，必死》</a><span class="meta">哥飞公众号 · 2025-03-20</span></li>
+      <li><a href="https://new.web.cafe/topic/bh3di61bwx">《复盘：第一个 AI 出海站，我做错了哪些事？》</a><span class="meta">孟健 · 2025-10-03</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/xlft7pezkb">《Woy.ai 案例拆解》</a><span class="meta">哥飞 · 2025-10-13</span></li>
+    </ul></div>
+    <div class="s4-next" id="s4-next" hidden><a class="btn primary big" href="sim-5.html">下一关：写首页 →</a><span class="muted" style="font-size:14px">树搭好了，下一关把最重要的首页写出来。</span></div>
+  </section>
+</main>
+
+<div class="s4-bar" id="s4-bar" hidden>
+  <p class="s4-bar-t">把 <b id="s4-bar-w"></b> 放到：</p>
+  <div class="s4-bar-btns">
+    <button type="button" class="btn" data-to="root">根 /</button>
+    <button type="button" class="btn" data-to="nav">功能页</button>
+    <button type="button" class="btn" data-to="foot">必备页</button>
+    <button type="button" class="btn" data-to="content">内容页</button>
+    <button type="button" class="btn" data-to="later">以后再做</button>
+    <button type="button" class="btn soft" data-to="pool">放回去</button>
+    <button type="button" class="btn" data-to="">取消</button>
+  </div>
+</div>
+
+<nav id="pager"></nav>
+<footer id="foot"></footer>
+<script src="assets/kit.js"></script>
+<script>
+(() => {
+  const { $, $$, el, svgEl, sleep, countUp, confetti, flip, dnd, rng, bindSeg, reduce, store, SIM } = KIT;
+
+  const P = Object.fromEntries(SIM.pages.map(p => [p.id, p]));
+  const W = Object.fromEntries(SIM.words.map(w => [w.w, w]));
+  const TREE = ['root', 'nav', 'foot', 'content'];
+  const BRANCH = ['nav', 'foot', 'content'];
+  const ZN = { root: '根', nav: '功能页', foot: '必备页', content: '内容页', later: '以后再做', pool: '没安排' };
+  const NEED = ['pricing', 'about', 'privacy', 'terms'];
+  const FUNC = ['i2v', 't2v'];
+  const CONTENT = ['prompts', 'howto', 'vs', 'tiktok'];
+  const WHEN = { prompts: '第 2～6 周', howto: '第 1 个月起', vs: '第 3～6 周', tiktok: '第 2～4 周' };
+  const NEEDWHY = {
+    pricing: '收款平台（比如 Stripe）审核时要看定价页，用户也要知道多少钱。',
+    about: '告诉用户和审核的人：谁在做这个站。',
+    privacy: '收款平台和谷歌广告都硬性要求有隐私政策。',
+    terms: '收款平台和谷歌广告都硬性要求有服务条款。',
+  };
+  const BEST = { home: 'root', i2v: 'nav', t2v: 'nav', pricing: 'foot', about: 'foot', privacy: 'foot', terms: 'foot', prompts: 'later', howto: 'later', vs: 'later', tiktok: 'later', es: 'later' };
+
+  const board = $('#s4-board'), pool = $('#s4-pool'), say = $('#s4-say'), pts = $('#s4-pts');
+  const goBtn = $('#s4-go'), bar = $('#s4-bar'), tree = $('#s4-tree'), wires = $('#s4-wires');
+  const after = $('#s4-after'), result = $('#s4-result'), decide = $('#s4-decide'), island = $('#s4-island');
+  const zoneOf = k => $(`.dd-zone[data-z="${k}"]`, board);
+  const cardOf = id => $(`.s4-card[data-id="${id}"]`, board);
+  const where = id => cardOf(id).parentElement.dataset.z;
+  const onTree = id => TREE.includes(where(id));
+  let locked = false, tool = null, seed = 5;
+
+  function talk(html, tone) {
+    say.className = 'viz-say' + (tone ? ' ' + tone : '');
+    say.innerHTML = html;
+  }
+
+  // ---------- 存档 ----------
+  const s3 = SIM.load('sim-3');
+  const s3placed = s3 && s3.placed;
+  if (s3placed) $('#s4-from').textContent = `页面卡上的绿色小字，是你在第 3 关（${s3.score} 分）给对应的词定的去处。`;
+  function paintLast() {
+    const last = SIM.load('sim-4');
+    $('#s4-last').hidden = !last;
+    if (last) $('#s4-last').textContent = `上次 ${last.score} 分`;
+  }
+  paintLast();
+
+  // ---------- 发牌 ----------
+  function cardHTML(p) {
+    let tag = '';
+    if (p.kw && W[p.kw]) {
+      const b = s3placed && s3placed[p.kw] ? s3placed[p.kw] : W[p.kw].bucket;
+      tag = `<span class="s4-c-tag">第 3 关${s3placed ? '' : '（默认）'}：${SIM.buckets[b]}</span>`;
+    }
+    return `<span class="s4-c-name">${p.name}</span><span class="s4-c-path">${p.path}</span>${p.kw ? `<span class="s4-c-kw">${p.kw}</span>` : ''}${tag}`;
+  }
+  function deal() {
+    $$('.s4-card', board).forEach(n => n.remove());
+    const r = rng(seed), list = SIM.pages.slice();
+    for (let i = list.length - 1; i > 0; i--) {
+      const j = Math.floor(r() * (i + 1));
+      [list[i], list[j]] = [list[j], list[i]];
+    }
+    list.forEach(p => pool.appendChild(el('button', { type: 'button', class: 'dd-item s4-card', 'data-id': p.id }, cardHTML(p))));
+  }
+
+  // ---------- 树枝：从根长到每根枝 ----------
+  const lit = { nav: false, foot: false, content: false };
+  const growUntil = {};
+  const paths = {};
+  BRANCH.forEach(k => { paths[k] = svgEl('path', { class: 'off' }, wires); });
+  function drawWires(grow) {
+    const t = tree.getBoundingClientRect();
+    if (!t.width) return;
+    const r = zoneOf('root').getBoundingClientRect();
+    const rects = BRANCH.map(k => zoneOf(k).getBoundingClientRect());
+    const narrow = rects[1].top > rects[0].top + 10;
+    BRANCH.forEach((k, i) => {
+      const b = rects[i], p = paths[k];
+      let d;
+      if (!narrow) {
+        const sx = r.left + r.width / 2 - t.left, sy = r.bottom - t.top;
+        const ex = b.left - t.left + 17, ey = b.top - t.top;
+        const my = sy + (ey - sy) / 2;
+        d = `M${sx} ${sy} V${my} H${ex} V${ey}`;
+      } else {
+        const sx = 12, sy = r.bottom - t.top;
+        d = `M${sx} ${sy} V${b.top - t.top + 24} H${b.left - t.left}`;
+      }
+      p.setAttribute('d', d);
+      const on = !!$('.s4-card', zoneOf(k));
+      p.setAttribute('class', on ? 'on' : 'off');
+      if (on && grow && !lit[k] && !reduce) {
+        const len = p.getTotalLength();
+        p.style.transition = 'none';
+        p.style.strokeDasharray = len;
+        p.style.strokeDashoffset = len;
+        p.getBoundingClientRect();
+        p.style.transition = 'stroke-dashoffset .7s ease';
+        p.style.strokeDashoffset = 0;
+        growUntil[k] = performance.now() + 750;
+      } else if (!(on && performance.now() < (growUntil[k] || 0))) {
+        p.style.transition = 'none';
+        p.style.strokeDasharray = on ? 'none' : '5 6';
+        p.style.strokeDashoffset = 0;
+      }
+      lit[k] = on;
+    });
+  }
+  if (window.ResizeObserver) new ResizeObserver(() => drawWires(false)).observe(tree);
+  addEventListener('resize', () => drawWires(false));
+
+  function paint(grow) {
+    BRANCH.forEach(k => zoneOf(k).classList.toggle('s4-has', !!$('.s4-card', zoneOf(k))));
+    const n = TREE.reduce((s, k) => s + $$('.s4-card', zoneOf(k)).length, 0);
+    $('#s4-n').textContent = n;
+    const left = $$('.s4-card', pool).length;
+    $('#s4-left').textContent = left;
+    if (!locked) {
+      goBtn.disabled = left > 0;
+      goBtn.textContent = left ? `还剩 ${left} 张没安排` : '上线检查';
+    }
+    drawWires(grow);
+    return { n, left };
+  }
+
+  // ---------- 工具放哪 ----------
+  function setTool(v) {
+    tool = v;
+    $$('#s4-tool button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === v)));
+    island.hidden = !(v === 'app' || v === 'both');
+    $('#s4-root-em').textContent = v === 'same' ? '打开 framepop.com 看到的那一页：工具 + 介绍文字合在这儿'
+      : v === 'app' ? '打开 framepop.com 看到的那一页：只剩介绍文字，工具搬走了'
+      : v === 'both' ? '打开 framepop.com 看到的那一页：也放了一份工具'
+      : '打开 framepop.com 看到的那一页（只放 1 页）';
+    drawWires(false);
+  }
+  bindSeg($('#s4-tool'), v => {
+    if (locked) return;
+    setTool(v);
+    talk(v === 'same' ? '定了：工具和介绍合在首页。接着把别的页挂上去。'
+      : v === 'app' ? '定了：工具放 app.framepop.com。看树下面多出来的那块。'
+      : '定了：两边都放一份。看树下面多出来的那块。');
+  });
+  function askTool() {
+    if (!decide.hidden) return;
+    decide.hidden = false;
+    drawWires(false);
+  }
+
+  // ---------- 拖一拖 ----------
+  const dd = dnd(board, {
+    items: '.s4-card',
+    zones: '.dd-zone',
+    accept(item, zone) {
+      if (zone.dataset.z === 'root' && $('.s4-card', zone)) {
+        talk('<b>根上只能放 1 页</b>：打开 framepop.com 只会看到一个页面。想换，先把上面那张拖走。', 'bad');
+        setTimeout(() => item.classList.remove('wrong'), 500);
+        return false;
+      }
+      return true;
+    },
+    onMove(item, zone) {
+      const k = zone.dataset.z, p = P[item.dataset.id];
+      if (BRANCH.includes(k)) {
+        item.classList.add('s4-new');
+        setTimeout(() => item.classList.remove('s4-new'), 900);
+      }
+      const { n, left } = paint(true);
+      if (k === 'root') askTool();
+      if (k === 'pool') { talk(`<b>${p.name}</b> 放回去了。`); return; }
+      let msg = `<b>${p.name}</b> → 「${ZN[k]}」。`;
+      if (k === 'root' && !tool) msg += '开发跑来问你一件事，看上面的黄框。';
+      else if (TREE.includes(k)) msg += `第一天上线 ${n} 页。`;
+      if (!left) msg += tool ? '全安排好了，点「上线检查」。' : '全安排好了。先回答开发的问题（黄框），再点「上线检查」。';
+      talk(msg);
+    },
+  });
+
+  // 上线检查以后：锁住，不让再拖
+  board.addEventListener('pointerdown', e => {
+    if (locked && e.target.closest('.s4-card')) e.stopImmediatePropagation();
+  }, true);
+  board.addEventListener('keydown', e => {
+    if (locked && e.target.closest('.s4-card')) e.stopImmediatePropagation();
+  }, true);
+
+  // ---------- 手机快捷条 ----------
+  function syncBar() {
+    const item = $('.s4-card.picked', board);
+    if (!item || locked) { bar.hidden = true; return; }
+    bar.hidden = false;
+    $('#s4-bar-w').textContent = P[item.dataset.id].name;
+    const here = item.parentElement.dataset.z;
+    $$('[data-to]', bar).forEach(b => { b.hidden = b.dataset.to !== '' && b.dataset.to === here; });
+  }
+  const later = () => setTimeout(syncBar, 0);
+  board.addEventListener('click', later);
+  board.addEventListener('keydown', later);
+  addEventListener('pointerup', later);
+  $$('[data-to]', bar).forEach(b => b.addEventListener('click', () => {
+    const item = $('.s4-card.picked', board);
+    if (!item) { syncBar(); return; }
+    if (b.dataset.to) dd.moveTo(item, zoneOf(b.dataset.to)); else dd.unpick();
+    syncBar();
+  }));
+
+  // ---------- 判分：每一盏灯 ----------
+  function evaluate() {
+    const rows = [];
+    const push = (label, got, max, why) => rows.push({ label, got, max, why, st: got >= max ? 'ok' : got > 0 ? 'half' : 'bad' });
+    const rootCard = $('.s4-card', zoneOf('root'));
+    if (where('home') === 'root') push('根上是首页', 15, 15, '打开 framepop.com 就是首页，主打 lumibo video generator。');
+    else push('根上不是首页', 0, 15, rootCard ? `根上挂的是「${P[rootCard.dataset.id].name}」。打开 framepop.com 看到的必须是首页，它主打核心词。` : '根上空着。打开 framepop.com 看到的必须是首页。');
+
+    NEED.forEach(id => {
+      if (onTree(id)) push(`${P[id].name}上线了`, 6, 6, NEEDWHY[id]);
+      else push(`缺${P[id].name}`, 0, 6, '收款审核会卡：' + NEEDWHY[id]);
+    });
+
+    let fp = 0;
+    const fnote = [];
+    FUNC.forEach(id => {
+      const z = where(id), other = FUNC.find(x => x !== id);
+      if (z === 'nav') fp += 8;
+      else if (z === 'foot' || z === 'content') { fp += 4; fnote.push(`${P[id].name}挂在「${ZN[z]}」，功能页要挂在首页下一层的导航里`); }
+      else if (z === 'later' && onTree(other)) { fp += 4; fnote.push(`${P[id].name}留到以后也说得通，第一天至少有 1 个功能页就行`); }
+      else if (z === 'later') fnote.push(`${P[id].name}没上`);
+      else fnote.push(`${P[id].name}挂在了根上，把首页挤走了`);
+    });
+    if (!FUNC.some(onTree)) fnote.unshift('第一天一个功能页都没有，至少要上 1 个');
+    push('功能页挂在第二层', fp, 16, fp === 16 ? '图生视频、文生视频挂在首页下面，首页导航直接链过去。' : fnote.join('；') + '。');
+
+    if (onTree('es')) push('多语言上早了', 0, 8, '西班牙语版第一天就上了。孟健第一个站一上来就做多语言，复杂度翻倍；Woy.ai 批量上低质量多语言页，被砍到只剩首页。');
+    else push('多语言先没做', 8, 8, '西班牙语版放在以后，看数据再说。');
+
+    const n = TREE.reduce((s, k) => s + $$('.s4-card', zoneOf(k)).length, 0);
+    if (n <= 10) push(`第一天 ${n} 页，没铺太多`, 10, 10, '新站先上 10 个左右页面，看谷歌后台数据再慢慢加。');
+    else push(`第一天铺了 ${n} 页`, 0, 10, '新站别一口气铺：先上 10 个左右，看谷歌后台数据再慢慢加。');
+
+    let cp = 0;
+    const cnote = [];
+    CONTENT.forEach(id => {
+      const z = where(id);
+      if (z === 'later') cp += 3;
+      else if (z === 'content') { cp += 1.5; cnote.push(`${P[id].name}第一天就上也行，按节奏是${WHEN[id]}再加`); }
+      else cnote.push(`${P[id].name}挂在了「${ZN[z]}」，它是内容页`);
+    });
+    push('内容页按节奏慢慢加', cp, 12, cp === 12 ? '模板、教程、对比、用途页都留到以后，看用户想干什么再一批批加。' : cnote.join('；') + '。');
+
+    if (tool === 'same') push('工具和介绍在同一个网站', 15, 15, '工具和介绍文字合在首页，全站都在 framepop.com 一个域名下。');
+    else if (tool === 'app') push('工具放到了 app 子域名', 0, 15, '工具放 app.framepop.com，首页只剩介绍：「在谷歌眼里，就相当于是两个网站」。用户在 app 那边用，拿流量的却是这边。');
+    else push('两边各放一份工具', 0, 15, '还是多出一个 app 子域名，谷歌眼里是两个网站；两份工具也把用户分散了。');
+
+    const score = Math.round(rows.reduce((s, r) => s + r.got, 0));
+    return { rows, score, n };
+  }
+
+  // ---------- 上线检查 ----------
+  async function launch() {
+    if (locked) return;
+    if (!tool) {
+      askTool();
+      talk('开发还等着你回答：<b>工具放哪？</b>在黄框里选一个，再点「上线检查」。', 'bad');
+      decide.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
+      return;
+    }
+    locked = true;
+    dd.unpick();
+    syncBar();
+    goBtn.disabled = true;
+    goBtn.textContent = '检查中……';
+    $$('#s4-tool button').forEach(b => { b.disabled = true; });
+    $('.s4-treebox').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    talk('谷歌爬虫从首页出发，顺着树枝把第一天的页面走一遍……');
+    await sleep(500);
+    for (const k of TREE) {
+      for (const c of $$('.s4-card', zoneOf(k))) {
+        c.classList.add('s4-visit');
+        setTimeout(() => c.classList.remove('s4-visit'), 700);
+        await sleep(170);
+      }
+    }
+    if (!island.hidden) {
+      island.classList.remove('s4-lost');
+      void island.offsetWidth;
+      island.classList.add('s4-lost');
+      talk('爬虫走完了树，可没走到 <b>app.framepop.com</b>：在谷歌眼里，那是另一个网站。', 'bad');
+      await sleep(900);
+    }
+    const { rows, score, n } = evaluate();
+    const box = $('#s4-check'), list = $('#s4-lights');
+    list.innerHTML = '';
+    box.hidden = false;
+    box.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    talk('上线检查一条条亮灯……');
+    let sum = 0;
+    for (const r of rows) {
+      const li = el('li', { class: 's4-l' }, `<i class="s4-dot"></i><div><b>${r.label}</b><span>${r.why}</span></div><em>+${+r.got.toFixed(1)} / ${r.max}</em>`);
+      list.appendChild(li);
+      await sleep(220);
+      li.dataset.st = r.st;
+      sum += r.got;
+      countUp(pts, Math.round(sum), 260);
+      await sleep(r.st === 'ok' ? 160 : 420);
+    }
+    const day1 = TREE.flatMap(k => $$('.s4-card', zoneOf(k)).map(c => c.dataset.id));
+    SIM.save('sim-4', score, 100, { day1, tool, misses: rows.filter(r => r.st !== 'ok').map(r => r.label) });
+    goBtn.textContent = '检查完了';
+    const bad = rows.filter(r => r.st !== 'ok').length;
+    talk(bad ? `检查完了：${bad} 盏灯亮了提醒。往下看结果。` : '全部绿灯！这棵树可以上线了。', bad ? 'bad' : 'good');
+    showResult(score, rows, n);
+  }
+  goBtn.addEventListener('click', launch);
+
+  function showResult(score, rows, n) {
+    const verdict = score === 100 ? ['满分！', '第一天的树搭得又稳又干净，收款审核和谷歌都挑不出毛病。']
+      : score >= 80 ? ['很稳，差一点点', '大结构对了，看看下面亮灯的地方。']
+      : score >= 60 ? ['能上线，但有坑', '几个地方会拖后腿，对照理由改一改。']
+      : ['先别上线', '对着站长小抄再搭一遍。'];
+    const misses = rows.filter(r => r.st !== 'ok');
+    const tooMany = n > 10;
+    result.className = 'sim-result' + (score < 60 ? ' meh' : '');
+    result.innerHTML = `
+      <div class="s4-res-top">
+        <div class="s4-res-num"><span class="big-num" id="s4-big">0</span><span>/ 100</span></div>
+        <div><h3>${verdict[0]}</h3><p>${verdict[1]}</p></div>
+      </div>
+      ${misses.length ? `<h3>亮灯的地方</h3><ul class="s4-res-list">${misses.map(r => `<li><b>${r.label}</b>（${+r.got.toFixed(1)} / ${r.max}）<span>${r.why}</span></li>`).join('')}</ul>` : ''}
+      ${tooMany ? '<blockquote class="said"><p>「新站搞海量页面必死」</p><span class="who">哥飞 · 2025-03-07 · 《再聊精品工具站》</span></blockquote>' : ''}
+      <p style="font-size:14.5px" class="muted">哪些页第一天要有，来自哥飞转载的活动分享；具体哪周上哪页，是按资料推出来的排期 <span class="st tl">推出来的</span></p>
+      <p style="font-size:15px">回去复习：<a href="s4-structure.html#k1">树状结构</a> · <a href="s4-structure.html#k2">第一天要哪些页</a> · <a href="s4-structure.html#k3">工具放哪</a> · <a href="s4-structure.html#k4">别一口气铺页面</a></p>
+      <div class="s4-btns"><button type="button" class="btn soft" id="s4-show">看推荐摆法</button><button type="button" class="btn" id="s4-ff" hidden>快进到第 6 周</button><button type="button" class="btn" data-s4-replay>重玩这一关</button></div>`;
+    after.hidden = false;
+    paintLast();
+    countUp($('#s4-big'), score, 900);
+    $('[data-s4-replay]', result).addEventListener('click', replayLevel);
+    $('#s4-show').addEventListener('click', showBest);
+    $('#s4-ff').addEventListener('click', fastForward);
+    setTimeout(() => {
+      result.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
+      if (score === 100) confetti(result);
+    }, 300);
+    paintNext();
+  }
+
+  // 推荐摆法：卡片滑回该去的位置，树枝重新长一遍
+  function moveAll(target) {
+    const all = $$('.s4-card', board);
+    flip(all, () => all.forEach(c => {
+      const z = target[c.dataset.id];
+      if (z && c.parentElement.dataset.z !== z) {
+        zoneOf(z).appendChild(c);
+        if (BRANCH.includes(z)) {
+          c.classList.add('s4-new');
+          setTimeout(() => c.classList.remove('s4-new'), 900);
+        }
+      }
+    }), 800);
+    paint(true);
+  }
+  function showBest(e) {
+    e.currentTarget.disabled = true;
+    setTool('same');
+    moveAll(BEST);
+    $('#s4-ff').hidden = false;
+    talk('推荐摆法：首页在根上（工具 + 介绍合一），两个功能页挂在导航，四个必备页挂在页脚，第一天一共 7 页。内容页和西班牙语版都在架子上等着。', 'good');
+    $('.s4-treebox').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+  }
+  async function fastForward(e) {
+    e.currentTarget.disabled = true;
+    $('.s4-treebox').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    for (const id of ['tiktok', 'prompts', 'vs', 'howto']) {
+      if (where(id) === 'content') continue;
+      moveAll({ [id]: 'content' });
+      talk(`${WHEN[id]}：<b>${P[id].name}</b>挂上树了。看谷歌后台数据，一批批加。<span class="st tl">推出来的</span>`);
+      await sleep(1100);
+    }
+    talk('快进到第 6 周：树上 11 页，是一页页加上去的，不是第一天一口气铺的。西班牙语版还在架子上，等后台显示真有西语国家的人来再说。', 'good');
+  }
+
+  // ---------- 复盘题答完，亮出下一关 ----------
+  function paintNext() {
+    $('#s4-next').hidden = !store.get('quiz.sim-4', {})[0] || after.hidden;
+  }
+  $$('#s4-after .q-opt').forEach(o => o.addEventListener('click', () => setTimeout(paintNext, 0)));
+
+  // ---------- 重玩 ----------
+  function replayLevel() {
+    locked = false;
+    seed += 1;
+    deal();
+    tool = null;
+    $$('#s4-tool button').forEach(b => { b.disabled = false; b.setAttribute('aria-pressed', 'false'); });
+    setTool(null);
+    decide.hidden = true;
+    pts.dataset.val = 0;
+    pts.textContent = '0';
+    $('#s4-check').hidden = true;
+    $('#s4-lights').innerHTML = '';
+    after.hidden = true;
+    result.innerHTML = '';
+    paint(false);
+    talk('重新开始。先找首页：打开 framepop.com 看到的那一页，挂到根上。');
+    board.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+  }
+  $('[data-s4-replay]', board).addEventListener('click', replayLevel);
+
+  deal();
+  paint(false);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1048 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>第 7 步 做工具、收订阅 · AI 新词站白话课</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<style>
+/* 第 7 步专用。示意画面（夜空、月亮、小猫）的颜色 */
+:root { --s7-sky: #22325F; --s7-moon: #F4E3B5; --s7-star: #FFFFFF; --s7-hill2: #3B5598; --s7-hill1: #2A6F4F; --s7-cat: #10152A; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --s7-sky: #1B2340; --s7-moon: #E2C98A; --s7-star: #E6E9F1; --s7-hill2: #2E4380; --s7-hill1: #2F6B50; --s7-cat: #0B0E16; }
+}
+:root[data-theme="dark"] { --s7-sky: #1B2340; --s7-moon: #E2C98A; --s7-star: #E6E9F1; --s7-hill2: #2E4380; --s7-hill1: #2F6B50; --s7-cat: #0B0E16; }
+
+/* 知识点 1：三条路 */
+.s7-routes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 620px) { .s7-routes { grid-template-columns: 1fr; } }
+.s7-route {
+  font: inherit; text-align: left; display: grid; gap: 2px; padding: 12px 14px; border-radius: 14px; cursor: pointer;
+  border: 1.5px solid var(--line); background: var(--bg); color: var(--ink); transition: border-color .2s, background .2s;
+}
+.s7-route:hover { border-color: var(--indigo); }
+.s7-route[aria-pressed="true"] { border-color: var(--indigo); background: var(--indigo-soft); }
+.s7-route .s7-r-no { font-family: var(--font-mono); font-size: 12px; color: var(--indigo); }
+.s7-route b { font-size: 16px; line-height: 1.5; }
+.s7-route .s7-r-sub { font-size: 12.5px; color: var(--muted); font-family: var(--font-mono); line-height: 1.5; }
+.s7-time { position: relative; height: 60px; margin: 0 24px; }
+.s7-time-axis { position: absolute; left: 0; right: 0; top: 26px; height: 6px; border-radius: 3px; background: var(--line); }
+.s7-time-bar {
+  position: absolute; top: 22px; height: 14px; min-width: 14px; border-radius: 7px; background: var(--indigo);
+  transition: left .8s cubic-bezier(.3, .7, .3, 1), width .8s cubic-bezier(.3, .7, .3, 1);
+}
+.s7-time-tick { position: absolute; top: 40px; transform: translateX(-50%); font-family: var(--font-mono); font-size: 11px; color: var(--muted); white-space: nowrap; }
+.s7-time-cap { font-size: 12.5px; font-weight: 700; color: var(--muted); margin-bottom: -8px; }
+.s7-time-pin { position: absolute; top: 0; transform: translateX(-50%); font-size: 11.5px; font-weight: 700; color: var(--green); white-space: nowrap; line-height: 1.2; }
+.s7-time-pin::after { content: ""; position: absolute; left: 50%; top: 15px; width: 2px; height: 22px; background: var(--green); }
+.s7-rd { display: grid; gap: 10px; }
+.s7-rd.enter > * { animation: rise .35s both; }
+.s7-rd-row { display: grid; grid-template-columns: 5em 1fr; gap: 10px; align-items: baseline; font-size: 15px; line-height: 1.75; }
+.s7-rd-row > span:first-child { font-size: 12.5px; font-weight: 700; color: var(--muted); }
+@media (max-width: 480px) { .s7-rd-row { grid-template-columns: 1fr; gap: 0; } }
+
+/* 知识点 1：第一版放什么 */
+.s7-v1-zones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 560px) { .s7-v1-zones { grid-template-columns: 1fr; } }
+.s7-v1-zones .dd-zone[data-z="now"] .dd-zone-head { color: var(--indigo); }
+#s7-v1 .dd-item { font-family: var(--font-body); }
+#s7-v1 .dd-item:disabled { color: var(--ink); cursor: default; }
+.s7-row-end { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+
+/* 知识点 2：拼装 */
+.s7-asm { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 56px; align-items: stretch; padding: 4px 0; }
+.s7-blk {
+  position: relative; display: grid; gap: 8px; align-content: start; padding: 12px; border-radius: 16px; background: var(--bg);
+  border: 1.5px dashed var(--line); transition: transform .8s cubic-bezier(.3, .7, .3, 1), border-color .4s;
+}
+.s7-blk.theirs { border-color: var(--amber); }
+.s7-blk.ours { border-color: var(--indigo); }
+.s7-asm.joined .s7-blk { border-style: solid; }
+.s7-asm.joined .s7-blk.theirs { transform: translateX(28px); }
+.s7-asm.joined .s7-blk.ours { transform: translateX(-28px); }
+.s7-blk-tag { justify-self: start; font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 999px; }
+.theirs .s7-blk-tag { background: var(--amber-soft); color: var(--amber); }
+.ours .s7-blk-tag { background: var(--indigo-soft); color: var(--indigo); }
+.s7-joint {
+  position: absolute; left: 0; top: 14px; transform: translate(-50%, -50%) scale(.4); opacity: 0; z-index: 2;
+  font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: var(--indigo); color: var(--on-indigo);
+  white-space: nowrap; transition: opacity .4s .5s, transform .4s .5s;
+}
+.s7-asm.joined .s7-joint { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+.s7-plats { display: flex; flex-wrap: wrap; gap: 6px; }
+.s7-plats button { font-size: 12.5px; padding: 5px 10px; }
+.s7-plats button[aria-pressed="true"] { background: var(--amber); border-color: var(--amber); color: var(--surface); }
+.s7-mcard { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; align-items: center; padding: 10px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); }
+.s7-mcard b { font-size: 15px; }
+.s7-mcard small { grid-column: 2; font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+.s7-gear { grid-row: span 2; width: 30px; height: 30px; border-radius: 50%; border: 4px dotted var(--amber); }
+.s7-mcard.busy .s7-gear { animation: s7spin 1s linear infinite; }
+.s7-mst { font-family: var(--font-mono); font-size: 12.5px; color: var(--amber); }
+@keyframes s7spin { to { transform: rotate(360deg); } }
+.s7-browser { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); overflow: hidden; display: grid; }
+.s7-bbar { display: flex; align-items: center; gap: 5px; padding: 6px 10px; border-bottom: 1px solid var(--line); font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
+.s7-bbar i { width: 7px; height: 7px; border-radius: 50%; background: var(--line); }
+.s7-bbar span { margin-left: 6px; }
+.s7-bbody { display: grid; gap: 8px; padding: 10px 12px 12px; }
+.s7-bbody h4 { margin: 0; font-size: 14.5px; font-family: var(--font-display); }
+.s7-inrow { display: grid; grid-template-columns: 1fr auto; gap: 6px; }
+.s7-in { min-height: 34px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); font-family: var(--font-mono); font-size: 12.5px; color: var(--ink); overflow-wrap: anywhere; }
+.s7-in:empty::before { content: "描述你想要的视频……"; color: var(--muted); }
+.s7-go { align-self: start; font-size: 12.5px; font-weight: 700; padding: 7px 10px; border-radius: 8px; background: var(--indigo); color: var(--on-indigo); white-space: nowrap; }
+.s7-go.press { animation: pulse 1s 2; }
+.s7-out { position: relative; aspect-ratio: 16 / 9; border-radius: 8px; border: 1px dashed var(--line); background: var(--bg); display: grid; place-items: center; overflow: hidden; font-size: 12.5px; color: var(--muted); }
+.s7-out svg { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity .5s; }
+.s7-out.done { border-style: solid; }
+.s7-out.done svg { opacity: 1; }
+.s7-out .s7-cost { position: absolute; right: 6px; bottom: 6px; font-family: var(--font-mono); font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--amber-soft); color: var(--amber); opacity: 0; transition: opacity .4s .3s; }
+.s7-out.done .s7-cost { opacity: 1; }
+.s7-plat-note { font-size: 14px; color: var(--muted); line-height: 1.7; }
+.s7-plat-note b { color: var(--amber); }
+@media (max-width: 640px) {
+  .s7-asm { grid-template-columns: 1fr; gap: 44px; }
+  .s7-asm.joined .s7-blk.theirs { transform: translateY(22px); }
+  .s7-asm.joined .s7-blk.ours { transform: translateY(-22px); }
+  .s7-joint { left: 50%; top: 0; }
+}
+
+/* 知识点 3：算账器 */
+.s7-sliders { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 22px; }
+@media (max-width: 560px) { .s7-sliders { grid-template-columns: 1fr; } }
+.s7-sl-top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.s7-sl-top output { font-family: var(--font-mono); font-weight: 600; color: var(--indigo); white-space: nowrap; }
+.s7-fail { display: flex; gap: 8px; align-items: flex-start; font-size: 14.5px; line-height: 1.6; padding: 10px 12px; border-radius: 12px; background: var(--amber-soft); cursor: pointer; }
+.s7-fail input { accent-color: var(--amber); width: 17px; height: 17px; margin: 3px 0 0; flex: none; }
+.s7-fail b { color: var(--amber); }
+.s7-bars { display: grid; gap: 10px; }
+.s7-bar-row { display: grid; grid-template-columns: 4.6em minmax(0, 1fr) 5.6em; gap: 10px; align-items: center; font-size: 14px; }
+.s7-bar-row b { font-family: var(--font-mono); text-align: right; white-space: nowrap; }
+.s7-bar-track { height: 22px; border-radius: 6px; background: var(--bg); overflow: hidden; display: flex; }
+.s7-bar-track i { display: block; height: 100%; width: 0; transition: width .5s; }
+.s7-seg-rev { background: var(--green); }
+.s7-seg-free { background: var(--amber); }
+.s7-seg-paid { background: color-mix(in srgb, var(--amber) 55%, var(--surface)); }
+.s7-seg-fee { background: var(--muted); }
+.s7-net { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.s7-net .big-num.win { color: var(--green); }
+.s7-net .big-num.lose { color: var(--amber); }
+.s7-verdict { font-weight: 700; }
+.s7-facts { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; font-size: 14.5px; line-height: 1.7; }
+.s7-facts b { font-family: var(--font-mono); color: var(--indigo); }
+
+/* 知识点 3：年付 */
+.s7-chain { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 14px; }
+.s7-chain span { padding: 5px 10px; border-radius: 10px; background: var(--bg); border: 1px solid var(--line); line-height: 1.5; }
+.s7-chain span.end { background: var(--indigo-soft); border-color: var(--indigo); color: var(--indigo); font-weight: 650; }
+.s7-chain em { font-style: normal; color: var(--muted); }
+.s7-yr-dots { display: grid; grid-template-columns: repeat(20, 1fr); gap: 4px; max-width: 360px; }
+.s7-yr-dots i { aspect-ratio: 1; border-radius: 50%; background: var(--indigo-soft); border: 1.5px solid var(--indigo); transition: background .3s, border-color .3s; }
+.s7-yr-dots i.yr { background: var(--green); border-color: var(--green); }
+.s7-yr-sum { display: grid; gap: 2px; font-size: 14.5px; line-height: 1.7; }
+.s7-yr-sum b { font-family: var(--font-mono); }
+.s7-yr-total { font-family: var(--font-mono); font-size: 26px; font-weight: 600; color: var(--green); }
+
+/* 知识点 4：预览图 */
+.s7-pv { display: grid; justify-items: center; gap: 10px; }
+.s7-pv-frame { position: relative; width: 100%; max-width: 520px; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); transition: max-width .7s cubic-bezier(.3, .7, .3, 1); }
+.s7-pv.free .s7-pv-frame { max-width: 230px; }
+.s7-scene { display: block; width: 100%; height: auto; transition: filter .6s; }
+.s7-pv.free .s7-scene { filter: blur(1.4px) saturate(.75); }
+.s7-pv-wm { position: absolute; inset: 0; display: grid; align-content: center; justify-items: center; gap: 18px; pointer-events: none; opacity: 0; transition: opacity .5s; }
+.s7-pv.free .s7-pv-wm { opacity: 1; }
+.s7-pv-wm span {
+  transform: rotate(-20deg); font-size: 13px; font-weight: 800; letter-spacing: .08em; white-space: nowrap; padding: 1px 8px; border-radius: 4px;
+  background: color-mix(in srgb, var(--ink) 45%, transparent); color: var(--surface);
+}
+.s7-pv-cap { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: center; font-size: 14px; }
+.s7-pv-cap .chip { font-family: var(--font-body); }
+
+/* 知识点 4：Niko 的引导 */
+.s7-fn-nums { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 560px) { .s7-fn-nums { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.s7-fn-num { background: var(--bg); border-radius: 12px; padding: 10px 12px; display: grid; gap: 0; align-content: start; }
+.s7-fn-num b { font-family: var(--font-mono); font-size: 22px; line-height: 1.3; }
+.s7-fn-num span { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+.s7-fn-num.order b { color: var(--amber); }
+.s7-fn-num.order.got { background: var(--green-soft); }
+.s7-fn-num.order.got b { color: var(--green); }
+.s7-path { position: relative; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 28px; padding: 10px 0 34px; }
+.s7-node {
+  position: relative; padding: 10px 6px; border-radius: 12px; border: 1.5px dashed var(--line); background: var(--surface);
+  text-align: center; font-size: 14.5px; font-weight: 650; color: var(--muted); line-height: 1.4; transition: border-color .3s, background .3s, color .3s;
+}
+.s7-node::after { content: "→"; position: absolute; right: -22px; top: 50%; transform: translateY(-50%); color: var(--line); font-weight: 700; }
+.s7-node:last-of-type::after { content: none; }
+.s7-node.lit { border-style: solid; border-color: var(--indigo); background: var(--indigo-soft); color: var(--indigo); }
+.s7-node.lit::after { color: var(--indigo); }
+.s7-lost {
+  position: absolute; left: 0; top: 100%; margin-top: 6px; font-size: 12.5px; font-weight: 700; color: var(--amber); white-space: nowrap;
+  background: var(--amber-soft); padding: 2px 8px; border-radius: 999px; transition: opacity .3s;
+}
+.s7-path.fixed .s7-lost { opacity: 0; }
+.s7-walker { position: absolute; left: 0; top: 0; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 0 4px var(--amber-soft); opacity: 0; pointer-events: none; z-index: 2; }
+@media (max-width: 560px) {
+  .s7-path { grid-template-columns: 1fr; gap: 24px; padding-bottom: 30px; }
+  .s7-node::after { content: "↓"; right: auto; left: 50%; top: auto; bottom: -24px; transform: translateX(-50%); }
+  .s7-lost { left: auto; right: 0; top: 50%; margin: 0; transform: translateY(-50%); }
+}
+
+/* 知识点 5：问答小路 */
+.s7-lad { display: grid; }
+.s7-lrow { display: grid; grid-template-columns: minmax(0, 1.15fr) 56px minmax(0, 1fr); align-items: center; }
+.s7-q { display: grid; gap: 8px; padding: 10px 12px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--surface); transition: border-color .3s, opacity .3s, box-shadow .3s; }
+.s7-q p { font-weight: 650; font-size: 15.5px; line-height: 1.5; }
+.s7-q.cur { border-color: var(--indigo); box-shadow: 0 0 0 3px color-mix(in srgb, var(--indigo) 22%, transparent); }
+.s7-q.past { border-color: var(--indigo); }
+.s7-q .seg button { padding: 5px 16px; }
+.s7-q .s7-picked { font-size: 13px; font-weight: 700; color: var(--indigo); }
+.s7-yes, .s7-no { position: relative; }
+.s7-yes { height: 30px; }
+.s7-yes::before, .s7-yes::after { content: ""; position: absolute; left: 4px; right: 4px; top: 50%; height: 3px; margin-top: -1.5px; border-radius: 2px; background: var(--line); }
+.s7-yes::after { background: var(--indigo); transform: scaleX(0); transform-origin: left; transition: transform .5s; }
+.s7-yes.on::after { transform: scaleX(1); }
+.s7-yes span, .s7-no span { position: absolute; font-size: 12px; font-weight: 700; color: var(--muted); }
+.s7-yes span { left: 50%; top: -6px; transform: translateX(-50%); }
+.s7-no { height: 30px; margin-left: 34px; width: 3px; }
+.s7-no::before, .s7-no::after { content: ""; position: absolute; left: 0; top: 2px; bottom: 2px; width: 3px; border-radius: 2px; background: var(--line); }
+.s7-no::after { background: var(--indigo); transform: scaleY(0); transform-origin: top; transition: transform .5s; }
+.s7-no.on::after { transform: scaleY(1); }
+.s7-no span { left: 12px; top: 50%; transform: translateY(-50%); white-space: nowrap; }
+.s7-res { display: grid; gap: 2px; padding: 10px 12px; border-radius: 14px; border: 1.5px dashed var(--line); background: var(--bg); opacity: .6; transition: opacity .3s, border-color .3s, background .3s; }
+.s7-res b { font-size: 15px; }
+.s7-res span { font-size: 13px; color: var(--muted); line-height: 1.5; }
+.s7-res.hit { opacity: 1; border-style: solid; border-color: var(--green); background: var(--green-soft); animation: pop .45s; }
+.s7-lad.done .s7-q:not(.past) { opacity: .45; }
+.s7-lend { margin-right: auto; }
+.s7-lad-detail { display: grid; gap: 8px; padding: 14px 16px; border-radius: 14px; background: var(--bg); font-size: 15px; line-height: 1.75; }
+.s7-lad-detail.enter > * { animation: rise .35s both; }
+.s7-lad-detail b { color: var(--green); }
+@media (max-width: 560px) {
+  .s7-lrow { grid-template-columns: 1fr; }
+  .s7-yes { height: 26px; margin-left: 34px; width: 3px; }
+  .s7-yes::before, .s7-yes::after { left: 0; right: auto; top: 2px; bottom: 2px; width: 3px; height: auto; margin: 0; }
+  .s7-yes::after { transform: scaleY(0); transform-origin: top; }
+  .s7-yes.on::after { transform: scaleY(1); }
+  .s7-yes span { left: 12px; top: 50%; transform: translateY(-50%); }
+  .s7-res { margin-left: 18px; }
+}
+
+/* 知识点 5：Creem 小账、两种说法、200 笔 */
+.s7-fee { display: grid; gap: 8px; }
+.s7-fee-out { font-size: 15px; line-height: 1.7; }
+.s7-fee-out b { font-family: var(--font-mono); color: var(--green); }
+.s7-fee-out em { font-style: normal; font-family: var(--font-mono); color: var(--amber); font-weight: 600; }
+.s7-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 560px) { .s7-two { grid-template-columns: 1fr; } }
+.s7-two > div { padding: 12px 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); display: grid; gap: 4px; font-size: 14.5px; line-height: 1.7; }
+.s7-two .who { font-size: 12.5px; font-weight: 700; color: var(--muted); }
+.s7-dots200 { display: grid; grid-template-columns: repeat(25, 1fr); gap: 3px; max-width: 300px; }
+.s7-dots200 i { aspect-ratio: 1; border-radius: 50%; background: var(--green); opacity: .55; }
+.s7-dots200 i.bad { background: var(--amber); opacity: 1; transform: scale(1.5); }
+.s7-facts-list { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
+</style>
+</head>
+<body data-page="s7">
+<header id="topbar"></header>
+
+<div class="ph"><div class="wrap">
+  <span class="eyebrow">第 7 步 / 共 8 步 · 只给你指个路，不教写代码</span>
+  <h1>做工具、收订阅</h1>
+  <p class="lead">工具怎么做出来、AI 从哪来、一次生成花多少钱、价格怎么定、怎么防白嫖、用什么收钱。每一条都给你一张能点的图，细节去读原文。</p>
+  <ul class="asks">
+    <li><a href="#k1">不会写代码，工具怎么做出来？第一版做多少？</a></li>
+    <li><a href="#k2">AI 从哪来？要自己做模型吗？</a></li>
+    <li><a href="#k3">一次生成多少钱？价格怎么定才不亏？</a></li>
+    <li><a href="#k4">怎么防白嫖？有流量没人付钱怎么办？</a></li>
+    <li><a href="#k5">没有公司，用什么收钱？</a></li>
+  </ul>
+  <div class="gist"><span class="lab">一句话答案</span><p>AI 工具站 = 别人的 <button type="button" class="term" data-t="model">AI 模型</button> + 你的 <button type="button" class="term" data-t="shell">网页外壳</button>。第一版只做一个页面的核心功能就上线；先算清一次生成花多少钱再定价；免费给预览、成品要付钱；没公司就用护照注册 <button type="button" class="term" data-t="creem">Creem</button>，再多备一个收款渠道。</p></div>
+</div></div>
+
+<main class="wrap">
+
+  <section class="kp" id="k1">
+    <div class="scorebar" data-scorebar></div>
+    <div class="kp-head"><span class="kp-no">知识点 1</span><h2>不会写代码也能做：三条路，第一版只做一个页面</h2></div>
+    <p class="kp-say">哥飞说：懂一点技术名词、能把需求说清楚，AI 就能替你写代码。<span class="st hf">哥飞原话</span> 下面三条路挑一条，点开看要多久、适合谁。</p>
+    <blockquote class="said"><p>「如果你不会编程，但是懂大概一些技术名词，只要能够描述清楚需求，Cursor就能够帮你写代码。」</p><span class="who">哥飞 · 2024-08-17</span></blockquote>
+
+    <div class="viz" id="s7-routes">
+      <div class="viz-head"><span class="viz-label">点一点 · 三条路</span><p class="viz-title">不会写代码，挑一条路把工具做出来</p></div>
+      <div class="s7-routes" id="s7-route-btns">
+        <button type="button" class="s7-route" data-v="ai" aria-pressed="true"><span class="s7-r-no">A 路</span><b>AI 写代码</b><span class="s7-r-sub">Cursor + Next.js + Vercel</span></button>
+        <button type="button" class="s7-route" data-v="tpl" aria-pressed="false"><span class="s7-r-no">B 路</span><b>现成模板一键部署</b><span class="s7-r-sub">Vercel 模板 / 买源码</span></button>
+        <button type="button" class="s7-route" data-v="prompt" aria-pressed="false"><span class="s7-r-no">C 路</span><b>提示词建站</b><span class="s7-r-sub">把区块名报给 AI</span></button>
+      </div>
+      <p class="s7-time-cap">从动手到上线要多久（越往右越久）：</p>
+      <div class="s7-time" id="s7-time" aria-hidden="true">
+        <span class="s7-time-axis"></span>
+        <span class="s7-time-bar" id="s7-time-bar"></span>
+        <span class="s7-time-pin" id="s7-time-pin">Ben 真实：2 小时</span>
+      </div>
+      <div class="s7-rd" id="s7-route-detail" aria-live="polite"></div>
+      <p class="viz-say">三条路都能上线。<b>站上线</b>和<b>能收钱</b>是两件事：先让站上线拿到排名，有人用了再接收款。<span class="st tl">推出来的</span></p>
+    </div>
+
+    <p class="kp-say">第一版做多少？哥飞的话很干脆：只做单页的核心功能，<b>登录、注册、支付、性能优化统统往后放</b>。<span class="st hf">哥飞原话</span> Ben 抢 genie3 这个新词时，买完域名 2 小时就上线了。<span class="st sq">社群经验</span></p>
+    <blockquote class="said"><p>「快速做出单页的核心功能就推出去,登录注册、支付、性能优化统统后置。」</p><span class="who">哥飞 · 2026-08-22</span></blockquote>
+
+    <div class="viz" id="s7-v1">
+      <div class="viz-head"><span class="viz-label">动手玩 · 拖一拖</span><p class="viz-title">给 FramePop（示意）排一排：哪些第一版就上，哪些放进下一版？</p></div>
+      <div class="dd-pool" id="s7-v1-pool">
+        <button type="button" class="dd-item" data-z="now" data-why="这是第一版唯一不能少的东西：哥飞说「快速做出单页的核心功能就推出去」。" data-no="核心功能是第一版唯一不能少的东西：哥飞说「快速做出单页的核心功能就推出去」。">核心功能：输入一句话出视频</button>
+        <button type="button" class="dd-item" data-z="later" data-why="哥飞：登录注册、支付、性能优化统统后置。群里有人连登录都不做，等有了用户再上。" data-no="登录注册在哥飞的「统统后置」名单里。第一版先让人能直接用起来。">登录注册</button>
+        <button type="button" class="dd-item" data-z="now" data-why="Ben 的第一版就有落地页。谷歌和用户都靠这段文字看懂你是干什么的（第 5 步细讲）。" data-no="落地页文字要第一版就有：Ben 的第一版就有落地页，谷歌和用户都靠这段文字看懂你是干什么的。">落地页文字：一眼说清你是干什么的</button>
+        <button type="button" class="dd-item" data-z="later" data-why="后置不等于不收费：有群友拖到 5 月才收费，一收「很快出了20单」。有人用了，就尽快接上收款。" data-no="支付也在「统统后置」名单里。先上线、确认有人用，再接收款。">支付</button>
+        <button type="button" class="dd-item" data-z="now" data-why="Ben 2 小时上线的第一版，就带了隐私协议和用户协议两页（还有 about 页）。" data-no="Ben 2 小时上线的第一版就带了这两页。它们不费事，先放上。">隐私协议、用户协议</button>
+        <button type="button" class="dd-item" data-z="later" data-why="也在哥飞「统统后置」的名单里。先确认有人用，再优化。" data-no="性能优化在「统统后置」名单里，先确认有人用。">性能优化</button>
+        <button type="button" class="dd-item" data-z="later" data-why="哥飞：「第一次做网站，可以先不考虑多语言，只做英文就可以。」孟健的站就吃过多语言做太早的亏。" data-no="哥飞说第一次做网站先只做英文。孟健的站就吃过多语言做太早的亏。">多语言版本</button>
+        <button type="button" class="dd-item" data-z="later" data-why="跟着支付一起上。等真要收订阅费时，登录就省不了了：得知道是谁付的钱、给谁加积分。（推出来的）" data-no="积分、会员是跟着支付走的，支付后置，它也后置。">会员积分系统</button>
+      </div>
+      <div class="s7-v1-zones">
+        <div class="dd-zone" data-z="now"><span class="dd-zone-head">第一版就上</span></div>
+        <div class="dd-zone" data-z="later"><span class="dd-zone-head">放进下一版清单</span></div>
+      </div>
+      <p class="viz-say" id="s7-v1-say">把卡片拖进框里。手机上可以先点一下卡片，再点框。</p>
+      <div class="s7-row-end"><span class="dd-hint" id="s7-v1-count">已放好 0 / 8</span><button type="button" class="btn" id="s7-v1-reset">重来</button></div>
+    </div>
+
+    <div class="box warn"><span class="lab">补充提醒（不是原文内容）</span><p><button type="button" class="term" data-t="vercel">Vercel</button> 的免费版规定只能个人非商业使用。按月收费的站，要用付费版，或者先看清条款再决定放哪。一位网友在哥飞《5800 字长文》的评论区提醒过。<span class="st bc">补充提醒</span></p></div>
+    <div class="box case"><span class="lab">真实案例 · Ben 抢 genie3</span><p>谷歌发布 genie3 后，Ben 抢注了 genie3.net。「1个小时后，几乎常见的域名都被注册了」。他注册完域名约 2 小时就上线：落地页、blog、about、隐私协议、用户协议。上线马上去 GSC 提交，生成功能是拿到流量后才补的。<span class="st sq">社群经验</span></p></div>
+
+    <div class="quiz" data-answer="B">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">FramePop 的第一版，要不要先把登录注册做好？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">要，没有登录就不能上线</button>
+        <button class="q-opt" data-l="B">不用，先上线一个页面的核心功能，登录、支付往后放</button>
+        <button class="q-opt" data-l="C">要，登录、支付、会员都做完再上线，才显得专业</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>哥飞说：「我们是要做站、搞流量、赚钱，不是要写出一个完美的系统。」第一版只做单页核心功能，登录支付都后置。<span class="st hf">哥飞原话</span> 但后置不等于不收费：有人用了，就尽快接上收款。<span class="st tl">推出来的</span></p></div>
+    </div>
+
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://mp.weixin.qq.com/s/Qn7IWcv6W9CAFsyIzA-Etw">《产品经理再也没有借口不会写代码了》</a><span class="meta">哥飞 · 2024-08-17 · 公众号</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/s8cqxjwudt">《不用开发，如何只用一个域名就可以一键部署上线一个AI产品》</a><span class="meta">哥飞 · 归档于 2025-01-16</span></li>
+      <li><a href="https://new.web.cafe/experience/as5dfnrox2">《先做出单页核心功能就推出去，登录注册支付统统后置》</a><span class="meta">哥飞 · 2026-08-22 · 会员帖</span></li>
+      <li><a href="https://new.web.cafe/topic/qroffybyzo">《我单方面宣布在 genie3 抢新词大战中获胜，复盘一下》</a><span class="meta">Ben · 2025-08-10</span></li>
+      <li><a href="https://mp.weixin.qq.com/s/aatUutL9bXkOCNtNT2GUBQ">《5分钟做个网站》</a><span class="meta">刘小排 · 公众号（C 路：提示词建站）</span></li>
+      <li><a href="https://new.web.cafe/topic/gstytr3bmg">《萌新小白入门教程 3：接入大模型 api 都用哪些平台》</a><span class="meta">阿飞 · 2025-09-02（里面有现成模板推荐）</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/o3RNNMKZAMtBADNFswicqE">《5800 字长文》评论区</a><span class="meta">哥飞 · Vercel 免费版的提醒在评论里</span></li>
+    </ul></div>
+  </section>
+
+  <section class="kp" id="k2">
+    <div class="kp-head"><span class="kp-no">知识点 2</span><h2>AI 不用自己造：别人的模型 + 你的外壳</h2></div>
+    <p class="kp-say">别人把 AI 模型做好，放在 <button type="button" class="term" data-t="s7platform">模型平台</button> 上。你做一个好用的网页外壳，配一个用户会搜的名字，就是一个 AI 工具站。<span class="st hf">哥飞原话</span><span class="st sq">社群经验</span> 先去 <button type="button" class="term" data-t="s7hf">Hugging Face</button>、Replicate、fal.ai 搜；群友常用的还有 Kie、OpenRouter。</p>
+    <blockquote class="said"><p>「一般先是 huggingface、replicate、fal.ai 等地方先搜索下，如果没找到，那就得大海捞针了」</p><span class="who">哥飞 · 2024-04-06 群聊，经哥飞 AI 转述</span></blockquote>
+
+    <div class="viz" id="s7-asm-viz">
+      <div class="viz-head"><span class="viz-label">看动画 · 点「下一步」</span><p class="viz-title">把别人的模型，接到你的网页上</p></div>
+      <div class="s7-asm" id="s7-asm">
+        <div class="s7-blk theirs">
+          <span class="s7-blk-tag">别人的：模型平台</span>
+          <div class="seg s7-plats" id="s7-plats">
+            <button type="button" data-v="hf" aria-pressed="false">Hugging Face</button>
+            <button type="button" data-v="rep" aria-pressed="false">Replicate</button>
+            <button type="button" data-v="fal" aria-pressed="true">fal.ai</button>
+            <button type="button" data-v="kie" aria-pressed="false">Kie</button>
+            <button type="button" data-v="or" aria-pressed="false">OpenRouter</button>
+          </div>
+          <div class="s7-mcard" id="s7-mcard"><span class="s7-gear" aria-hidden="true"></span><b>Lumibo 2 模型</b><small><span id="s7-plat-name">fal.ai</span> 上的接口（虚构）· <span class="s7-mst" id="s7-mst">没接上</span></small></div>
+        </div>
+        <div class="s7-blk ours">
+          <span class="s7-joint">接口（API）接上了</span>
+          <span class="s7-blk-tag">你的：网页外壳</span>
+          <div class="s7-browser">
+            <div class="s7-bbar"><i></i><i></i><i></i><span>framepop.com（示意）</span></div>
+            <div class="s7-bbody">
+              <h4>Lumibo Video Generator</h4>
+              <div class="s7-inrow"><div class="s7-in" id="s7-in"></div><span class="s7-go" id="s7-go">生成视频</span></div>
+              <div class="s7-out" id="s7-out"><span id="s7-out-tip">结果会出现在这里</span>
+                <svg viewBox="0 0 320 180" aria-hidden="true"><rect width="320" height="180" fill="var(--s7-sky)"/><circle cx="236" cy="54" r="30" fill="var(--s7-moon)"/><g fill="var(--s7-star)"><circle cx="40" cy="30" r="1.8"/><circle cx="92" cy="18" r="1.4"/><circle cx="150" cy="40" r="1.6"/><circle cx="290" cy="22" r="1.4"/><circle cx="60" cy="70" r="1.2"/><circle cx="182" cy="16" r="1.2"/></g><path d="M0 140 Q 80 96 160 132 T 320 120 V180 H0 Z" fill="var(--s7-hill2)"/><path d="M0 160 Q 90 128 190 156 T 320 150 V180 H0 Z" fill="var(--s7-hill1)"/><g transform="translate(140 118)" fill="var(--s7-cat)"><ellipse cx="14" cy="16" rx="13" ry="10"/><circle cx="26" cy="5" r="7"/><path d="M21 0 L23 -7 L26 -1 Z M27 -1 L30 -7 L32 0 Z"/><path d="M2 16 Q -8 6 -4 -4" stroke="var(--s7-cat)" stroke-width="3" fill="none" stroke-linecap="round"/></g></svg>
+                <span class="s7-cost">平台收你一次的钱（示意）</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="s7-plat-note" id="s7-plat-note"></p>
+      <p class="viz-say" id="s7-asm-say"></p>
+      <div class="sp-nav"><div class="sp-dots"></div><div class="seg"><button type="button" class="btn sp-prev">上一步</button><button type="button" class="btn primary sp-next">下一步</button></div></div>
+    </div>
+
+    <div class="box analogy"><span class="lab">打个比方</span><p>哥飞管这叫「农夫山泉模式，不生产水，只是水的搬运工」。群友的经验更直白：哪家便宜用哪家，对接的代码也让 AI 写。<span class="st hf">哥飞原话</span><span class="st sq">社群经验</span></p></div>
+
+    <div class="quiz" data-answer="A">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">一个 AI 工具站，本质上是什么？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">别人做好的 AI 模型，加上你做的网页外壳</button>
+        <button class="q-opt" data-l="B">自己从零训练一个 AI 模型，再给它做网站</button>
+        <button class="q-opt" data-l="C">把模型官网的页面整个复制一份，换个域名放上去</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>哥飞看 Vercel 上的 AI 模板，说它们都是在调用 Replicate 上的模型，还问「Relicate上的每一个模型是否都可以做一个客户端呢？」<span class="st hf">哥飞原话</span> 王马扎从上海回来 10 天连上 5 个站，就是直接嵌入 Hugging Face 上的模型。<span class="st sq">社群经验</span></p></div>
+    </div>
+
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://new.web.cafe/topic/gstytr3bmg">《萌新小白入门教程 3：接入大模型 api 都用哪些平台》</a><span class="meta">阿飞 · 2025-09-02</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/s8cqxjwudt">《不用开发，如何只用一个域名就可以一键部署上线一个AI产品》</a><span class="meta">哥飞 · 归档于 2025-01-16</span></li>
+      <li><a href="https://new.web.cafe/topic/xmsohbemzf">《海外 AI 产品新手复盘：4 个月赚到 1 刀，15 天破 1000 刀》</a><span class="meta">王马扎 · 2025-09-26</span></li>
+      <li><span>「先去 huggingface、replicate、fal.ai 搜」：2024-04-06 群聊，经哥飞 SEO Agent 转述，无单独文章</span></li>
+    </ul></div>
+  </section>
+
+  <section class="kp" id="k3">
+    <div class="kp-head"><span class="kp-no">知识点 3</span><h2>先算一次生成花多少钱，再定价</h2></div>
+    <p class="kp-say">平台按运行时间或次数收钱，每个模型页面上都写着价格。<span class="st hf">哥飞原话</span> 群友的笨办法最靠谱：<b>自己跑 10 次，取平均</b>，就知道生成一次花多少。<span class="st sq">社群经验</span></p>
+    <blockquote class="said"><p>「按照运行时长收费，每个模型下都会告诉你这个模型的价格」</p><span class="who">哥飞 · 2024-07-17 群聊，经哥飞 AI 转述</span></blockquote>
+
+    <div class="viz" id="s7-calc">
+      <div class="viz-head"><span class="viz-label">动手玩 · 算账器（数字全是示意）</span><p class="viz-title">拖一拖：FramePop 每个月是赚还是亏？</p></div>
+      <div class="viz-controls"><span class="viz-note">先选一个情景，再拖滑块：</span>
+        <div class="seg" id="s7-preset">
+          <button type="button" data-v="img" aria-pressed="false">图片小工具</button>
+          <button type="button" data-v="cheap" aria-pressed="false">视频工具 · 照抄同行低价</button>
+          <button type="button" data-v="fair" aria-pressed="true">视频工具 · 按成本定价</button>
+        </div>
+      </div>
+      <div class="s7-sliders">
+        <label class="range-wrap"><span class="s7-sl-top"><span>生成一次的成本</span><output id="s7-o-cost"></output></span><input type="range" id="s7-c-cost" min="0.01" max="0.5" step="0.01" value="0.25"></label>
+        <label class="range-wrap"><span class="s7-sl-top"><span>每个来的人免费送几次</span><output id="s7-o-free"></output></span><input type="range" id="s7-c-free" min="0" max="20" step="1" value="1"></label>
+        <label class="range-wrap"><span class="s7-sl-top"><span>月费</span><output id="s7-o-price"></output></span><input type="range" id="s7-c-price" min="0" max="8" step="1" value="6"></label>
+        <label class="range-wrap"><span class="s7-sl-top"><span>付费率（来的人里有几个付钱）</span><output id="s7-o-rate"></output></span><input type="range" id="s7-c-rate" min="0.5" max="10" step="0.5" value="2"></label>
+        <label class="range-wrap"><span class="s7-sl-top"><span>每月来多少人</span><output id="s7-o-vis"></output></span><input type="range" id="s7-c-vis" min="500" max="30000" step="500" value="5000"></label>
+        <label class="range-wrap"><span class="s7-sl-top"><span>付费用户每月用几次</span><output id="s7-o-use"></output></span><input type="range" id="s7-c-use" min="10" max="200" step="10" value="30"></label>
+      </div>
+      <label class="s7-fail"><input type="checkbox" id="s7-c-fail"><span>这个接口<b>生成失败也收钱</b>：假设 3 次里失败 1 次，用户会重试，等于每成功一次要付 1.5 次的钱（示意）</span></label>
+      <div class="s7-bars">
+        <div class="s7-bar-row"><span>每月收入</span><span class="s7-bar-track"><i class="s7-seg-rev" id="s7-b-rev"></i></span><b id="s7-n-rev">$0</b></div>
+        <div class="s7-bar-row"><span>每月花掉</span><span class="s7-bar-track"><i class="s7-seg-free" id="s7-b-free"></i><i class="s7-seg-paid" id="s7-b-paid"></i><i class="s7-seg-fee" id="s7-b-fee"></i></span><b id="s7-n-cost">$0</b></div>
+        <div class="legend-row"><span><i class="sw" style="background:var(--amber)"></i>免费用户烧掉的</span><span><i class="sw" style="background:color-mix(in srgb, var(--amber) 55%, var(--surface))"></i>付费用户用掉的</span><span><i class="sw mut"></i>收款手续费（按 Creem 约 3.9% + 0.4 美元算）</span></div>
+      </div>
+      <div class="s7-net"><span>每月净赚</span><span class="big-num" id="s7-n-net">$0</span><span class="s7-verdict" id="s7-verdict"></span></div>
+      <ul class="s7-facts" id="s7-facts"></ul>
+      <p class="viz-say" id="s7-calc-say"></p>
+      <p class="viz-note">只算了 AI 接口和手续费，没算服务器、域名、外链、退款。所有数字都是示意 <span class="st sy">示意</span></p>
+    </div>
+
+    <div class="box case"><span class="lab">群友算的一笔真账（2025-09-01 群聊）</span><p>某个图片模型：文生图一次 0.039 美元；图生图要先读一张图，一次 0.339 美元。同行年费 63 美元给 800 张，摊下来一张约 0.079 美元。结论：<b>文生图大约一倍毛利，图生图是亏的</b>。<span class="st sq">社群经验</span></p></div>
+    <div class="box warn"><span class="lab">坑：有的视频接口，失败了也收钱</span><p>图片接口生成失败，平台一般不收钱；可有的视频接口失败了照样收。群里有人碰上一个用户大量失败，「原本稳赚的生意导致今天亏本好多」。<span class="st sq">社群经验</span> 哥飞的建议：「你自己做好关键词过滤，能省一点是一点。」<span class="st hf">哥飞原话</span> 打开上面的「失败也收钱」开关，看看账变成什么样。</p></div>
+
+    <p class="kp-say">价格怎么定？哥飞的思路是<b>倒着算</b>：先估一个用户平均会付几个月，再算月费定多少才回本。然后加一档年付：<b>年付只收大约 5 个月的钱，给用 12 个月</b>。<span class="st hf">哥飞原话</span></p>
+    <blockquote class="said"><p>「年付只需要5个月费就能用12个月」</p><span class="who">哥飞 · 2023-12-12</span></blockquote>
+
+    <div class="viz" id="s7-yr">
+      <div class="viz-head"><span class="viz-label">动手玩 · 哥飞的例子（原文数字）</span><p class="viz-title">100 个付费用户里，有几个选年付？</p></div>
+      <div class="s7-chain"><span>花 10000 元</span><em>→</em><span>来 1000 个注册（每个 10 元）</span><em>→</em><span>付费率 10%：100 人付钱</span><em>→</em><span>平均付 4 个月</span><em>→</em><span class="end">月费 25 元刚好回本</span></div>
+      <div class="viz-controls">
+        <div class="range-wrap"><span class="s7-sl-top"><label for="s7-yr-sl">选年付（125 元 = 5 个月钱）的人</label><output id="s7-yr-o">40 人</output></span><input type="range" id="s7-yr-sl" min="0" max="100" step="10" value="40"></div>
+      </div>
+      <div class="s7-yr-dots" id="s7-yr-dots" aria-hidden="true"></div>
+      <div class="legend-row"><span><i class="sw ours"></i>月付，平均付 4 个月</span><span><i class="sw good"></i>年付 125 元</span></div>
+      <div class="s7-yr-sum" id="s7-yr-sum"></div>
+      <p class="viz-say" id="s7-yr-say"></p>
+    </div>
+
+    <div class="box case"><span class="lab">真实案例 · 王马扎和 Canen 怎么定价</span><p><b>王马扎：</b>他的接口成本一次 0.05～0.25 美元，同行卖给用户一次才 0.2～0.4 美元，照抄会亏。他把成本告诉 AI 来定价，毛利 75% 以上，价格比同行贵。年订阅放在第一眼，结果订单里年订阅占大头；第五天出了一笔 327 美元的年订阅，14 天收入破 1000 美元。<span class="st sq">社群经验</span></p><p><b>Canen：</b>以前定 4.99 美元，算账发现撑不起拉新、外链和维护。现在优先考虑 29、39、99 美元三档（Starter / Pro / Advanced），再加年付折扣。<span class="st sq">社群经验</span></p></div>
+
+    <div class="quiz" data-answer="C">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">FramePop 准备接一个视频模型。动手之前，最该先问清楚什么？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">这个模型的名字好不好听、好不好记</button>
+        <button class="q-opt" data-l="B">这个平台上已经有多少人在用</button>
+        <button class="q-opt" data-l="C">生成一次大概多少钱、失败了扣不扣钱</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>价格是从成本倒推出来的。有的视频接口失败也收钱，碰上一个用户大量失败，稳赚的生意当天就亏了。<span class="st sq">社群经验</span> 先自己跑 10 次取平均，问清失败怎么算，再定价。</p></div>
+    </div>
+
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://mp.weixin.qq.com/s/whiVv3maJV1nJ_2aX0enGg">《哥飞关于订阅App的套餐定价的一点思考》</a><span class="meta">哥飞 · 2023-12-12 · 公众号</span></li>
+      <li><a href="https://new.web.cafe/topic/xmsohbemzf">《海外 AI 产品新手复盘：4 个月赚到 1 刀，15 天破 1000 刀》</a><span class="meta">王马扎 · 2025-09-26</span></li>
+      <li><a href="https://new.web.cafe/topic/obajfya6rs">《参加这次年中出海大会让我把"做网站赚钱"从玄学变成了一套可执行流程》</a><span class="meta">Canen · 2026-07-07</span></li>
+      <li><span>「按运行时长收费」：2024-07-17 群聊；图片模型算账：2025-09-01 群聊；视频接口失败也收钱：2026-03-10 群聊。都经哥飞 SEO Agent 转述，无单独文章</span></li>
+    </ul></div>
+  </section>
+
+  <section class="kp" id="k4">
+    <div class="kp-head"><span class="kp-no">知识点 4</span><h2>免费给预览，成品要付钱；没人付钱先修引导</h2></div>
+    <p class="kp-say">免费试用的人，也在花你的钱。哥飞的办法：生成好以后，给一张<b>带水印的预览小图</b>；想下载大图，就付钱。<span class="st hf">哥飞原话</span></p>
+    <blockquote class="said"><p>「生成好图片后，你用算法处理下，生成一张预览小图给用户。想要下载大图，就要付钱。」</p><span class="who">哥飞 · 2025-10-04 群聊，经哥飞 AI 转述</span></blockquote>
+
+    <div class="viz" id="s7-pv-viz">
+      <div class="viz-head"><span class="viz-label">点一点 · 切换看看</span><p class="viz-title">同一次生成，免费用户和付费用户拿到的不一样</p></div>
+      <div class="seg" id="s7-pv-seg"><button type="button" data-v="free" aria-pressed="true">免费用户看到的</button><button type="button" data-v="paid" aria-pressed="false">付费用户拿到的</button></div>
+      <div class="s7-pv free" id="s7-pv">
+        <div class="s7-pv-frame">
+          <svg class="s7-scene" viewBox="0 0 320 180" role="img" aria-label="示意画面：一只小猫在月亮下跳舞"><rect width="320" height="180" fill="var(--s7-sky)"/><circle cx="236" cy="54" r="30" fill="var(--s7-moon)"/><g fill="var(--s7-star)"><circle cx="40" cy="30" r="1.8"/><circle cx="92" cy="18" r="1.4"/><circle cx="150" cy="40" r="1.6"/><circle cx="290" cy="22" r="1.4"/><circle cx="60" cy="70" r="1.2"/><circle cx="182" cy="16" r="1.2"/></g><path d="M0 140 Q 80 96 160 132 T 320 120 V180 H0 Z" fill="var(--s7-hill2)"/><path d="M0 160 Q 90 128 190 156 T 320 150 V180 H0 Z" fill="var(--s7-hill1)"/><g transform="translate(140 118)" fill="var(--s7-cat)"><ellipse cx="14" cy="16" rx="13" ry="10"/><circle cx="26" cy="5" r="7"/><path d="M21 0 L23 -7 L26 -1 Z M27 -1 L30 -7 L32 0 Z"/><path d="M2 16 Q -8 6 -4 -4" stroke="var(--s7-cat)" stroke-width="3" fill="none" stroke-linecap="round"/></g></svg>
+          <div class="s7-pv-wm" aria-hidden="true"><span>FramePop 预览</span><span>FramePop 预览</span><span>FramePop 预览</span></div>
+        </div>
+        <div class="s7-pv-cap" id="s7-pv-cap"></div>
+      </div>
+      <p class="viz-say" id="s7-pv-say"></p>
+    </div>
+    <p class="kp-say">群友还用过这些办法：用谷歌账号登录才能试、同一台设备和同一个 IP 限次数、无痕窗口不给试。有人「几千个注册 0 付费」，就是试用给得太多。<span class="st sq">社群经验</span></p>
+
+    <p class="kp-say">另一种情况：<b>有流量，就是没人付钱</b>。Niko 的站一周冲进谷歌前五，单日 800 多访客，一开始一单没有，降价也没用。真正的问题是：用户进来，不知道下一步该点哪。<span class="st sq">社群经验</span></p>
+
+    <div class="viz" id="s7-fn">
+      <div class="viz-head"><span class="viz-label">看动画 · Niko 的三个阶段（原文数字）</span><p class="viz-title">同一个站，只改了「下一步点哪」</p></div>
+      <div class="seg" id="s7-fn-seg"><button type="button" data-v="before" aria-pressed="true">1 修之前</button><button type="button" data-v="cut" aria-pressed="false">2 先降价</button><button type="button" data-v="after" aria-pressed="false">3 修好引导</button></div>
+      <div class="s7-fn-nums">
+        <div class="s7-fn-num"><b>800+</b><span>单日最高访客</span></div>
+        <div class="s7-fn-num"><b>&lt;100</b><span>注册（不到十分之一）</span></div>
+        <div class="s7-fn-num"><b id="s7-fn-price">$50</b><span id="s7-fn-price-l">月费</span></div>
+        <div class="s7-fn-num order" id="s7-fn-ord"><b id="s7-fn-orders">0</b><span>成交订单</span></div>
+      </div>
+      <div class="s7-path" id="s7-path">
+        <div class="s7-node">先试用<span class="s7-lost">下一步点哪？</span></div>
+        <div class="s7-node">试完去登录</div>
+        <div class="s7-node">登录后付费</div>
+        <div class="s7-node">付完回到工具框</div>
+        <span class="s7-walker" id="s7-walker"></span>
+      </div>
+      <p class="viz-say" id="s7-fn-say"></p>
+    </div>
+    <div class="box case"><span class="lab">真实案例 · Niko 的朋友教他看什么</span><p>先有流量，再出单；出单率低，再提转化率；退订少了，再优化产品。盯五个数：访客、注册、订单、付费、留存。朋友给的参考：排第三，付费率千分之 1～3；排第二，千分之 5～8；排第一，1%～5%。<span class="st sq">社群经验</span></p><p>Niko 怎么找到问题的：上线后马上发到朋友群里让人把关；用 Clarity 看用户在页面上怎么点；还让 Claude Code 把用户路径审了一遍。<span class="st sq">社群经验</span></p></div>
+
+    <div class="quiz" data-answer="B">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">FramePop 每天有几百个访客，就是没人付钱。先做哪件事？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">马上把价格砍一半</button>
+        <button class="q-opt" data-l="B">把「试用 → 登录 → 付费」每一步都引导好，找个朋友从头用一遍</button>
+        <button class="q-opt" data-l="C">先别管，再多做 20 个页面去拉更多流量</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>Niko 降价后等了一两天还是没单；把每一步「下一步点哪」引导好，当晚就出了第一笔 50 美元月费。问题不在价格，在路径。<span class="st sq">社群经验</span></p></div>
+    </div>
+
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://new.web.cafe/topic/rpg62z89h8">《新词 7 天冲到谷歌前五的完整实战复盘》</a><span class="meta">Niko · 2025-10-08</span></li>
+      <li><a href="https://new.web.cafe/topic/obajfya6rs">《参加这次年中出海大会让我把"做网站赚钱"从玄学变成了一套可执行流程》</a><span class="meta">Canen · 2026-07-07（文末有一份转化检查清单）</span></li>
+      <li><span>「预览小图、下载大图要付钱」：2025-10-04 群聊，经哥飞 SEO Agent 转述，无单独文章</span></li>
+    </ul></div>
+  </section>
+
+  <section class="kp" id="k5">
+    <div class="kp-head"><span class="kp-no">知识点 5</span><h2>收款：看你手里有什么，没公司先用 Creem</h2></div>
+    <p class="kp-say">收款平台不是想用哪个就用哪个，要看你手里有什么：公司、香港银行卡、护照。哥飞画过一张选路图，门槛从高到低。<span class="st hf">哥飞原话</span></p>
+    <blockquote class="said"><p>「还可以用护照注册 Creem ，群里很多人都在用，最后钱可以提现到支付宝。」</p><span class="who">哥飞 · 2025-11-03</span></blockquote>
+
+    <div class="viz" id="s7-lad-viz">
+      <div class="viz-head"><span class="viz-label">问答小路 · 照实回答</span><p class="viz-title">你该用哪个收款平台？</p></div>
+      <div class="s7-lad" id="s7-lad">
+        <div class="s7-lrow" data-i="0">
+          <div class="s7-q"><p>1. 你有国内公司吗？</p><div class="seg"><button type="button" class="btn" data-a="yes">有</button><button type="button" class="btn" data-a="no">没有</button></div></div>
+          <div class="s7-yes"><span>有</span></div>
+          <div class="s7-res" data-r="paypal"><b><button type="button" class="term" data-t="s7paypal">PayPal</button>.cn（公司名义）</b><span>收美元，提现人民币到国内银行账户</span></div>
+        </div>
+        <div class="s7-no"><span>没有</span></div>
+        <div class="s7-lrow" data-i="1">
+          <div class="s7-q"><p>2. 你有（或愿意去办）香港个人银行卡吗？</p><div class="seg"><button type="button" class="btn" data-a="yes">有</button><button type="button" class="btn" data-a="no">没有</button></div></div>
+          <div class="s7-yes"><span>有</span></div>
+          <div class="s7-res" data-r="stripe"><b>个人版 <button type="button" class="term" data-t="stripe">Stripe</button></b><span>用护照注册，钱进香港账户</span></div>
+        </div>
+        <div class="s7-no"><span>没有</span></div>
+        <div class="s7-lrow" data-i="2">
+          <div class="s7-q"><p>3. 你有护照吗？</p><div class="seg"><button type="button" class="btn" data-a="yes">有</button><button type="button" class="btn" data-a="no">没有</button></div></div>
+          <div class="s7-yes"><span>有</span></div>
+          <div class="s7-res" data-r="creem"><b>Creem</b><span>用护照注册，不用跑香港</span></div>
+        </div>
+        <div class="s7-no"><span>没有</span></div>
+        <div class="s7-res s7-lend" data-r="passport"><b>先去办护照</b><span>当地公安局，「一周多就办好了」，再注册 Creem</span></div>
+      </div>
+      <div class="s7-lad-detail" id="s7-lad-detail" aria-live="polite"></div>
+      <div class="s7-row-end"><span class="viz-note">有海外公司的：用公司名义开 Stripe、Paddle、PayPro、PayPal 都行。国内外都没公司，也能用个人名义注册 PayPal.cn（选「个人卖家」），但只能提现外币。<span class="st hf">哥飞原话</span></span><button type="button" class="btn" id="s7-lad-reset">重新走一遍</button></div>
+    </div>
+
+    <div class="box case">
+      <span class="lab">Creem 的几个数字（帆的教程和评论区）</span>
+      <ul class="s7-facts-list">
+        <li>手续费：大约订单金额的 <b>3.9% + 0.40 美元</b>。</li>
+        <li>最低定价 <b>4.49 美元</b>，更低的要另设折扣码。</li>
+        <li>审核大约 <b>1～2 天</b>。审核员会亲自用一遍你网站的功能，写假好评「很容易被拒绝掉」。</li>
+        <li>每月 1 号、15 号打款，要自己在后台点提现。</li>
+      </ul>
+      <div class="s7-fee" id="s7-fee">
+        <div class="seg" id="s7-fee-seg"><button type="button" data-v="4.49" aria-pressed="false">$4.49</button><button type="button" data-v="4.99" aria-pressed="true">$4.99</button><button type="button" data-v="9.99" aria-pressed="false">$9.99</button><button type="button" data-v="19.99" aria-pressed="false">$19.99</button><button type="button" data-v="39" aria-pressed="false">$39</button></div>
+        <p class="s7-fee-out" id="s7-fee-out"></p>
+      </div>
+      <p><b>钱怎么到手，两种说法都写上：</b></p>
+      <div class="s7-two">
+        <div><span class="who">哥飞 · 2025-11-03</span><p>用护照注册 Creem，「最后钱可以提现到支付宝」。<span class="st hf">哥飞原话</span></p></div>
+        <div><span class="who">帆 · 2025-07-21（自己走过一遍）</span><p>提现到支付宝要申报、要合同，「很容易失败」。他建议改用 <button type="button" class="term" data-t="s7wise">Wise</button>，「从Wise 直接提现到银行卡，秒到的」。<span class="st sq">社群经验</span></p></div>
+      </div>
+    </div>
+
+    <div class="box warn">
+      <span class="lab">坑：拒付（争议）</span>
+      <p><button type="button" class="term" data-t="chargeback">拒付</button>就是用户付了钱，又去银行把钱要回来。Cy 说「通常200 笔交易 1笔争议被认为是正常情况」。反击输了，除了这笔钱还要多付 15 美元；而且争议一发生就算进争议率，赢了也照算。<span class="st sq">社群经验</span></p>
+      <div class="s7-dots200" id="s7-dots200" role="img" aria-label="200 个点里只有 1 个是黄色：200 笔交易里 1 笔争议算正常"></div>
+      <p>所以从第一天就让程序记下：谁、什么时候、从哪个 IP、用了什么、扣了几次。出了争议，这就是证据。<span class="st tl">推出来的</span></p>
+    </div>
+    <div class="box good"><span class="lab">多备几个收款渠道</span><p>「一个网站可以同时申请多个收款平台，提供给用户，让用户自己选择。」<span class="st hf">哥飞原话</span> 哥飞自己的 Stripe 在 2024 年因为「莫须有」的理由被封过，后来一直用 Paddle 和 PayPro。2026 年 7 月社群里还出过一篇《Creem支付大面积封号》。</p></div>
+
+    <div class="quiz" data-answer="C">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">没有公司、也不想跑香港的新手，第一个收款平台用哪个？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">先去注册一家美国公司，再开 Stripe</button>
+        <button class="q-opt" data-l="B">先不收钱，等流量很大了再想</button>
+        <button class="q-opt" data-l="C">用护照注册 Creem，以后有条件再加一个个人 Stripe 备用</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>哥飞的选路图里，最后一档就是「用护照注册 Creem」，群里很多人在用。<span class="st hf">哥飞原话</span> 新手先别为了收款注册公司；收款渠道最好备两个。<span class="st tl">推出来的</span></p></div>
+    </div>
+
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://new.web.cafe/experience/vkyy809cag">《出海网站支付收款用哪个平台？Stripe、Paddle、PayPro、PayPal、Creem 怎么选择？》</a><span class="meta">哥飞 · 2025-11-03</span></li>
+      <li><a href="https://new.web.cafe/topic/3xvtpo244a">《【图文】手把手 Creem 从注册到收款全流程教程》</a><span class="meta">帆 · 2025-07-21（评论区一定要看）</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/ggy5t10gyj">《聊聊如何开通香港个人Stripe》</a><span class="meta">哥飞 · 归档于 2025-02-27</span></li>
+      <li><a href="https://new.web.cafe/topic/4lal23d9c3">《一次Stripe争议成功反击的经验》</a><span class="meta">Cy · 2025-09-05</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/xh18bxswt0">《Creem支付大面积封号》</a><span class="meta">web.cafe · 2026-07-20</span></li>
+      <li><span>「一个网站可以同时申请多个收款平台」：2025-11-03 群聊，经哥飞 SEO Agent 转述，无单独文章</span></li>
+    </ul></div>
+  </section>
+
+  <section class="kp" id="recap">
+    <div class="kp-head"><span class="kp-no">小结</span><h2>这一步记住 6 件事</h2></div>
+    <div class="recap"><ol>
+      <li>AI 工具站 = 别人的模型 + 你的外壳。模型先去 Hugging Face、Replicate、fal.ai 找。</li>
+      <li>不会写代码：AI 写代码、套模板、提示词建站，三条路都能上线。第一版只做一个页面的核心功能。</li>
+      <li>登录、支付往后放，但不等于不收费：有人用了，就尽快接上收款。</li>
+      <li>先自己跑 10 次算出一次花多少钱，再定价；年付大约收 5 个月的钱；接视频模型先问清失败扣不扣钱。</li>
+      <li>免费给预览、成品要付钱。有流量没人付钱，先修「试用 → 登录 → 付费」的引导，别急着降价。</li>
+      <li>没公司就用护照注册 Creem，有香港卡再开个人 Stripe，渠道多备几个。收费的站别用 Vercel 免费版（补充提醒）。</li>
+    </ol></div>
+    <div class="scorebar" data-scorebar></div>
+    <h3>这一步该读的原文（按顺序）</h3>
+    <ol class="readlist">
+      <li><a href="https://mp.weixin.qq.com/s/Qn7IWcv6W9CAFsyIzA-Etw">《产品经理再也没有借口不会写代码了》</a><label><input type="checkbox">读过了</label><span class="why">不会编程也能让 Cursor 写代码，用 Next.js 做、放到 Vercel 上线；打消「我不会写代码」的顾虑。</span><span class="meta">哥飞 · 2024-08-17 · 约 5 分钟 · 公众号</span></li>
+      <li><a href="https://new.web.cafe/experience/as5dfnrox2">《先做出单页核心功能就推出去，登录注册支付统统后置》</a><label><input type="checkbox">读过了</label><span class="why">第一版只做一个页面的核心功能，登录支付后置，但也别拖着不收费。</span><span class="meta">哥飞 · 2026-08-22 · 约 5 分钟 · 会员帖</span></li>
+      <li><a href="https://mp.weixin.qq.com/s/whiVv3maJV1nJ_2aX0enGg">《哥飞关于订阅App的套餐定价的一点思考》</a><label><input type="checkbox">读过了</label><span class="why">按「用户平均付几个月」倒推月费，再加一档约 5 个月价钱的年付。</span><span class="meta">哥飞 · 2023-12-12 · 约 10 分钟 · 公众号</span></li>
+      <li><a href="https://new.web.cafe/experience/vkyy809cag">《出海网站支付收款用哪个平台？》</a><label><input type="checkbox">读过了</label><span class="why">按有没有公司、香港卡、护照，一级级选出你能用的收款平台。</span><span class="meta">哥飞 · 2025-11-03 · 约 5 分钟</span></li>
+      <li><a href="https://new.web.cafe/topic/3xvtpo244a">《手把手 Creem 从注册到收款全流程教程》</a><label><input type="checkbox">读过了</label><span class="why">Creem 注册、建商品、过审核、测试付款、提现的全流程，评论区补了费率和一堆踩坑。</span><span class="meta">帆 · 2025-07-21 · 约 30 分钟</span></li>
+      <li><a href="https://new.web.cafe/topic/4lal23d9c3">《一次Stripe争议成功反击的经验》</a><label><input type="checkbox">读过了</label><span class="why">用户拒付时要准备哪些证据，以及什么时候反击不划算。</span><span class="meta">Cy · 2025-09-05 · 约 10 分钟</span></li>
+    </ol>
+  </section>
+
+</main>
+
+<nav id="pager"></nav>
+<footer id="foot"></footer>
+<script src="assets/kit.js"></script>
+<script>
+(() => {
+  const { $, $$, el, bindSeg, tween, sleep, replay, countUp, flyTo, makeSteps, dnd, reduce, addTerms, confetti } = KIT;
+
+  addTerms({
+    s7cursor: ['Cursor', 'AI 写代码工具。你用中文说要做什么，它替你写代码、改代码，改了哪里还会标出来。'],
+    s7nextjs: ['Next.js', '做网站用的一套现成框架（代码骨架）。哥飞推荐它配 Vercel：前后端、服务器都不用自己管。'],
+    s7hf: ['Hugging Face', '放 AI 模型的大仓库。很多新模型最先出现在这里，有的能直接嵌进你的网页里用。'],
+    s7platform: ['模型平台', 'Replicate、fal.ai、Kie、OpenRouter 这类网站：别人的 AI 模型放在上面，你的网站调用一次，它收一次钱（按次数或运行时间）。'],
+    s7wise: ['Wise', '一个跨境收款、换钱的账户。帆建议 Creem 的钱先打到 Wise，再提现到国内银行卡。'],
+    s7paypal: ['PayPal', '老牌的在线收款。有国内公司可以用 PayPal.cn 收美元、提现人民币；个人卖家只能提现外币。'],
+  });
+
+  const money = (v, d = 0) => (v < 0 ? '−$' : '$') + Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+
+  // ---------- 知识点 1：三条路 ----------
+  const T_MIN = Math.log10(4), T_MAX = Math.log10(5000);
+  const tpos = minutes => (Math.log10(minutes) - T_MIN) / (T_MAX - T_MIN) * 100;
+  const timeBox = $('#s7-time');
+  [[5, '5 分钟'], [60, '1 小时'], [1440, '1 天'], [4320, '3 天']].forEach(([m, label]) => {
+    timeBox.appendChild(el('span', { class: 's7-time-tick', style: `left:${tpos(m)}%` }, label));
+  });
+  $('#s7-time-pin').style.left = tpos(120) + '%';
+  const ROUTES = {
+    ai: {
+      span: [240, 4320],
+      rows: [
+        ['要多久', '不带收款，当天能上；带免费额度和收款，大约 1～3 天。<span class="st tl">推出来的</span>（哥飞 AI 估的）'],
+        ['适合谁', '懂一点「前端、后端、部署、域名、接口」这些词，能用中文把需求说清楚的人。'],
+        ['怎么做', '装好 <button type="button" class="term" data-t="s7cursor">Cursor</button> → 用中文说「用 <button type="button" class="term" data-t="s7nextjs">Next.js</button> 做一个只有一个页面、一个按钮的小工具」→ 点 apply、accept，保存看效果 → 放到 <button type="button" class="term" data-t="vercel">Vercel</button> 上线。<span class="st hf">哥飞原话</span>'],
+        ['要注意', '哥飞只替这一套背书，「其它技术栈不清楚」。文章是 2024 年的，按钮名字现在可能变了。'],
+      ],
+    },
+    tpl: {
+      span: [10, 10],
+      rows: [
+        ['要多久', '哥飞旧文的标题就叫「10 分钟上线一个 AI 产品」：手里有一个域名就行。<span class="st hf">哥飞原话</span> 要改成你自己的功能，看改多少。'],
+        ['适合谁', '完全不想碰代码，想先跑起来看看的人。'],
+        ['怎么做', '在 Vercel 模板中心挑一个 AI 模板一键部署；或者在 codecanyon「花几十美元就可以买一套源代码」。<span class="st hf">哥飞原话</span> 群友还推荐 ShipAny、MkSaaS 这类 AI 工具模板，和开源的 ShipFree。<span class="st sq">社群经验</span>'],
+        ['要注意', '模板调用 AI 接口，要用你自己的密钥，按用量另外付钱。<span class="st tl">推出来的</span> 王马扎建议新手直接买现成的 AI SaaS 模板：自带客服、邮件、订阅和积分管理。<span class="st sq">社群经验</span>'],
+      ],
+    },
+    prompt: {
+      span: [5, 5],
+      rows: [
+        ['要多久', '刘小排的文章标题叫「5 分钟做个网站」。<span class="st sq">社群经验</span>'],
+        ['适合谁', '先要一个像样的落地页、功能很简单的人。'],
+        ['怎么做', '打开 bolt.new 这类工具，把区块名直接报给 AI：header（顶栏）、hero（第一屏）、features（功能）、pricing（价格）、faq（常见问题）、footer（页脚）。'],
+        ['要注意', '出来的多半只是一个落地页；要接 AI 模型、收钱，还得往下做。<span class="st tl">推出来的</span>'],
+      ],
+    },
+  };
+  const routeDetail = $('#s7-route-detail'), timeBar = $('#s7-time-bar');
+  function showRoute(key, animate) {
+    const r = ROUTES[key];
+    const left = tpos(r.span[0]);
+    timeBar.style.left = left + '%';
+    timeBar.style.width = (tpos(r.span[1]) - left) + '%';
+    routeDetail.innerHTML = r.rows.map(([k, v]) => `<div class="s7-rd-row"><span>${k}</span><span>${v}</span></div>`).join('');
+    if (animate) replay(routeDetail);
+  }
+  $$('#s7-route-btns .s7-route').forEach(b => b.addEventListener('click', () => {
+    $$('#s7-route-btns .s7-route').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    showRoute(b.dataset.v, true);
+  }));
+  showRoute('ai', false);
+
+  // ---------- 知识点 1：第一版放什么 ----------
+  const v1 = $('#s7-v1'), v1pool = $('#s7-v1-pool'), v1say = $('#s7-v1-say'), v1count = $('#s7-v1-count');
+  const v1items = $$('.dd-item', v1);
+  const v1total = v1items.length;
+  const v1placed = () => v1items.filter(i => i.classList.contains('right')).length;
+  dnd(v1, {
+    accept(item, zone) {
+      if (item.dataset.z === zone.dataset.z) return true;
+      v1say.className = 'viz-say bad';
+      v1say.innerHTML = `<b>放错了。</b>${item.dataset.no}`;
+      replay(v1say);
+      return false;
+    },
+    onMove(item) {
+      item.classList.remove('wrong');
+      item.classList.add('right');
+      item.disabled = true;
+      const n = v1placed();
+      v1count.textContent = `已放好 ${n} / ${v1total}`;
+      if (n === v1total) {
+        v1say.className = 'viz-say good';
+        v1say.innerHTML = '<b>全放对了。</b>第一版 = 一个页面 + 核心功能 + 几页必备文字。剩下的写进下一版清单，想到什么先记下来，「不要随想随加」。';
+        confetti(v1);
+      } else {
+        v1say.className = 'viz-say';
+        v1say.innerHTML = `<b>对。</b>${item.dataset.why}`;
+      }
+      replay(v1say);
+    },
+  });
+  $('#s7-v1-reset').addEventListener('click', () => {
+    v1items.forEach(i => { i.classList.remove('right', 'wrong'); i.disabled = false; v1pool.appendChild(i); });
+    v1count.textContent = `已放好 0 / ${v1total}`;
+    v1say.className = 'viz-say';
+    v1say.textContent = '把卡片拖进框里。手机上可以先点一下卡片，再点框。';
+  });
+
+  // ---------- 知识点 2：拼装 ----------
+  const PLATS = {
+    hf: ['Hugging Face', '很多新模型最先放在这里。王马扎回来 10 天连上 5 个 AI 工具站，就是<b>直接嵌入 Hugging Face 上的模型</b>。<span class="st sq">社群经验</span>'],
+    rep: ['Replicate', '哥飞最先搜的三个地方之一。群友说它<b>有冷启动</b>：冷门模型第一次要等 3～5 分钟。<span class="st sq">社群经验</span>'],
+    fal: ['fal.ai', '哥飞最先搜的三个地方之一。群友说它<b>没有冷启动</b>；图片生成失败不收钱，但视频接口失败照样收。<span class="st sq">社群经验</span>'],
+    kie: ['Kie', '群友说 Replicate 上的 nano banana 不稳时，改用 Kie；把 Kie 的文档整页复制给 AI，<b>一次就接上了</b>。<span class="st sq">社群经验</span>'],
+    or: ['OpenRouter', '阿飞整理的「接大模型都用哪些平台」里列了它，和 Kie、Replicate 等放在一起，原文没比价格。<span class="st sq">社群经验</span>'],
+  };
+  const platName = $('#s7-plat-name'), platNote = $('#s7-plat-note');
+  function showPlat(key, animate) {
+    platName.textContent = PLATS[key][0];
+    platNote.innerHTML = `<b>${PLATS[key][0]}：</b>${PLATS[key][1]}`;
+    if (animate) replay(platNote);
+  }
+  bindSeg($('#s7-plats'), v => showPlat(v, true));
+  showPlat('fal', false);
+
+  const asmBox = $('#s7-asm-viz'), asm = $('#s7-asm'), sIn = $('#s7-in'), sGo = $('#s7-go'), mcard = $('#s7-mcard'), mst = $('#s7-mst');
+  const sOut = $('#s7-out'), sOutTip = $('#s7-out-tip'), asmSay = $('#s7-asm-say');
+  const PROMPT = 'a cat dancing under the moon';
+  const ASM_SAY = [
+    '左边是<b>别人的</b>：模型平台上的 Lumibo 2 模型（虚构）。右边是<b>你的</b>：FramePop 的网页。现在两块还没接上，网页上的按钮按了也没用。',
+    '在平台上拿到密钥，让 AI 写几行对接代码，两块就<b>拼在一起</b>了。这个「插座」就叫<b>接口（API）</b>。',
+    '用户来到 FramePop，在输入框里打一句话：<b>一只猫在月亮下跳舞</b>。他不用知道背后是哪家的模型。',
+    '你的网页把这句话<b>送到平台</b>，模型开始生成。这一次平台就开始计费了，按次数或按运行时间。',
+    '结果<b>送回你的网页</b>，用户看到视频。平台向你收这一次的钱，用户付不付钱、付多少，由你定（下一个知识点）。',
+  ];
+  let asmRun = 0;
+  async function paintAsm(i, animate) {
+    const run = ++asmRun;
+    asm.classList.toggle('joined', i >= 1);
+    mcard.classList.toggle('busy', i === 3);
+    mst.textContent = i === 3 ? '生成中…' : i >= 4 ? '生成完了' : i >= 1 ? '已接上，等指令' : '没接上';
+    sGo.classList.toggle('press', i === 3 && animate);
+    sOut.classList.toggle('done', i >= 4);
+    sOutTip.hidden = i >= 4;
+    asmSay.innerHTML = ASM_SAY[i];
+    if (animate) replay(asmSay);
+    if (i < 2) { sIn.textContent = ''; return; }
+    if (i === 2 && animate && !reduce) {
+      for (let k = 1; k <= PROMPT.length; k++) {
+        if (run !== asmRun) return;
+        sIn.textContent = PROMPT.slice(0, k);
+        await sleep(40);
+      }
+    } else sIn.textContent = PROMPT;
+    if (i === 3 && animate) await flyTo(sIn, mcard, { html: '一句话', cls: 'chip ours' });
+    if (i === 4 && animate) {
+      sOut.classList.remove('done');
+      sOutTip.hidden = false;
+      await flyTo(mcard, sOut, { html: '视频', cls: 'chip good' });
+      if (run !== asmRun) return;
+      sOut.classList.add('done');
+      sOutTip.hidden = true;
+    }
+  }
+  makeSteps(asmBox, ['1 没接上', '2 接上', '3 用户打字', '4 送过去', '5 送回来'], paintAsm);
+
+  // ---------- 知识点 3：算账器 ----------
+  const PRICES = [4.49, 4.99, 9.99, 14.99, 19.99, 29, 39, 49, 99];
+  const SL = { cost: $('#s7-c-cost'), free: $('#s7-c-free'), price: $('#s7-c-price'), rate: $('#s7-c-rate'), vis: $('#s7-c-vis'), use: $('#s7-c-use') };
+  const failBox = $('#s7-c-fail');
+  const PRESETS = {
+    img: { cost: 0.04, free: 3, price: 2, rate: 2, vis: 5000, use: 60 },
+    cheap: { cost: 0.25, free: 2, price: 2, rate: 2, vis: 5000, use: 40 },
+    fair: { cost: 0.25, free: 1, price: 6, rate: 2, vis: 5000, use: 30 },
+  };
+  const FAIL_X = 1.5;
+  const calcSay = $('#s7-calc-say'), facts = $('#s7-facts'), netNum = $('#s7-n-net'), verdict = $('#s7-verdict');
+  function calc(animate) {
+    const c = Number(SL.cost.value), free = Number(SL.free.value), price = PRICES[Number(SL.price.value)];
+    const rate = Number(SL.rate.value), vis = Number(SL.vis.value), use = Number(SL.use.value);
+    const ce = failBox.checked ? c * FAIL_X : c;
+    $('#s7-o-cost').textContent = money(c, 2) + ' / 次';
+    $('#s7-o-free').textContent = free + ' 次';
+    $('#s7-o-price').textContent = money(price, price % 1 ? 2 : 0) + ' / 月';
+    $('#s7-o-rate').textContent = rate + '%';
+    $('#s7-o-vis').textContent = vis.toLocaleString('en-US') + ' 人';
+    $('#s7-o-use').textContent = use + ' 次';
+    const payers = vis * rate / 100;
+    const feeUnit = price * 0.039 + 0.40;
+    const rev = payers * price;
+    const fee = payers * feeUnit;
+    const freeCost = vis * free * ce;
+    const paidCost = payers * use * ce;
+    const cost = fee + freeCost + paidCost;
+    const net = rev - cost;
+    const scale = Math.max(rev, cost, 1);
+    $('#s7-b-rev').style.width = (rev / scale * 100) + '%';
+    $('#s7-b-free').style.width = (freeCost / scale * 100) + '%';
+    $('#s7-b-paid').style.width = (paidCost / scale * 100) + '%';
+    $('#s7-b-fee').style.width = (fee / scale * 100) + '%';
+    const show = (node, v) => {
+      if (animate) { countUp(node, v, 380, x => money(x)); return; }
+      node.dataset.val = v;
+      node.textContent = money(v);
+    };
+    show($('#s7-n-rev'), rev);
+    show($('#s7-n-cost'), cost);
+    show(netNum, net);
+    netNum.classList.toggle('win', net >= 0);
+    netNum.classList.toggle('lose', net < 0);
+    verdict.textContent = net >= 0 ? '赚' : '亏';
+    verdict.style.color = net >= 0 ? 'var(--green)' : 'var(--amber)';
+    const perPayer = price - feeUnit - use * ce;
+    const margin = perPayer / price * 100;
+    const perVisitor = free * ce;
+    const breakEven = perPayer > 0 ? perVisitor / perPayer * 100 : null;
+    facts.innerHTML = [
+      `付费用户：<b>${Math.round(payers).toLocaleString('en-US')}</b> 人（来的人 × 付费率）`,
+      `每来一个人，免费额度先烧掉 <b>${money(perVisitor, 2)}</b>`,
+      `每个付费用户每月给你留下 <b>${money(perPayer, 2)}</b>（月费 − 手续费 − 他自己用掉的）`,
+      perPayer <= 0 ? '付费率再高也是亏：<b>每卖出一份都在赔钱</b>'
+        : perVisitor === 0 ? '不送免费次数：<b>只要有人付钱就不亏</b>'
+        : `付费率至少要到 <b>${Math.max(0.1, breakEven).toFixed(1)}%</b> 才不亏`,
+      `付费这部分的毛利：<b>${margin.toFixed(0)}%</b>（王马扎做到 75% 以上）`,
+    ].map(t => `<li>${t}</li>`).join('');
+    if (perPayer <= 0) {
+      calcSay.className = 'viz-say bad';
+      calcSay.innerHTML = '<b>每卖出一份都在亏。</b>付费用户自己用掉的成本，比他付的钱还多。照抄同行的低价就会这样：王马扎的成本一次 0.05～0.25 美元，同行一次只卖 0.2～0.4 美元，所以他没照抄。';
+    } else if (net < 0) {
+      calcSay.className = 'viz-say bad';
+      calcSay.innerHTML = '<b>亏在免费额度上。</b>来的人越多、送得越多，烧得越快。试试少送几次，或者像哥飞说的，免费只给预览（下一个知识点）。';
+    } else {
+      calcSay.className = 'viz-say good';
+      calcSay.innerHTML = `<b>这样是赚的。</b>${failBox.checked ? '打开「失败也收钱」以后少赚了一大截，这就是为什么接视频模型前要先问清楚。' : '再打开下面「失败也收钱」的开关试试。'}退款、拒付、服务器、外链的钱还没算。`;
+    }
+  }
+  function applyPreset(key) {
+    const p = PRESETS[key];
+    Object.keys(p).forEach(k => { SL[k].value = p[k]; });
+    calc(true);
+  }
+  bindSeg($('#s7-preset'), v => applyPreset(v));
+  Object.values(SL).forEach(s => s.addEventListener('input', () => {
+    $$('#s7-preset button').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    calc(true);
+  }));
+  failBox.addEventListener('change', () => calc(true));
+  calc(false);
+
+  // ---------- 知识点 3：年付 ----------
+  const yrSl = $('#s7-yr-sl'), yrDots = $('#s7-yr-dots'), yrSum = $('#s7-yr-sum'), yrSay = $('#s7-yr-say');
+  const dots = Array.from({ length: 100 }, () => yrDots.appendChild(el('i')));
+  function paintYr(animate) {
+    const n = Number(yrSl.value);
+    $('#s7-yr-o').textContent = n + ' 人';
+    dots.forEach((d, i) => {
+      d.style.transitionDelay = animate && !reduce ? (Math.abs(i - n) * 6) + 'ms' : '0ms';
+      d.classList.toggle('yr', i < n);
+    });
+    const monthly = (100 - n) * 4 * 25, yearly = n * 125, total = monthly + yearly;
+    const more = (total / 10000 - 1) * 100;
+    yrSum.innerHTML = `<span>月付 ${100 - n} 人 × 4 个月 × 25 元 = <b>${monthly.toLocaleString('en-US')}</b> 元</span><span>年付 ${n} 人 × 125 元 = <b>${yearly.toLocaleString('en-US')}</b> 元</span><span>合计 <span class="s7-yr-total" id="s7-yr-total">${total.toLocaleString('en-US')}</span> 元，比只有月付（10000 元）多 <b>${more.toFixed(0)}%</b></span>`;
+    if (n === 100) {
+      yrSay.innerHTML = '<b>人人都选年付，多 25%。</b>推特原文算出来的「多 25%」，就是这样假设的。哥飞觉得不现实。<span class="st hf">哥飞原话</span>';
+    } else if (n === 40) {
+      yrSay.innerHTML = '<b>哥飞假设 40% 的人选年付：多 10%。</b>他认为这个数更贴近实际。<span class="st hf">哥飞原话</span>';
+    } else {
+      yrSay.innerHTML = '年付的人越多，收得越多。但要小心：本来会续费超过 5 个月的人，选了年付反而让你少收。年付打几折，要看你的用户一般留几个月。<span class="st tl">推出来的</span>';
+    }
+  }
+  yrSl.addEventListener('input', () => paintYr(true));
+  paintYr(false);
+
+  // ---------- 知识点 4：预览图 ----------
+  const pv = $('#s7-pv'), pvCap = $('#s7-pv-cap'), pvSay = $('#s7-pv-say');
+  const PV = {
+    free: ['<span class="chip bad">预览小图 · 带水印（示意）</span><span class="chip">下载高清版 → 要付费</span>', '免费用户<b>看得到效果</b>，但拿到的是一张缩小、带水印的预览图。想要能用的成品，就得付钱。'],
+    paid: ['<span class="chip good">高清大图 · 无水印（示意）</span><span class="chip ours">下载</span>', '付了钱，拿到的是<b>同一次生成的高清原图</b>。预览图是从原图「用算法处理」出来的，不用多生成一次。<span class="st tl">推出来的</span>'],
+  };
+  function showPv(key, animate) {
+    pv.classList.toggle('free', key === 'free');
+    pvCap.innerHTML = PV[key][0];
+    pvSay.innerHTML = PV[key][1];
+    if (animate) { replay(pvCap); replay(pvSay); }
+  }
+  bindSeg($('#s7-pv-seg'), v => showPv(v, true));
+  showPv('free', false);
+
+  // ---------- 知识点 4：Niko 的引导 ----------
+  const path = $('#s7-path'), nodes = $$('.s7-node', path), walker = $('#s7-walker');
+  const fnSay = $('#s7-fn-say'), ordNum = $('#s7-fn-orders'), ordBox = $('#s7-fn-ord');
+  const FN = {
+    before: { price: '$50', priceL: '月费（Niko 后来觉得定高了）', orders: 0, say: '<b>修之前：</b>单日 800 多访客，注册不到 100 个，付费 0。Stripe 上来过一笔，还被风控拦了。网站是照开发者的思路做的，用户进来<b>不知道下一步干什么</b>。' },
+    cut: { price: '降了', priceL: '月费（降到多少原文没写）', orders: 0, say: '<b>先降价：</b>Niko 觉得 50 美元一个月定高了，就降了价。等了一两天，<b>还是没单</b>。问题不在价格。' },
+    after: { price: '$50', priceL: '第一笔成交还是 50 美元月费', orders: 1, say: '<b>修好引导：</b>每一步都告诉用户下一步。有试用先引导试用，试完引导登录，登录后引导付费，付完带回工具框。改完<b>当晚出了第一笔 50 美元月费</b>。' },
+  };
+  const center = n => [n.offsetLeft + n.offsetWidth / 2, n.offsetTop + n.offsetHeight / 2];
+  const placeWalker = ([x, y]) => { walker.style.left = x + 'px'; walker.style.top = y + 'px'; };
+  const moveWalker = (from, to, ms) => new Promise(res => tween(ms, k => placeWalker([from[0] + (to[0] - from[0]) * k, from[1] + (to[1] - from[1]) * k]), res));
+  let fnRun = 0;
+  async function showFn(key, animate) {
+    const run = ++fnRun;
+    const s = FN[key];
+    $('#s7-fn-price').textContent = s.price;
+    $('#s7-fn-price-l').textContent = s.priceL;
+    ordNum.textContent = '0';
+    ordBox.classList.remove('got');
+    fnSay.innerHTML = s.say;
+    fnSay.className = key === 'after' ? 'viz-say good' : 'viz-say bad';
+    if (animate) replay(fnSay);
+    path.classList.toggle('fixed', key === 'after');
+    nodes.forEach(n => n.classList.remove('lit'));
+    walker.style.opacity = 0;
+    if (key !== 'after') {
+      if (!animate || reduce) return;
+      const a = center(nodes[0]);
+      placeWalker([a[0], a[1] - 40]);
+      walker.style.opacity = 1;
+      await moveWalker([a[0], a[1] - 40], a, 500);
+      if (run !== fnRun) return;
+      await sleep(500);
+      if (run !== fnRun) return;
+      await moveWalker(a, [a[0] - 30, a[1] + 60], 700);
+      if (run === fnRun) walker.style.opacity = 0;
+      return;
+    }
+    if (animate && !reduce) {
+      let at = center(nodes[0]);
+      placeWalker([at[0], at[1] - 40]);
+      walker.style.opacity = 1;
+      await moveWalker([at[0], at[1] - 40], at, 400);
+      for (let i = 0; i < nodes.length; i++) {
+        if (run !== fnRun) return;
+        const to = center(nodes[i]);
+        if (i) await moveWalker(at, to, 550);
+        if (run !== fnRun) return;
+        nodes[i].classList.add('lit');
+        at = to;
+        await sleep(200);
+      }
+      walker.style.opacity = 0;
+    } else nodes.forEach(n => n.classList.add('lit'));
+    if (run !== fnRun) return;
+    ordNum.textContent = '1';
+    ordBox.classList.add('got');
+    if (animate) replay(ordNum.parentElement, 'enter');
+  }
+  bindSeg($('#s7-fn-seg'), v => showFn(v, true));
+  showFn('before', false);
+
+  // ---------- 知识点 5：问答小路 ----------
+  const lad = $('#s7-lad'), rows = $$('.s7-lrow', lad), noLines = $$('.s7-no', lad), ladDetail = $('#s7-lad-detail');
+  const DETAIL = {
+    start: '从第 1 个问题开始，照实回答「有」或「没有」。',
+    paypal: '<b>有国内公司：</b>用公司名义注册 PayPal.cn，「直接全球收款美元，最后提现人民币到国内银行账户」。<span class="st hf">哥飞原话</span>',
+    stripe: '<b>有香港个人银行卡：</b>众安、中银、汇丰等都行，哥飞说「最好都开」，再用护照注册个人版 Stripe，钱进香港账户。<span class="st hf">哥飞原话</span> 哥飞自己跑了两趟香港，审核两三天通过。他提醒：开户用的网站最好已经上线一段时间、有流量，别拿一个啥功能都没有的静态页面去申请。',
+    creem: '<b>有护照：</b>注册 Creem，群里很多人在用，不用跑香港，审核大约 1～2 天。<span class="st hf">哥飞原话</span> 下面的框里有 Creem 的手续费和提现的两种说法。以后有条件，再开一个个人 Stripe 当备用。<span class="st tl">推出来的</span>',
+    passport: '<b>连护照也没有：</b>去当地公安局办，哥飞说「一周多就办好了」。办好就去注册 Creem。<span class="st hf">哥飞原话</span>',
+  };
+  function showDetail(key) {
+    ladDetail.innerHTML = `<p>${DETAIL[key]}</p>`;
+    replay(ladDetail);
+  }
+  function resetLad() {
+    lad.classList.remove('done');
+    $$('.s7-q', lad).forEach((q, i) => {
+      q.classList.toggle('cur', i === 0);
+      q.classList.remove('past');
+      $$('button', q).forEach(b => { b.disabled = i !== 0; b.removeAttribute('aria-pressed'); });
+    });
+    $$('.s7-yes, .s7-no', lad).forEach(x => x.classList.remove('on'));
+    $$('.s7-res', lad).forEach(x => x.classList.remove('hit'));
+    ladDetail.innerHTML = `<p>${DETAIL.start}</p>`;
+  }
+  function finish(res) {
+    lad.classList.add('done');
+    $(`.s7-res[data-r="${res}"]`, lad).classList.add('hit');
+    showDetail(res);
+  }
+  lad.addEventListener('click', e => {
+    const b = e.target.closest('.s7-q button');
+    if (!b || b.disabled) return;
+    const row = b.closest('.s7-lrow'), i = Number(row.dataset.i), q = $('.s7-q', row);
+    $$('button', q).forEach(x => { x.disabled = true; x.setAttribute('aria-pressed', String(x === b)); });
+    q.classList.remove('cur');
+    q.classList.add('past');
+    if (b.dataset.a === 'yes') {
+      $('.s7-yes', row).classList.add('on');
+      setTimeout(() => finish($('.s7-res', row).dataset.r), reduce ? 0 : 450);
+      return;
+    }
+    noLines[i].classList.add('on');
+    if (i === rows.length - 1) { setTimeout(() => finish('passport'), reduce ? 0 : 450); return; }
+    setTimeout(() => {
+      const nq = $('.s7-q', rows[i + 1]);
+      nq.classList.add('cur');
+      $$('button', nq).forEach(x => { x.disabled = false; });
+    }, reduce ? 0 : 400);
+  });
+  $('#s7-lad-reset').addEventListener('click', resetLad);
+  resetLad();
+
+  // ---------- 知识点 5：Creem 手续费、200 笔 ----------
+  const feeOut = $('#s7-fee-out');
+  function showFee(price) {
+    const cut = price * 0.039 + 0.40, got = price - cut;
+    feeOut.innerHTML = `卖 <b>${money(price, 2)}</b>：手续费约 <em>${money(cut, 2)}</em>，到手约 <b>${money(got, 2)}</b>，被扣掉 <em>${(cut / price * 100).toFixed(0)}%</em>。${price < 10 ? '价格越低，那 0.40 美元越疼。' : ''}<span class="st tl">推出来的</span>`;
+  }
+  bindSeg($('#s7-fee-seg'), v => { showFee(Number(v)); replay(feeOut); });
+  showFee(4.99);
+  const d200 = $('#s7-dots200');
+  for (let i = 0; i < 200; i++) d200.appendChild(el('i', i === 137 ? { class: 'bad' } : {}));
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>第 2 关 收词 · AI 新词站白话课</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<style>
+/* 第 2 关 收词：9 个来源 → 快进两周 → 去重、查量、陷阱、排序 → 结算 */
+.sim2-toprow { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.sim2-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.sim2-steps li { font-size: 13px; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); background: var(--surface); }
+.sim2-steps li.on { border-color: var(--amber); color: var(--amber); font-weight: 700; background: var(--amber-soft); }
+.sim2-steps li.done { border-color: color-mix(in srgb, var(--green) 50%, var(--line)); color: var(--green); }
+.sim2-lock { padding: 22px 18px; border-radius: 16px; border: 2px dashed var(--line); color: var(--muted); text-align: center; font-size: 15px; background: var(--surface); }
+.sim2-lock b { display: block; color: var(--ink); font-size: 16px; margin-bottom: 4px; }
+.sim2-body { display: grid; gap: 16px; }
+
+/* 日历和快进 */
+.sim2-clock { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 14px; background: var(--bg); }
+.sim2-cal { display: grid; text-align: center; min-width: 96px; padding: 4px 10px 6px; border-radius: 10px; background: var(--surface); border: 1.5px solid var(--amber); }
+.sim2-cal span { font-size: 11.5px; color: var(--amber); font-weight: 700; letter-spacing: .1em; }
+.sim2-cal b { font-family: var(--font-mono); font-size: 18px; white-space: nowrap; }
+.sim2-cal.go { animation: pop .4s; }
+.sim2-clock p { font-size: 14px; color: var(--muted); line-height: 1.6; }
+@media (max-width: 520px) {
+  .sim2-clock { grid-template-columns: auto 1fr; }
+  .sim2-clock .btn { grid-column: 1 / -1; justify-self: start; }
+}
+
+/* 来源和收词篮 */
+.sim2-grid { display: grid; grid-template-columns: minmax(0, 1fr) 290px; gap: 14px; align-items: start; }
+.sim2-basket { grid-column: 2; grid-row: 1; position: sticky; top: 64px; display: grid; gap: 8px; padding: 12px; border-radius: 14px; border: 2px dashed var(--indigo); background: var(--indigo-soft); align-content: start; z-index: 5; }
+.sim2-sources { grid-column: 1; grid-row: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.sim2-src { display: grid; gap: 3px; align-content: start; text-align: left; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; cursor: pointer; touch-action: manipulation; min-height: 96px; }
+.sim2-src:hover:not(:disabled) { border-color: var(--indigo); }
+.sim2-src b { font-size: 14.5px; line-height: 1.4; }
+.sim2-src .how { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+.sim2-badge { justify-self: start; margin-top: auto; font-style: normal; font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--bg); color: var(--muted); }
+.sim2-src.done { border-color: color-mix(in srgb, var(--green) 55%, var(--line)); background: var(--green-soft); cursor: default; }
+.sim2-src.done .sim2-badge { background: var(--surface); color: var(--green); }
+.sim2-src.nodata { border-color: var(--amber); background: var(--amber-soft); }
+.sim2-src.nodata .sim2-badge { background: var(--surface); color: var(--amber); }
+.sim2-src.fresh .sim2-badge { background: var(--indigo); color: var(--on-indigo); }
+.sim2-src:disabled:not(.done) { opacity: .6; cursor: default; }
+.sim2-shake { animation: shake .45s; }
+.sim2-bhead { display: grid; gap: 4px; font-size: 13.5px; }
+.sim2-bhead > b { font-size: 14px; color: var(--indigo); }
+.sim2-bhead span b { font-family: var(--font-mono); }
+.sim2-chips { display: flex; flex-wrap: wrap; gap: 6px; max-height: 330px; overflow-y: auto; align-content: flex-start; }
+.sim2-chips .chip { font-size: 12.5px; padding: 3px 9px; background: var(--surface); }
+.sim2-chips .chip:not(.ours) { color: var(--muted); }
+.sim2-empty { font-size: 13px; color: var(--muted); }
+.sim2-pop { animation: pop .35s both; }
+@media (max-width: 640px) {
+  .sim2-grid { display: block; }
+  .sim2-basket { top: 56px; margin-bottom: 12px; box-shadow: 0 6px 14px rgba(0, 0, 0, .08); }
+  .sim2-chips { max-height: 92px; }
+  .sim2-sources { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sim2-src .how { display: none; }
+  .sim2-src { min-height: 0; }
+}
+
+/* 整理流水线 */
+.sim2-pipe { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.sim2-step { display: grid; grid-template-columns: auto 1fr; gap: 0 10px; align-items: center; text-align: left; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--indigo); background: var(--surface); color: var(--ink); font: inherit; cursor: pointer; touch-action: manipulation; }
+.sim2-step i { grid-row: span 2; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-family: var(--font-mono); font-size: 13px; background: var(--indigo); color: var(--on-indigo); }
+.sim2-step b { font-size: 15px; }
+.sim2-step span { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+.sim2-step:disabled { border-color: var(--line); cursor: default; opacity: .55; }
+.sim2-step.done { border-color: var(--green); background: var(--green-soft); opacity: 1; }
+.sim2-step.done i { background: var(--green); color: var(--surface); }
+.sim2-step.ready { animation: pulse 2s infinite; }
+@media (max-width: 520px) { .sim2-pipe { grid-template-columns: 1fr; } }
+.sim2-rhead { display: grid; grid-template-columns: minmax(0, 1fr) minmax(64px, .8fr) 70px; gap: 10px; font-size: 12.5px; color: var(--muted); padding: 0 12px; }
+.sim2-rhead span:last-child { text-align: right; }
+.sim2-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.sim2-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(64px, .8fr) 70px; gap: 10px; align-items: center; padding: 5px 10px; border-radius: 9px; background: var(--surface); border: 1.5px solid var(--line); max-height: 90px; overflow: hidden; transition: max-height .35s, opacity .35s, padding .35s, border-width .35s, margin .35s; }
+.sim2-rw { font-family: var(--font-mono); font-size: 13.5px; overflow-wrap: anywhere; line-height: 1.5; }
+.sim2-rbar { height: 10px; border-radius: 5px; background: var(--bg); overflow: hidden; }
+.sim2-rbar i { display: block; height: 100%; width: 0; background: var(--indigo); border-radius: 5px; transition: width .7s cubic-bezier(.3, .7, .3, 1); }
+.sim2-rv { font-family: var(--font-mono); font-size: 13px; text-align: right; }
+.sim2-row.dup { border-color: var(--amber); background: var(--amber-soft); animation: shake .4s 2; }
+.sim2-row.gone { max-height: 0; opacity: 0; padding-block: 0; border-width: 0; margin-top: -4px; }
+.sim2-row.trap { border-color: var(--amber); box-shadow: 0 0 0 3px color-mix(in srgb, var(--amber) 25%, transparent); }
+.sim2-row.trap .sim2-rbar i { background: var(--amber); }
+.sim2-row.core { border-color: var(--indigo); background: var(--indigo-soft); }
+.sim2-flash { animation: flashGood 1s; }
+.sim2-tag { font-style: normal; font-family: var(--font-body); font-size: 11px; font-weight: 700; margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: var(--indigo); color: var(--on-indigo); white-space: nowrap; display: inline-block; }
+.sim2-tag.warn { background: var(--amber-soft); color: var(--amber); }
+.sim2-tag.ok { background: var(--green-soft); color: var(--green); }
+
+/* 陷阱 */
+.sim2-trap { display: grid; gap: 12px; padding: 16px; border-radius: 16px; border: 2px solid var(--amber); background: var(--surface); animation: rise .4s both; }
+.sim2-trap-q { font-size: 16px; line-height: 1.75; }
+.sim2-trap-q b { color: var(--amber); }
+.sim2-opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.sim2-opt { display: grid; gap: 4px; text-align: left; padding: 12px 14px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--bg); color: var(--ink); font: inherit; font-size: 15px; line-height: 1.6; cursor: pointer; touch-action: manipulation; }
+.sim2-opt:hover:not(:disabled) { border-color: var(--indigo); }
+.sim2-opt:disabled { cursor: default; }
+.sim2-opt.good { border-color: var(--green); background: var(--green-soft); }
+.sim2-opt.bad { border-color: var(--amber); background: var(--amber-soft); animation: shake .45s; }
+.sim2-opt.answer { border-color: var(--green); border-style: dashed; }
+.sim2-cmp svg { display: block; width: 100%; max-width: 420px; height: auto; background: var(--bg); border-radius: 10px; overflow: visible; }
+.sim2-cmp text { font-family: var(--font-body); }
+.sim2-ax { stroke: var(--line); stroke-width: 1.5; }
+.sim2-tx { fill: var(--muted); font-size: 12.5px; }
+.sim2-l1 { fill: none; stroke: var(--indigo); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.sim2-l2 { fill: none; stroke: var(--amber); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.sim2-t1 { fill: var(--indigo); font-size: 13px; font-weight: 700; font-family: var(--font-mono) !important; }
+.sim2-t2 { fill: var(--amber); font-size: 13px; font-weight: 700; font-family: var(--font-mono) !important; }
+.sim2-endrow { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+/* 结算 */
+.sim2-parts { display: grid; gap: 8px; }
+.sim2-part { display: grid; grid-template-columns: 7.5em 1fr auto; gap: 10px; align-items: center; font-size: 14.5px; }
+.sim2-part b { font-family: var(--font-mono); }
+.sim2-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.sim2-list li { display: grid; gap: 4px; padding: 12px 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); font-size: 14.5px; line-height: 1.7; }
+.sim2-list.miss li { border-left: 4px solid var(--amber); }
+.sim2-list li > b { font-size: 15px; }
+.sim2-list li > a { font-size: 13.5px; font-weight: 600; justify-self: start; }
+.sim2-list.ok li { grid-template-columns: 1fr auto; padding: 8px 12px; font-size: 14px; }
+.sim2-list.ok li > span { color: var(--green); font-family: var(--font-mono); font-weight: 600; }
+details.sim2-det summary { cursor: pointer; font-weight: 650; padding: 6px 0; }
+.sim2-endbtns { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.sim2-endbtns a.btn { text-decoration: none; display: inline-block; }
+.sim2-endbtns a.btn[aria-disabled="true"] { opacity: .5; }
+.sim2-nudge { animation: shake .45s; }
+</style>
+</head>
+<body data-page="sim-2">
+<header id="topbar"></header>
+
+<div class="ph"><div class="wrap">
+  <span class="eyebrow">站长模拟器 · 第 2 关 / 共 8 关</span>
+  <h1>收词：把 Lumibo 2 的各种说法都收进篮子</h1>
+  <p class="lead">核心词定了，可用户不会只搜这一种说法。去 9 个地方把相关的词收齐，再去重、查搜索量、按量排序。今天是 Lumibo 2 发布后的第 1 天。</p>
+  <div class="gist"><span class="lab">过关要点</span><p>新词刚出来，有的工具还查不到，先用当天就有词的来源；搜索量最后信<button type="button" class="term" data-t="ads">谷歌 Ads 关键词规划师</button>；它说两个词一样多时，放进<button type="button" class="term" data-t="trends">谷歌趋势</button>加双引号比一比。</p></div>
+</div></div>
+
+<main class="wrap">
+
+  <section class="kp" id="sim2-top">
+    <div class="sim-hud"><span class="lv">第 2 关</span><span>站：FramePop（示意）</span><span id="sim2-day">第 1 天</span><span class="pts">得分 <b id="sim2-pts">0</b> / 100</span></div>
+    <div class="sim-task">
+      <span class="lab">本关任务</span>
+      <p>核心词：<b class="mono" id="sim2-core">lumibo video generator</b><span class="muted" id="sim2-core-from" style="font-size:14px"></span></p>
+      <p>① 点 9 个来源，把 <b>18 个不同的说法</b>都收进篮子（40 分）；② 来源先后用得对不对（15 分）；③ 去重、查搜索量、按量排序（30 分）；④ 小心规划师的一个坑（15 分）。</p>
+      <p class="muted" id="sim2-last" style="font-size:14.5px" hidden></p>
+    </div>
+    <div class="sim2-toprow">
+      <ol class="sim2-steps" id="sim2-steps"><li class="on">① 收词</li><li>② 整理</li><li>结算</li></ol>
+      <button type="button" class="btn" data-replay>重玩这一关</button>
+    </div>
+  </section>
+
+  <!-- 第一段：收词 -->
+  <section class="kp" id="sim2-s1">
+    <div class="kp-head"><span class="kp-no">第一段 · 收词</span><h2>点一个来源，词就飞进篮子</h2></div>
+    <p class="kp-say">哥飞列过收词的地方：谷歌下拉、相关搜索、趋势相关查询、规划师、<button type="button" class="term" data-t="semrush">Semrush</button>、<button type="button" class="term" data-t="similarweb">Similarweb</button>、各平台的搜索框……同一个意思的不同说法，「尽量把每一种表达都覆盖到」。<span class="st hf">哥飞原话</span></p>
+    <div class="viz" id="sim2-collect">
+      <div class="viz-head"><span class="viz-label">动手玩 · 点来源收词</span><p class="viz-title">9 个来源，1 个收词篮（词和数字都是示意）</p></div>
+      <div class="sim2-clock">
+        <div class="sim2-cal" id="sim2-cal"><span>今 天</span><b id="sim2-daynum">第 1 天</b></div>
+        <p id="sim2-clock-say">Lumibo 2 昨天才发布。有的工具要等谷歌攒够数据，才查得到它。</p>
+        <button type="button" class="btn" id="sim2-ff">快进两周</button>
+      </div>
+      <div class="sim2-grid">
+        <div class="sim2-basket" id="sim2-basket">
+          <div class="sim2-bhead"><b>收词篮</b><span>篮子里 <b id="sim2-raw">0</b> 条 · 不同的说法 <b id="sim2-uniq">0</b> / 18</span><span class="meter ours"><i id="sim2-umeter"></i></span></div>
+          <div class="sim2-chips" id="sim2-chips"><span class="sim2-empty">还空着。点左边的来源试试。蓝框是第一次收到的说法，灰的是收重复了。</span></div>
+        </div>
+        <div class="sim2-sources" id="sim2-sources"></div>
+      </div>
+      <p class="viz-say" id="sim2-say" aria-live="polite">先挑一个来源点一下。每个来源给的词都不一样，也会有重复。</p>
+      <div class="viz-controls"><button type="button" class="btn primary big" id="sim2-to2" disabled>收好了，去整理 →</button><span class="muted" id="sim2-to2-hint" style="font-size:14px">整理时要用规划师查搜索量，它现在还没有 Lumibo 2 的数据。</span></div>
+    </div>
+  </section>
+
+  <!-- 第二段：整理 -->
+  <section class="kp" id="sim2-s2">
+    <div class="kp-head"><span class="kp-no">第二段 · 整理</span><h2>去重 → 查搜索量 → 按量排序</h2></div>
+    <div class="sim2-lock"><b>收完词才能来</b>篮子里的词会排成一张表：先删掉重复的，再查每个词有多少人搜，最后从大到小排队。</div>
+    <div class="sim2-body" hidden>
+      <p class="kp-say">哥飞的整理顺序：先用表格去掉重复的词，再一行一个丢进规划师查量，然后按量排序。量信谁？「两家都不信，而是信谷歌的」。<span class="st hf">哥飞原话</span></p>
+      <div class="viz" id="sim2-tidy">
+        <div class="viz-head"><span class="viz-label">动手玩 · 整理流水线</span><p class="viz-title">一步一步点，看表格怎么变</p></div>
+        <div class="sim2-pipe">
+          <button type="button" class="sim2-step ready" id="sim2-dedup"><i>1</i><b>去重</b><span>删掉重复的、大小写不同的</span></button>
+          <button type="button" class="sim2-step" id="sim2-vol" disabled><i>2</i><b>查搜索量</b><span>一行一个，丢进规划师</span></button>
+          <button type="button" class="sim2-step" id="sim2-sort" disabled><i>3</i><b>按量排序</b><span>从大到小排队</span></button>
+        </div>
+        <div class="sim2-trap" id="sim2-trap" hidden>
+          <p class="sim2-trap-q"><b>咦？</b>规划师给 <code>lumibo video generator</code> 和 <code>lumibo video generators</code>（多了个 s）的搜索量一模一样，都是 <b>22,000</b>。你怎么办？</p>
+          <div class="sim2-opts">
+            <button type="button" class="sim2-opt" data-v="trust">信规划师，两个都按 22,000 记</button>
+            <button type="button" class="sim2-opt" data-v="cmp">放进谷歌趋势，给两个词加上双引号比一比</button>
+          </div>
+          <div class="sim2-cmp" id="sim2-cmp" hidden></div>
+          <p class="viz-say" id="sim2-trap-say" hidden></p>
+        </div>
+        <div class="sim2-rhead"><span>词</span><span>搜索量</span><span>每月（示意）</span></div>
+        <ol class="sim2-rows" id="sim2-rows"></ol>
+        <p class="viz-say" id="sim2-tsay" aria-live="polite">表里是你篮子里的全部词，原样排着，有重复。先点「去重」。</p>
+      </div>
+      <div class="sim2-endrow"><button type="button" class="btn" id="sim2-finish">不整理了，直接结算</button><span class="muted" id="sim2-finish-hint" style="font-size:14px">三步都做完，按钮会变成「结算本关」。</span></div>
+    </div>
+  </section>
+
+  <!-- 结算 -->
+  <section class="kp" id="sim2-s3">
+    <div class="kp-head"><span class="kp-no">结算</span><h2>第 2 关成绩单</h2></div>
+    <div class="sim2-lock"><b>整理完，这里出成绩</b>收全了几成、来源用得对不对、整理有没有做、陷阱踩没踩，都会列出来。</div>
+    <div class="sim2-body" hidden>
+      <div class="sim-result" id="sim2-result">
+        <span class="lab" style="font-size:12.5px;font-weight:700;letter-spacing:.08em">第 2 关 · 收词</span>
+        <div class="big-num"><span id="sim2-final">0</span> / 100</div>
+        <p id="sim2-sum"></p>
+        <div class="sim2-parts" id="sim2-parts"></div>
+      </div>
+      <h3>做错的地方（点链接回讲解）</h3>
+      <ul class="sim2-list miss" id="sim2-miss"></ul>
+      <details class="sim2-det"><summary id="sim2-good-sum">做对的</summary><ul class="sim2-list ok" id="sim2-good"></ul></details>
+
+      <div class="quiz" data-answer="C">
+        <span class="q-tag">复盘题</span>
+        <p class="q-title">新词发布第 1 天，规划师里还查不到它的搜索量。你最该做什么？</p>
+        <div class="q-opts">
+          <button class="q-opt" data-l="A">先等两周，规划师有数据了再开始收词</button>
+          <button class="q-opt" data-l="B">换一个老词做，老词的数据全</button>
+          <button class="q-opt" data-l="C">先从谷歌下拉、趋势、同行的新页面、平台搜索框把词收起来，过两周再用规划师查量</button>
+        </div>
+        <div class="q-ans" hidden><p class="q-verdict"></p><p>新词刚出来，工具里没数据很正常。抢先上线的同行做了哪些页面、趋势里的飙升词、各平台搜索框，当天就能收到词。<span class="st sq">社群经验</span> 搜索量最后用规划师查，「两家都不信，而是信谷歌的」。<span class="st hf">哥飞原话</span> 干等两周，新词的先机就没了。</p></div>
+      </div>
+
+      <div class="sim2-endbtns">
+        <button type="button" class="btn" data-replay>重玩这一关</button>
+        <a class="btn primary big" id="sim2-next" href="sim-3.html" aria-disabled="true">去第 3 关：一页放几个词 →</a>
+      </div>
+      <p class="muted" id="sim2-next-hint" style="font-size:14.5px">先答上面的复盘题，再进下一关。</p>
+
+      <div class="src"><span class="src-lab">看原文</span><ul>
+        <li><a href="https://new.web.cafe/tutorial/detail/lmlpg7ae96">《从需求调研到网站规划》</a><span class="meta">哥飞 · 2024-11-25 · 收词的 9 个地方</span></li>
+        <li><a href="https://new.web.cafe/tutorial/detail/y347cg5g3f">《跨平台对比、收集整理关键词》</a><span class="meta">哥飞 · 2025-01-15 · 去重、查量、ai image 和 ai images 的坑、双引号</span></li>
+        <li><a href="https://new.web.cafe/topic/l8aoo7xs01">《10 月新词新站经验分享》</a><span class="meta">blank · 2024-11-06 · Similarweb 看同行的新页面</span></li>
+        <li><a href="https://new.web.cafe/tutorial/detail/3nfxk91lnj">《paypal fee calculator 案例拆解》</a><span class="meta">哥飞 · 2025-12-05 · 边收边扩</span></li>
+      </ul></div>
+    </div>
+  </section>
+
+</main>
+
+<nav id="pager"></nav>
+<footer id="foot"></footer>
+<script src="assets/kit.js"></script>
+<script>
+(() => {
+  const { $, $$, el, svgEl, tween, sleep, fmt, replay, countUp, flip, flyTo, confetti, reduce, store, SIM } = KIT;
+
+  const HF = '<span class="st hf">哥飞原话</span>', SQ = '<span class="st sq">社群经验</span>', TL = '<span class="st tl">推出来的</span>';
+  const LINK = {
+    where: ['s2-collect.html#k2', '第 2 步 · 去哪收'],
+    tidy: ['s2-collect.html#k3', '第 2 步 · 收完怎么整理'],
+    trap: ['s2-collect.html#k4', '第 2 步 · 搜索量的坑'],
+    parent: ['s2-collect.html#k5', '第 2 步 · 兄弟词、父词'],
+  };
+  const norm = w => w.trim().toLowerCase().replace(/\s+/g, ' ');
+  const VOL = Object.fromEntries(SIM.words.map(o => [o.w, o.v]));
+  const ALL = SIM.words.map(o => o.w);
+  const PLURAL = 'lumibo video generators', SINGLE = 'lumibo video generator';
+
+  // 9 个来源。day1 = 第 1 天就有词；规划师和 Semrush 要等谷歌攒够数据（快进两周以后）
+  const SRC = [
+    { id: 'suggest', name: '谷歌下拉', how: '搜索框里打 lumibo，看弹出的推荐', day1: true,
+      words: ['lumibo 2', 'lumibo video generator', 'Lumibo Video Generator', 'lumibo 2 download', 'lumibo api', 'lumibo image to video', 'lumibo 2 release date'],
+      tip: `下拉看不到搜索量，先收着；在 lumibo 后面接着加字，还能挖出更细的说法。${HF}` },
+    { id: 'related', name: '相关搜索', how: '搜索结果页最底下的「相关搜索」', day1: true,
+      words: ['lumibo ai video generator', 'free lumibo video generator', 'lumibo video generator online', 'lumibo text to video'],
+      tip: `免费、在线、加个 ai……同一件事的不同说法都要收。${HF}` },
+    { id: 'trends', name: '趋势相关查询', how: '谷歌趋势「相关查询」切到「搜索量上升」', day1: true,
+      words: ['lumibo 2 vs sora', 'lumibo prompts', 'how to use lumibo 2', 'Lumibo 2'],
+      tip: `「搜索量上升」和「热门」两栏都要看，最多 25 个词，拿到的还能接着查。${HF}` },
+    { id: 'ads', name: 'Ads 规划师', how: '谷歌广告后台的「发现新关键词」', day1: false,
+      words: ['lumibo video generators', 'lumibo video maker', 'ai video generator', 'lumibo ai video generator'],
+      tip: `规划师会按意思给你一堆想不到的说法，比如 video maker。${HF}` },
+    { id: 'semrush', name: 'Semrush', how: '收费查词工具，输入 lumibo 看相关词', day1: false,
+      words: ['ai video generator', 'lumibo video generator', 'lumibo api'],
+      tip: `Semrush 能帮你发现词，但它的搜索量也是从谷歌来的，排序时以规划师为准。${HF}` },
+    { id: 'similar', name: 'Similarweb 同行新页面', how: '看抢先上线的同行最近新做了哪些页面', day1: true,
+      words: ['lumibo image to video', 'lumibo for tiktok', 'lumibo video generator no watermark', 'lumibo prompts'],
+      tip: `同行刚做的新页面，往往就是新词的细分需求：图生视频、给 TikTok 用、去水印。${SQ}` },
+    { id: 'video', name: 'YouTube / TikTok 搜索框', how: '视频平台搜索框的下拉推荐', day1: true,
+      words: ['lumibo for tiktok', 'how to use lumibo 2', 'LUMIBO PROMPTS'],
+      tip: `有搜索框的平台，下拉都能拿词。新词刚出来时，它们常常比工具更早有词。${HF}${TL}` },
+    { id: 'paa', name: 'People Also Ask', how: '搜索结果里「其他人还问了」那一栏', day1: true,
+      words: ['how to use lumibo 2', 'lumibo video generator no watermark', 'Lumibo 2 Release Date'],
+      tip: `「其他人还问了」里都是用户的问题，以后适合做教程页、写进常见问题。${TL}` },
+    { id: 'social', name: 'Reddit / X', how: '用户自己在帖子里怎么说', day1: true,
+      words: ['lumibo video maker', 'lumibo 2 vs sora', 'Free Lumibo Video Generator'],
+      tip: `用户自己的说法，比如 video maker，工具里不一定第一时间有。${TL}` },
+  ];
+  SRC.forEach(s => s.words.forEach(w => { if (!(norm(w) in VOL)) throw new Error(`来源「${s.name}」里的词不在 KIT.SIM.words 里：${w}`); }));
+  ALL.forEach(w => { if (!SRC.some(s => s.words.some(x => norm(x) === w))) throw new Error(`KIT.SIM.words 里的词没有任何来源能收到：${w}`); });
+
+  // ---------- 存档、计分 ----------
+  const s1 = SIM.load('sim-1');
+  const core = s1 && s1.core ? s1.core : SIM.core;
+  $('#sim2-core').textContent = core;
+  $('#sim2-core-from').textContent = s1 ? '（来自你第 1 关的存档）' : '（没读到第 1 关的存档，用默认的）';
+  const last = SIM.load('sim-2');
+  if (last) {
+    const p = $('#sim2-last');
+    p.hidden = false;
+    p.textContent = `你上次得了 ${last.score} / 100 分。再玩一遍，会用新成绩覆盖。`;
+  }
+  $$('[data-replay]').forEach(b => b.addEventListener('click', () => {
+    store.del('quiz.sim-2');
+    scrollTo(0, 0);
+    location.reload();
+  }));
+
+  const st = { raw: [], uniq: new Set(), used: new Set(), usedBefore: 0, ff: false, phase: 1, dedup: false, vol: false, sort: false, trap: null };
+  const srcPts = n => n >= 5 ? 15 : n >= 3 ? 8 : 0;
+  const collectPts = () => Math.round(st.uniq.size / ALL.length * 40);
+  const total = () => collectPts() + (st.ff ? srcPts(st.usedBefore) : 0) + (st.dedup ? 10 : 0) + (st.vol ? 10 : 0) + (st.sort ? 10 : 0) + (st.trap === 'cmp' ? 15 : 0);
+  const paintPts = () => countUp($('#sim2-pts'), total(), 400);
+  const stepLis = $$('#sim2-steps li');
+  function unlock(n) {
+    const sec = $('#sim2-s' + n);
+    $('.sim2-lock', sec).hidden = true;
+    $('.sim2-body', sec).hidden = false;
+    stepLis.forEach((li, i) => { li.classList.toggle('done', i < n - 1); li.classList.toggle('on', i === n - 1); });
+    sec.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+  }
+  const say = (cls, html) => { const p = $('#sim2-say'); p.className = 'viz-say ' + cls; p.innerHTML = html; };
+
+  // ---------- 第一段：来源 → 收词篮 ----------
+  const srcBox = $('#sim2-sources'), basket = $('#sim2-basket'), chips = $('#sim2-chips');
+  SRC.forEach(s => {
+    const b = el('button', { type: 'button', class: 'sim2-src', 'data-s': s.id }, `<b>${s.name}</b><span class="how">${s.how}</span><em class="sim2-badge">还没点</em>`);
+    b.addEventListener('click', () => pull(s, b));
+    srcBox.appendChild(b);
+  });
+  const srcBtn = id => $(`.sim2-src[data-s="${id}"]`, srcBox);
+  function addChip(w) {
+    const empty = $('.sim2-empty', chips);
+    if (empty) empty.remove();
+    st.raw.push(w);
+    const n = norm(w), fresh = !st.uniq.has(n);
+    st.uniq.add(n);
+    const chip = el('span', { class: 'chip' + (fresh ? ' ours' : '') }, w);
+    chips.appendChild(chip);
+    replay(chip, 'sim2-pop');
+    chips.scrollTop = chips.scrollHeight;
+    $('#sim2-raw').textContent = st.raw.length;
+    $('#sim2-uniq').textContent = st.uniq.size;
+    $('#sim2-umeter').style.width = (st.uniq.size / ALL.length * 100) + '%';
+    paintPts();
+  }
+  let busy = false;
+  const setSrcDisabled = all => $$('.sim2-src', srcBox).forEach(x => { x.disabled = all || x.classList.contains('done'); });
+  async function pull(s, b) {
+    if (busy || st.phase !== 1 || b.classList.contains('done')) return;
+    if (!s.day1 && !st.ff) {
+
+      b.classList.add('nodata');
+      replay(b, 'sim2-shake');
+      $('.sim2-badge', b).textContent = '暂无数据';
+      say('bad', s.id === 'ads'
+        ? `<b>规划师：暂无数据。</b>Lumibo 2 昨天才出生，谷歌还没攒够它的搜索数据。${TL} 新词刚出来常常这样：别干等，先用别的来源收词。`
+        : `<b>Semrush：暂无数据。</b>它的搜索量也是从谷歌来的，新词太新，这里也还没有。${HF} 先用别的来源收词。`);
+      return;
+    }
+    busy = true;
+    b.classList.remove('nodata', 'fresh');
+    st.used.add(s.id);
+    setSrcDisabled(true);
+    $('#sim2-ff').disabled = true;
+    const before = st.uniq.size;
+    await Promise.all(s.words.map((w, i) => (async () => {
+      await sleep(i * 140);
+      await flyTo(b, basket, { html: w });
+      addChip(w);
+    })()));
+    const fresh = st.uniq.size - before;
+    b.classList.add('done');
+    $('.sim2-badge', b).textContent = `收到 ${s.words.length} 条`;
+    busy = false;
+    setSrcDisabled(false);
+    $('#sim2-ff').disabled = st.ff;
+    const all = st.uniq.size === ALL.length;
+    say(fresh ? 'good' : '', `<b>${s.name}</b>：收到 ${s.words.length} 条，其中 <b>${fresh}</b> 个是篮子里还没有的说法。${s.tip}${all ? '<br><b>18 个说法全收齐了！</b>' : ''}`);
+  }
+
+  // 快进两周
+  $('#sim2-ff').addEventListener('click', async () => {
+    if (st.ff || busy) return;
+    busy = true;
+    $('#sim2-ff').disabled = true;
+    setSrcDisabled(true);
+    const dayNum = $('#sim2-daynum');
+    let shown = 1;
+    tween(1500, k => {
+      const d = Math.round(1 + 14 * k);
+      if (d !== shown) { shown = d; dayNum.textContent = `第 ${d} 天`; replay($('#sim2-cal'), 'go'); }
+    });
+    await sleep(1550);
+    dayNum.textContent = '第 15 天';
+    st.ff = true;
+    st.usedBefore = st.used.size;
+    $('#sim2-day').textContent = '第 15 天';
+    $('#sim2-ff').textContent = '已经是第 15 天';
+    $('#sim2-clock-say').textContent = '两周过去了：规划师和 Semrush 里有 Lumibo 2 的数据了。';
+    SRC.filter(s => !s.day1).forEach(s => {
+      const b = srcBtn(s.id);
+      b.classList.remove('nodata');
+      b.classList.add('fresh');
+      $('.sim2-badge', b).textContent = '有数据了';
+    });
+    busy = false;
+    setSrcDisabled(false);
+    const n = st.usedBefore, p = srcPts(n);
+    if (p === 15) say('good', `<b>两周过去了。</b>你在第 1 天就用 ${n} 个来源收了词，没有干等工具出数据，很好（+15）。现在规划师和 Semrush 也能用了，去点一下。`);
+    else say('bad', `<b>等等：</b>你只用了 ${n} 个当天就能用的来源就快进了（+${p}）。新词刚出来，下拉、趋势、同行的新页面、平台搜索框当天就有词，干等两周，先机就没了。现在规划师和 Semrush 能用了，剩下的来源也别忘了点。`);
+    $('#sim2-to2').disabled = false;
+    $('#sim2-to2-hint').textContent = '规划师有数据了。还没点的来源可以先点完，再去整理。';
+    paintPts();
+  });
+
+  $('#sim2-to2').addEventListener('click', () => {
+    if (busy) return;
+    st.phase = 2;
+    setSrcDisabled(true);
+    $('#sim2-ff').disabled = true;
+    $('#sim2-to2').disabled = true;
+    $('#sim2-to2-hint').textContent = `收词结束：${st.uniq.size} / 18 个说法。`;
+    buildRows();
+    unlock(2);
+  });
+
+  // ---------- 第二段：整理 ----------
+  const rowsBox = $('#sim2-rows'), tsay = $('#sim2-tsay');
+  const tellTidy = (cls, html) => { tsay.className = 'viz-say ' + cls; tsay.innerHTML = html; };
+  const rowOf = k => $(`.sim2-row[data-k="${k}"]`, rowsBox);
+  const maxS = Math.sqrt(Math.max(...SIM.words.map(o => o.v)));
+  const barW = v => (Math.sqrt(v) / maxS * 100) + '%';
+  function buildRows() {
+    rowsBox.innerHTML = '';
+    st.raw.forEach(w => rowsBox.appendChild(el('li', { class: 'sim2-row', 'data-k': norm(w) }, `<span class="sim2-rw">${w}</span><span class="sim2-rbar"><i></i></span><span class="sim2-rv">—</span>`)));
+  }
+  let animating = false;
+  const stepBtn = id => $('#sim2-' + id);
+  function markStep(id, next) {
+    const b = stepBtn(id);
+    b.classList.remove('ready');
+    b.classList.add('done');
+    b.disabled = true;
+    $('i', b).textContent = '✓';
+    if (next) { stepBtn(next).disabled = false; stepBtn(next).classList.add('ready'); }
+    if (st.dedup && st.vol && st.sort) {
+      const f = $('#sim2-finish');
+      f.className = 'btn primary big';
+      f.textContent = '结算本关';
+      $('#sim2-finish-hint').textContent = '三步都做完了。';
+    }
+  }
+
+  stepBtn('dedup').addEventListener('click', async () => {
+    if (st.dedup || animating) return;
+    animating = true;
+    const seen = new Map(), dups = [];
+    let exact = 0, kase = 0;
+    $$('.sim2-row', rowsBox).forEach(r => {
+      const k = r.dataset.k, raw = $('.sim2-rw', r).textContent;
+      if (seen.has(k)) { dups.push(r); if (seen.get(k) === raw) exact++; else kase++; } else seen.set(k, raw);
+    });
+    dups.forEach(r => r.classList.add('dup'));
+    tellTidy('bad', `标黄的 <b>${dups.length}</b> 条是重复的……`);
+    await sleep(900);
+    dups.forEach(r => r.classList.add('gone'));
+    $$('.sim2-row:not(.dup)', rowsBox).forEach(r => {
+      const w = $('.sim2-rw', r);
+      if (w.textContent !== r.dataset.k) { w.textContent = r.dataset.k; replay(r, 'sim2-flash'); }
+    });
+    await sleep(450);
+    dups.forEach(r => r.remove());
+    st.dedup = true;
+    animating = false;
+    markStep('dedup', 'vol');
+    paintPts();
+    tellTidy('good', `<b>去重完成 +10</b>：删掉 ${dups.length} 条，其中 ${exact} 条一模一样，${kase} 条只是大小写不同（都改成了小写）。剩下 <b>${seen.size}</b> 个不同的说法。不去重的话，同一个词要查两遍量、做页面时还会重复。${HF}`);
+  });
+
+  stepBtn('vol').addEventListener('click', async () => {
+    if (st.vol || animating) return;
+    animating = true;
+    const rows = $$('.sim2-row', rowsBox);
+    rows.forEach((r, i) => {
+      const k = r.dataset.k;
+      const v = k === PLURAL ? VOL[SINGLE] : VOL[k];
+      r.dataset.v = v;
+      setTimeout(() => { $('.sim2-rbar i', r).style.width = barW(v); countUp($('.sim2-rv', r), v, 700); }, reduce ? 0 : i * 70);
+    });
+    tellTidy('', '把这些词一行一个粘进规划师的「获取搜索量和预测数据」……');
+    await sleep(reduce ? 0 : rows.length * 70 + 800);
+    st.vol = true;
+    animating = false;
+    markStep('vol', null);
+    paintPts();
+    [SINGLE, PLURAL].forEach(k => { const r = rowOf(k); if (r) r.classList.add('trap'); });
+    tellTidy('good', `<b>查完了 +10</b>：每个词都长出了搜索量条（规划师的数，示意）。可是有两行不对劲，看上面的黄框。`);
+    const trap = $('#sim2-trap');
+    trap.hidden = false;
+    trap.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
+  });
+
+  // 陷阱：规划师把单复数显示成一样的量
+  const CMP = { one: [58, 70, 79, 86, 90, 95, 100], many: [2, 3, 3, 4, 4, 4, 4] };
+  function drawCompare(title) {
+    const box = $('#sim2-cmp');
+    box.hidden = false;
+    const W = 320, H = 150, X0 = 10, X1 = 220, Y0 = 122, Y1 = 26;
+    const xAt = i => X0 + (X1 - X0) * i / 6, yAt = v => Y0 - (Y0 - Y1) * v / 100;
+    const d = a => a.map((v, i) => `${i ? 'L' : 'M'}${xAt(i)} ${yAt(v)}`).join(' ');
+    const svg = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': '谷歌趋势里两个词加双引号对比：单数远高于复数（示意）' });
+    const t = (attrs, s) => { const n = svgEl('text', attrs, svg); n.textContent = s; return n; };
+    t({ class: 'sim2-tx', x: X0, y: 14 }, title);
+    svgEl('line', { class: 'sim2-ax', x1: X0, y1: Y0, x2: X1, y2: Y0 }, svg);
+    t({ class: 'sim2-tx', x: X0, y: 140 }, '7 天前');
+    t({ class: 'sim2-tx', x: X1, y: 140, 'text-anchor': 'end' }, '今天');
+    const l1 = svgEl('path', { class: 'sim2-l1', d: d(CMP.one) }, svg);
+    const l2 = svgEl('path', { class: 'sim2-l2', d: d(CMP.many) }, svg);
+    const n1 = t({ class: 'sim2-t1', x: X1 + 6, y: yAt(100) + 4 }, '"…generator"');
+    const n2 = t({ class: 'sim2-t2', x: X1 + 6, y: yAt(4) - 2 }, '"…generators"');
+    box.innerHTML = '';
+    box.appendChild(svg);
+    [l1, l2].forEach(p => {
+      const len = p.getTotalLength();
+      p.style.strokeDasharray = len;
+      p.style.strokeDashoffset = len;
+      tween(1100, k => { p.style.strokeDashoffset = len * (1 - k); });
+    });
+    [n1, n2].forEach(n => { n.style.opacity = 0; setTimeout(() => { n.style.transition = 'opacity .4s'; n.style.opacity = 1; }, reduce ? 0 : 1000); });
+  }
+  $$('#sim2-trap .sim2-opt').forEach(b => b.addEventListener('click', async () => {
+    if (st.trap) return;
+    st.trap = b.dataset.v;
+    const good = st.trap === 'cmp';
+    $$('#sim2-trap .sim2-opt').forEach(x => {
+      x.disabled = true;
+      if (x === b) x.classList.add(good ? 'good' : 'bad');
+      else if (x.dataset.v === 'cmp') x.classList.add('answer');
+    });
+    drawCompare(good ? '谷歌趋势：两个词都加上双引号（示意）' : '真相：放进谷歌趋势加双引号一比（示意）');
+    const ts = $('#sim2-trap-say');
+    ts.hidden = false;
+    ts.className = 'viz-say ' + (good ? 'good' : 'bad');
+    ts.innerHTML = good
+      ? `<b>做得对 +15</b>：两条线一下就分开了，带 s 的那个只有零头。规划师会把单复数、同义的说法归成一组，给同一个量，实际不可能一样。哥飞的原话是「谁在裸泳，一眼就能够看清楚」。${HF}`
+      : `<b>上当了 +0</b>：规划师会把单复数、同义的说法归成一组，给同一个量，实际不可能一样。放进谷歌趋势加双引号一比，带 s 的那个只有零头。哥飞的原话是「谁在裸泳，一眼就能够看清楚」。${HF}`;
+    await sleep(reduce ? 0 : 1200);
+    const pr = rowOf(PLURAL), sr = rowOf(SINGLE);
+    if (sr) sr.classList.remove('trap');
+    if (pr) {
+      pr.classList.remove('trap');
+      pr.dataset.v = VOL[PLURAL];
+      $('.sim2-rbar i', pr).style.width = barW(VOL[PLURAL]);
+      countUp($('.sim2-rv', pr), VOL[PLURAL], 900);
+      $('.sim2-rw', pr).insertAdjacentHTML('beforeend', good ? '<em class="sim2-tag ok">趋势里比过</em>' : '<em class="sim2-tag warn">其实只有零头</em>');
+    }
+    tellTidy('', `${pr ? `lumibo video generators 改成了约 ${fmt(VOL[PLURAL])}（按趋势里的比例估，示意）。` : '你的篮子里没有 lumibo video generators，不过这个坑以后一定会遇到。'}最后一步：按量排序。`);
+    stepBtn('sort').disabled = false;
+    stepBtn('sort').classList.add('ready');
+    paintPts();
+  }));
+
+  stepBtn('sort').addEventListener('click', () => {
+    if (st.sort || animating) return;
+    const rows = $$('.sim2-row', rowsBox);
+    flip(rows, () => rows.slice().sort((a, b) => Number(b.dataset.v) - Number(a.dataset.v) || a.dataset.k.localeCompare(b.dataset.k)).forEach(r => rowsBox.appendChild(r)), 900);
+    st.sort = true;
+    markStep('sort', null);
+    paintPts();
+    const tag = (k, cls, s) => { const r = rowOf(k); if (r) $('.sim2-rw', r).insertAdjacentHTML('beforeend', `<em class="sim2-tag ${cls}">${s}</em>`); return r; };
+    const cr = tag(core, '', '你的核心词');
+    if (cr) cr.classList.add('core');
+    tag('ai video generator', 'warn', '父词');
+    tag('lumibo 2', 'warn', '品牌词');
+    tellTidy('good', `<b>排好了 +10</b>：从大到小排队。注意排在最前面的不一定是你的主打：<b>ai video generator</b> 是父词，十几年的大站都在抢；<b>lumibo 2</b> 是品牌词，搜的人多半想找官网。你的核心词 <b>${core}</b> 排在它们后面，正合适。哪些词放首页、哪些单独做一页，是下一关的事。${TL}`);
+  });
+
+  // ---------- 结算 ----------
+  $('#sim2-finish').addEventListener('click', () => {
+    if (animating || st.phase === 3) return;
+    st.phase = 3;
+    $('#sim2-finish').disabled = true;
+    $$('.sim2-step, #sim2-trap .sim2-opt').forEach(b => { b.disabled = true; });
+    const missing = ALL.filter(w => !st.uniq.has(w));
+    const where = w => SRC.filter(s => s.words.some(x => norm(x) === w)).map(s => s.name).join('、');
+    const n = st.usedBefore, sp = srcPts(n);
+    const recs = [
+      { part: '收全', ok: !missing.length, pts: collectPts(), max: 40, what: `收到 ${st.uniq.size} / 18 个不同的说法`, link: LINK.where,
+        why: missing.length ? `没收到：${missing.map(w => `<code>${w}</code>（在 ${where(w)} 里）`).join('，')}。${missing.some(w => w === PLURAL || w === 'ai video generator') ? '有的词只有规划师、Semrush 才给，快进以后别忘了点它们。' : ''}` : '18 个全收齐了。' },
+      { part: '来源', ok: sp === 15, pts: sp, max: 15, what: `快进之前用了 ${n} 个当天就能用的来源`, link: LINK.where,
+        why: sp === 15 ? `第 1 天就用别的来源收词，没干等工具出数据。${SQ}` : `新词刚出来，规划师、Semrush 还没数据；下拉、趋势、同行的新页面、平台搜索框当天就有词。至少用 5 个再快进，才拿满分。${SQ}${TL}` },
+      { part: '去重', ok: st.dedup, pts: st.dedup ? 10 : 0, max: 10, what: st.dedup ? '做了去重' : '没去重', link: LINK.tidy,
+        why: `先用表格去掉重复的词，得到唯一的词表，再去查量。${HF}` },
+      { part: '查量', ok: st.vol, pts: st.vol ? 10 : 0, max: 10, what: st.vol ? '用规划师查了搜索量' : '没查搜索量', link: LINK.tidy,
+        why: `搜索量信谷歌自己的：把词一行一个粘进规划师的「获取搜索量和预测数据」。${HF}` },
+      { part: '排序', ok: st.sort, pts: st.sort ? 10 : 0, max: 10, what: st.sort ? '按量排了序' : '没排序', link: LINK.tidy,
+        why: `按搜索量从大到小排好，下一关分组、交给 AI 规划网站结构都靠这张表。${HF}` },
+      { part: '陷阱', ok: st.trap === 'cmp', pts: st.trap === 'cmp' ? 15 : 0, max: 15, link: LINK.trap,
+        what: st.trap === 'cmp' ? '规划师显示一样的量，你放进趋势比了' : st.trap === 'trust' ? '规划师显示一样的量，你直接信了' : '没走到规划师的坑那一步',
+        why: `规划师会把 ai image 和 ai images 这种单复数显示成一样的量，要放进谷歌趋势、加双引号再比。${HF}` },
+    ];
+    const score = recs.reduce((s, r) => s + r.pts, 0);
+    if (score !== total()) throw new Error(`结算分 ${score} 和页面上的分 ${total()} 对不上`);
+    SIM.save('sim-2', score, 100, { words: [...st.uniq] });
+    unlock(3);
+    const res = $('#sim2-result');
+    res.classList.toggle('meh', score < 60);
+    countUp($('#sim2-final'), score, 1200);
+    const right = recs.filter(r => r.ok).length;
+    $('#sim2-sum').innerHTML = `6 项里做对 <b>${right}</b> 项。收到的 ${st.uniq.size} 个词已经存好，第 3 关要把它们分组。${score === 100 ? '满分！' : score >= 80 ? '很稳。' : score >= 60 ? '及格了，看看下面做错的。' : '有点吃力，建议先看第 2 步讲解再重玩。'}`;
+    $('#sim2-parts').innerHTML = recs.map(r => `<div class="sim2-part"><span>${r.part}</span><span class="meter"><i style="width:0%" data-w="${r.pts / r.max * 100}"></i></span><b>${r.pts} / ${r.max}</b></div>`).join('');
+    requestAnimationFrame(() => requestAnimationFrame(() => $$('#sim2-parts .meter i').forEach(i => { i.style.width = i.dataset.w + '%'; })));
+    const miss = recs.filter(r => !r.ok), good = recs.filter(r => r.ok);
+    $('#sim2-miss').innerHTML = miss.length ? miss.map(r => `<li><b>${r.what}（${r.pts} / ${r.max}）</b><span>${r.why}</span><a href="${r.link[0]}">回去看：${r.link[1]} →</a></li>`).join('') : '<li><b>一个都没错。</b></li>';
+    $('#sim2-good-sum').textContent = `做对的 ${good.length} 项（点开看）`;
+    $('#sim2-good').innerHTML = good.map(r => `<li>${r.what}<span>+${r.pts}</span></li>`).join('');
+    if (score === 100) confetti(res);
+  });
+
+  const quiz = $('#sim2-s3 .quiz'), nextA = $('#sim2-next');
+  const answered = () => !!store.get('quiz.sim-2', {})[0];
+  function paintNext() {
+    const ok = answered();
+    nextA.setAttribute('aria-disabled', String(!ok));
+    $('#sim2-next-hint').textContent = ok ? '复盘题答完了，可以去下一关。' : '先答上面的复盘题，再进下一关。';
+  }
+  quiz.addEventListener('click', e => { if (e.target.closest('.q-opt')) setTimeout(paintNext); });
+  nextA.addEventListener('click', e => {
+    if (answered()) return;
+    e.preventDefault();
+    $('#sim2-next-hint').style.color = 'var(--amber)';
+    replay(quiz, 'sim2-nudge');
+    quiz.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
+  });
+  paintNext();
+})();
+</script>
+</body>
+</html>

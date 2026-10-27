@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>结局：成绩单 · 站长模拟器 · AI 新词站白话课</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<style>
+/* 结局：成绩单。类名一律 se- 开头 */
+.se-card { position: relative; overflow: hidden; display: grid; gap: 14px; padding: 22px; border-radius: 20px; background: var(--surface); border: 2px solid var(--indigo); }
+.se-top { display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: center; }
+.se-badge {
+  width: 112px; height: 112px; border-radius: 50%; display: grid; place-items: center; text-align: center;
+  background: var(--indigo); color: var(--on-indigo); box-shadow: 0 0 0 6px var(--indigo-soft);
+  font-family: var(--font-display); font-weight: 900; font-size: 19px; line-height: 1.3; padding: 12px;
+}
+.se-badge.pop { animation: pop .6s both; }
+.se-badge.none { background: var(--line); color: var(--muted); box-shadow: 0 0 0 6px var(--bg); }
+.se-title { display: grid; gap: 4px; }
+.se-title .lab { font-size: 12.5px; font-weight: 700; letter-spacing: .1em; color: var(--muted); }
+.se-title h2 { font-size: clamp(26px, 5vw, 34px); }
+.se-title p { font-size: 15.5px; color: var(--muted); }
+.se-total { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.se-total div { background: var(--bg); border-radius: 12px; padding: 10px 12px; display: grid; gap: 2px; }
+.se-total .k { font-size: 12.5px; color: var(--muted); }
+.se-total small { font-size: 14px; color: var(--muted); font-weight: 500; }
+.se-total b { font-family: var(--font-mono); font-size: 24px; line-height: 1.2; }
+.se-total .meter { margin-top: 4px; }
+.se-btns { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.se-confirm { font-size: 14px; color: var(--amber); }
+
+.se-levels { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.se-lv { display: grid; grid-template-columns: 56px 1fr; gap: 6px 14px; align-items: start; padding: 14px 16px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); }
+.se-lv .no { grid-row: span 3; width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; font-family: var(--font-mono); font-weight: 600; font-size: 18px; background: var(--indigo-soft); color: var(--indigo); }
+.se-lv.none .no { background: var(--bg); color: var(--muted); }
+.se-lv.full .no { background: var(--green-soft); color: var(--green); }
+.se-lv-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; align-items: baseline; }
+.se-lv-head b { font-size: 16.5px; }
+.se-lv-head em { font-style: normal; font-family: var(--font-mono); font-weight: 600; font-size: 15px; }
+.se-lv.none .se-lv-head em { color: var(--muted); font-family: var(--font-body); font-weight: 650; font-size: 14px; }
+.se-lv .meter { height: 12px; border-radius: 6px; }
+.se-lv .meter > i { transition: none; }
+.se-lv.mid .meter > i { background: var(--indigo); }
+.se-lv.low .meter > i { background: var(--amber); }
+.se-tip { font-size: 14.5px; line-height: 1.7; }
+.se-tip .lab { font-weight: 700; color: var(--amber); margin-right: 4px; }
+.se-lv.full .se-tip .lab { color: var(--green); }
+.se-lv > * { min-width: 0; }
+.se-tip a { overflow-wrap: anywhere; }
+.se-weak { background: var(--amber-soft); border-radius: 14px; padding: 14px 18px; display: grid; gap: 4px; font-size: 15.5px; }
+.se-weak .lab { font-size: 12.5px; font-weight: 700; color: var(--amber); letter-spacing: .06em; }
+.se-next { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.se-big { display: grid; gap: 6px; padding: 18px 20px; border-radius: 18px; text-decoration: none; color: var(--ink); border: 1.5px solid var(--line); background: var(--surface); }
+.se-big:hover { box-shadow: var(--shadow); }
+.se-big.read { border-color: var(--green); background: var(--green-soft); }
+.se-big .lab { font-size: 12.5px; font-weight: 700; letter-spacing: .06em; color: var(--green); }
+.se-big.again .lab { color: var(--amber); }
+.se-big b { font-size: 19px; }
+.se-big span { font-size: 14.5px; color: var(--muted); }
+.se-big em { font-style: normal; font-weight: 700; color: var(--indigo); font-size: 14.5px; }
+@media (max-width: 520px) {
+  .se-top { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+  .se-badge { width: 104px; height: 104px; font-size: 18px; }
+  .se-total b { font-size: 20px; }
+  .se-lv { grid-template-columns: 40px 1fr; gap: 6px 10px; padding: 12px 14px; }
+  .se-lv .no { width: 38px; height: 38px; font-size: 15px; border-radius: 11px; }
+}
+</style>
+</head>
+<body data-page="sim-end">
+<header id="topbar"></header>
+
+<div class="ph"><div class="wrap">
+  <span class="eyebrow">站长模拟器 · 结局</span>
+  <h1>成绩单：你这一趟站长当得怎么样</h1>
+  <p class="lead">8 关的分数都记在你自己的浏览器里。下面是每一关的得分、一句「下次注意」，和该回去看的那一页讲解。</p>
+</div></div>
+
+<main class="wrap">
+  <section class="kp" id="se-sum">
+    <div class="se-card" id="se-card">
+      <div class="se-top">
+        <div class="se-badge" id="se-badge">还没开局</div>
+        <div class="se-title"><span class="lab">你的称号</span><h2 id="se-name">还没开局</h2><p id="se-say"></p></div>
+      </div>
+      <div class="se-total">
+        <div><span class="k">总分</span><b><span id="se-total">0</span><small> / 800</small></b><span class="meter"><i id="se-total-bar"></i></span></div>
+        <div><span class="k">玩过的关</span><b><span id="se-played">0</span><small> / 8</small></b></div>
+        <div><span class="k">满分的关</span><b id="se-full">0</b></div>
+      </div>
+      <div class="se-btns">
+        <button type="button" class="btn primary big" id="se-play">揭晓成绩（播放动画）</button>
+        <button type="button" class="btn" id="se-clear">清空存档重来</button>
+        <span class="se-confirm" id="se-confirm" hidden></span>
+      </div>
+    </div>
+  </section>
+
+  <section class="kp" id="se-list">
+    <div class="kp-head"><span class="kp-no">每一关</span><h2>8 关的分数和「下次注意」</h2></div>
+    <ol class="se-levels" id="se-levels"></ol>
+    <div class="se-weak" id="se-weak" hidden></div>
+  </section>
+
+  <section class="kp" id="se-next">
+    <div class="kp-head"><span class="kp-no">接下来</span><h2>玩完了，去读原文</h2></div>
+    <p class="kp-say">模拟器是简化过的，数字都是 <span class="st sy">示意</span>。真要做站，按顺序把哥飞的原文读一遍，再拿一个真的新词当 <button type="button" class="term" data-t="orchard">数字果园</button> 里的第一棵树。哥飞说新手要「放弃一站发思维」，一个、两个、三个练手站做下去。<span class="st hf">哥飞原话</span></p>
+    <div class="se-next">
+      <a class="se-big read" href="reading.html"><span class="lab">新手阅读路线</span><b>哥飞的文章，先读哪篇、后读哪篇</b><span>按 8 步排好顺序，每篇一句话说明；只想先读 7 篇也有精简版。</span><em>去看阅读路线 →</em></a>
+      <a class="se-big again" href="sim-0.html"><span class="lab">再玩一遍</span><b>从开局重新当一回站长</b><span>换几个选择，看看结果会不会不一样。</span><em>回到开局 →</em></a>
+    </div>
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://mp.weixin.qq.com/s/L9BOyFrisy-xsw-NPWlPJQ">《放弃一站发思维，先从练手站做起》</a><span class="meta">哥飞 · 公众号 2024-12-02</span></li>
+      <li><a href="https://mp.weixin.qq.com/s/oAmrfRXrIWAMBVS0uB6C8Q">《新手只需要去追热点追新词就行》</a><span class="meta">哥飞 · 公众号 2025-02-28</span></li>
+      <li><a href="https://new.web.cafe/topic/8kgp07yhld">《哥飞实战手册》</a><span class="meta">GONG · 社群整理 · 数字果园的说法</span></li>
+    </ul></div>
+  </section>
+</main>
+
+<nav id="pager"></nav>
+<footer id="foot"></footer>
+<script src="assets/kit.js"></script>
+<script>
+(() => {
+  const { $, $$, el, sleep, countUp, SIM, SIM_PAGES, PAGES, store, reduce, confetti, tween } = KIT;
+
+  // 每关一句「下次注意」，链回对应讲解页
+  const TIPS = {
+    'sim-1': ['判断值不值得做，主要看谷歌前 10 名：前排都是大站的内页才值得专门打；域名别带别人的商标。', 's1-find.html#k4', '值不值得做'],
+    'sim-2': ['同一个意思的不同说法都要收；收完去重、查量、排序，搜索量最后以谷歌 Ads 关键词规划师为准。', 's2-collect.html#k2', '去哪收词'],
+    'sim-3': ['单复数、免费、在线这些修饰写进同一页；功能不同、用途不同，才单独做一页。', 's3-onepage.html#k2', '两个词算不算一回事'],
+    'sim-4': ['第一天上线首页、功能页、定价、关于、隐私和条款；用途页、对比页慢慢加，多语言最后再做。', 's4-structure.html#k2', '第一天要哪些页'],
+    'sim-5': ['Title 和 H1 只打核心词，变体放进 H2 和正文；Keywords 标签不用写，别让 AI 把 H1 改成口号。', 's5-page.html#k3', '关键词放哪'],
+    'sim-6': ['每页链回首页，首页链到新内页，链接上写关键词，别留孤岛页。', 's6-links.html#k1', '内链 5 条'],
+    'sim-7': ['先跑 10 次算清单次成本再定价；视频接口先问清失败扣不扣钱；收款先 Creem，再备一个。', 's7-tool.html#k3', '成本和定价'],
+    'sim-8': ['第 0 天提交 GSC；之后只干两件事：加精品页、加外链；别乱改已经排上去的首页，热度掉了做兄弟词、父词、开新站。', 's8-launch.html#k1', '上线第一周'],
+  };
+  const LEVELS = SIM_PAGES.filter(p => /^sim-[1-8]$/.test(p.id));
+  if (LEVELS.length !== 8) throw new Error(`模拟器关卡数不对：${LEVELS.length}`);
+
+  function readSaves() {
+    return LEVELS.map(p => {
+      const s = SIM.load(p.id);
+      const step = PAGES.find(x => x.id === p.step);
+      return { p, s, step, pct: s ? Math.max(0, Math.min(1, s.score / (s.max || 100))) : null };
+    });
+  }
+  function titleOf(rows) {
+    const played = rows.filter(r => r.s);
+    if (!played.length) return ['还没开局', '还没开局', '一关都还没玩。先去开局领取站长档案，再一关关往下走。'];
+    const total = played.reduce((a, r) => a + r.s.score, 0), avg = total / (played.length * 100);
+    const left = 8 - played.length;
+    const tail = left ? `还有 ${left} 关没玩，玩完称号可能会变。` : '';
+    if (left === 0 && avg >= .9) return ['数字果园园丁', '数字果园\n园丁', `8 关平均 ${Math.round(avg * 100)} 分。第一棵树种稳了，可以去种下一棵。`];
+    if (avg >= .75) return ['能收钱的站长', '能收钱的\n站长', `平均 ${Math.round(avg * 100)} 分：大部分坑都躲开了。${tail || '再把丢分的那几关补一补，就是园丁了。'}`];
+    if (avg >= .6) return ['新手村毕业', '新手村\n毕业', `平均 ${Math.round(avg * 100)} 分：流程跑通了，几个坑还要再踩一遍才记得住。${tail}`];
+    return ['见习站长', '见习\n站长', `平均 ${Math.round(avg * 100)} 分：先别急，回去把丢分最多的那一步讲解看一遍，再玩一次。${tail}`];
+  }
+
+  const list = $('#se-levels');
+  function render() {
+    const rows = readSaves();
+    list.textContent = '';
+    rows.forEach((r, i) => {
+      const [tip, href, lab] = TIPS[r.p.id];
+      const tone = !r.s ? 'none' : r.pct >= 1 ? 'full' : r.pct >= .7 ? 'mid' : 'low';
+      const li = el('li', { class: 'se-lv ' + tone, 'data-id': r.p.id });
+      li.innerHTML = `<span class="no">${i + 1}</span>
+        <div class="se-lv-head"><b>${r.p.title}</b>${r.s ? `<em><span class="se-n">${r.s.score}</span> / ${r.s.max || 100}</em>` : `<em>还没玩 · <a href="${r.p.href}">去玩 →</a></em>`}</div>
+        <span class="meter"><i style="width:${r.s ? r.pct * 100 : 0}%"></i></span>
+        <p class="se-tip"><span class="lab">${r.s && r.pct >= .9 ? '做得好，记住：' : '下次注意：'}</span>${tip} <a href="${href}">回看：${r.step.title} · ${lab}</a>${r.s && r.pct < 1 ? ` · <a href="${r.p.href}">重玩这一关</a>` : ''}</p>`;
+      list.appendChild(li);
+    });
+    const played = rows.filter(r => r.s);
+    const total = played.reduce((a, r) => a + r.s.score, 0);
+    const [name, badge, say] = titleOf(rows);
+    $('#se-name').textContent = name;
+    const b = $('#se-badge');
+    b.textContent = badge;
+    b.style.whiteSpace = 'pre-line';
+    b.classList.toggle('none', !played.length);
+    $('#se-say').textContent = say;
+    $('#se-total').textContent = total; $('#se-total').dataset.val = total;
+    $('#se-total-bar').style.width = (total / 800 * 100) + '%';
+    $('#se-played').textContent = played.length;
+    $('#se-full').textContent = played.filter(r => r.pct >= 1).length;
+    $('#se-play').disabled = !played.length;
+    const weak = played.filter(r => r.pct < 1).sort((x, y) => x.pct - y.pct)[0];
+    const wb = $('#se-weak');
+    wb.hidden = !weak;
+    if (weak) {
+      const [tip, href, lab] = TIPS[weak.p.id];
+      wb.innerHTML = `<span class="lab">最该回去看的一步</span><p>「${weak.p.title}」只拿了 ${weak.s.score} 分。${tip}</p><p><a href="${href}">去看讲解：${weak.step.title} · ${lab} →</a></p>`;
+    }
+    return rows;
+  }
+
+  // 揭晓：分数条一条条长出来，数字往上滚，最后亮称号、撒花
+  let playing = false;
+  $('#se-play').addEventListener('click', async () => {
+    if (playing) return;
+    playing = true;
+    $('#se-play').disabled = true;
+    const rows = render();
+    const lis = $$('.se-lv', list);
+    const badge = $('#se-badge');
+    badge.style.visibility = 'hidden';
+    $('#se-name').style.visibility = 'hidden';
+    const totalEl = $('#se-total'), totalBar = $('#se-total-bar');
+    totalEl.dataset.val = 0; totalEl.textContent = '0'; totalBar.style.width = '0%';
+    lis.forEach(li => { const i = $('.meter > i', li); i.dataset.w = i.style.width; i.style.width = '0%'; const n = $('.se-n', li); if (n) { n.dataset.val = 0; n.textContent = '0'; } });
+    if (!reduce) $('#se-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    await sleep(400);
+    let run = 0;
+    for (let k = 0; k < lis.length; k++) {
+      const li = lis[k], r = rows[k];
+      if (!r.s) continue;
+      const bar = $('.meter > i', li), n = $('.se-n', li);
+      const target = parseFloat(bar.dataset.w);
+      tween(700, t => { bar.style.width = (target * t) + '%'; });
+      countUp(n, r.s.score, 700);
+      const before = run;
+      run += r.s.score;
+      countUp(totalEl, run, 600);
+      tween(600, t => { totalBar.style.width = ((before + r.s.score * t) / 800 * 100) + '%'; });
+      await sleep(450);
+    }
+    await sleep(500);
+    badge.style.visibility = ''; $('#se-name').style.visibility = '';
+    badge.classList.remove('pop'); void badge.offsetWidth; badge.classList.add('pop');
+    confetti($('#se-card'));
+    playing = false;
+    $('#se-play').disabled = false;
+    $('#se-play').textContent = '再放一次揭晓动画';
+  });
+
+  // 清空存档：点两次才清，免得手滑
+  let armed = false;
+  $('#se-clear').addEventListener('click', () => {
+    const c = $('#se-confirm');
+    if (!armed) {
+      armed = true;
+      $('#se-clear').textContent = '确定清空？再点一次';
+      c.hidden = false;
+      c.textContent = '会删掉 8 关的分数和复盘题答案（讲解页的答题进度不动）。';
+      setTimeout(() => { if (armed) { armed = false; $('#se-clear').textContent = '清空存档重来'; c.hidden = true; } }, 6000);
+      return;
+    }
+    armed = false;
+    SIM_PAGES.forEach(p => { store.del('sim.' + p.id); store.del('quiz.' + p.id); store.del('done.' + p.id); });
+    $('#se-clear').textContent = '清空存档重来';
+    c.textContent = '清空了。从开局重新当一回站长吧。';
+    render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

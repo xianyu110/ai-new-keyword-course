@@ -1,0 +1,1529 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>第 1 步 找新词 · AI 新词站白话课</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<style>
+/* 第 1 步 找新词：本页专用样式，一律 s1- 开头 */
+:root { --s1-red: #B3412E; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --s1-red: #EE9482; } }
+:root[data-theme="dark"] { --s1-red: #EE9482; }
+
+.s1-check { display: inline-flex; gap: 8px; align-items: center; font-size: 14.5px; cursor: pointer; line-height: 1.5; }
+.s1-check input { accent-color: var(--indigo); width: 17px; height: 17px; margin: 0; flex: none; }
+.s1-mono { font-family: var(--font-mono); }
+
+/* 知识点 1：趋势显微镜 */
+.s1-chart { background: var(--bg); border-radius: 12px; padding: 6px 4px 2px; }
+.s1-chart svg text, .s1-qchart text { font-family: var(--font-mono); font-size: 11px; fill: var(--muted); }
+.s1-grid { stroke: var(--line); stroke-width: 1; }
+.s1-line { fill: none; stroke: var(--indigo); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.s1-line.gray { stroke: var(--muted); stroke-dasharray: 6 5; }
+.s1-area { fill: var(--indigo); opacity: .1; }
+#s1-mk { transition: opacity .35s; }
+.s1-mk line { stroke: var(--green); stroke-width: 1.6; stroke-dasharray: 4 4; }
+.s1-chart .s1-mk text { fill: var(--green); font-family: var(--font-body); font-weight: 700; font-size: 12.5px; paint-order: stroke; stroke: var(--bg); stroke-width: 5px; stroke-linejoin: round; }
+.s1-mk.fake line { stroke: var(--amber); }
+.s1-chart .s1-mk.fake text { fill: var(--amber); }
+.s1-word-seg button { font-family: var(--font-mono); font-size: 13px; }
+.s1-qchart { width: 100%; max-width: 380px; height: auto; display: block; background: var(--bg); border-radius: 10px; }
+
+/* 知识点 2：雷达 */
+.s1-radar-wrap { display: grid; gap: 14px; align-items: start; }
+@media (min-width: 720px) { .s1-radar-wrap { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.s1-scope { position: relative; width: 100%; max-width: 420px; aspect-ratio: 1 / 1; margin: 0 auto; }
+.s1-scope svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.s1-ring { fill: none; stroke: var(--line); stroke-width: 1.5; }
+.s1-ring.out { stroke: var(--indigo); stroke-opacity: .4; }
+.s1-sweep-fan { fill: var(--indigo); opacity: .15; }
+.s1-sweep-arm { stroke: var(--indigo); stroke-width: 2; opacity: .7; }
+.s1-core { fill: var(--indigo); }
+.s1-blip {
+  position: absolute; transform: translate(-50%, -8px); display: grid; justify-items: center; gap: 3px;
+  padding: 0; border: 0; background: none; cursor: pointer; font: inherit; color: var(--ink); transition: opacity .3s; z-index: 1;
+}
+.s1-blip i { width: 16px; height: 16px; border-radius: 50%; background: var(--muted); border: 3px solid var(--surface); box-shadow: 0 0 0 1.5px var(--muted); transition: transform .3s; }
+.s1-blip.trio i { background: var(--indigo); box-shadow: 0 0 0 1.5px var(--indigo); }
+.s1-blip span { font-size: 12px; line-height: 1.3; padding: 2px 7px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); white-space: nowrap; }
+.s1-blip.trio span { border-color: var(--indigo); color: var(--indigo); font-weight: 650; }
+.s1-blip.lit i { transform: scale(1.25); animation: s1-ping 1s ease-out; }
+.s1-blip:hover span { border-color: var(--indigo); }
+.s1-blip[aria-pressed="true"] span { background: var(--indigo); color: var(--on-indigo); border-color: var(--indigo); }
+.s1-only-trio .s1-blip:not(.trio) { opacity: .22; }
+@keyframes s1-ping { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--green) 75%, transparent); } 100% { box-shadow: 0 0 0 18px transparent; } }
+.s1-bi { background: var(--bg); border-radius: 14px; padding: 14px 16px; display: grid; gap: 8px; font-size: 15px; line-height: 1.7; align-content: start; }
+.s1-bi.enter > * { animation: rise .35s both; }
+.s1-bi-h { font-size: 17px; font-weight: 700; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.s1-bi ol { margin: 0; padding-left: 1.3em; display: grid; gap: 4px; }
+.s1-bi .k { font-size: 12.5px; font-weight: 700; color: var(--muted); letter-spacing: .04em; }
+.s1-bi .cs { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font-size: 14px; }
+.s1-tag { display: inline-block; font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; line-height: 1.4; }
+.s1-tag.free { background: var(--green-soft); color: var(--green); }
+.s1-tag.paid { background: var(--amber-soft); color: var(--amber); }
+.s1-tag.trio { background: var(--indigo); color: var(--on-indigo); }
+
+/* sitemap 对比 */
+.s1-diff-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 600px) { .s1-diff-cols { grid-template-columns: 1fr; } }
+.s1-sm { border: 1px solid var(--line); border-radius: 12px; background: var(--bg); overflow: hidden; min-width: 0; }
+.s1-sm-h { font-size: 13px; font-weight: 700; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--surface); display: flex; justify-content: space-between; gap: 4px 10px; flex-wrap: wrap; }
+.s1-sm-h span { font-family: var(--font-mono); font-weight: 500; color: var(--muted); }
+.s1-sm ol { list-style: none; margin: 0; padding: 6px 0; font-family: var(--font-mono); font-size: 13px; line-height: 1.5; }
+.s1-sm li { padding: 3px 12px; display: flex; gap: 8px; align-items: baseline; transition: opacity .3s, background .3s; overflow-wrap: anywhere; min-width: 0; }
+.s1-sm li.scan { background: var(--indigo-soft); }
+.s1-sm li.same { opacity: .4; }
+.s1-sm li.new { background: var(--green-soft); color: var(--green); font-weight: 600; animation: s1-flash .6s 3; }
+.s1-sm li.new::after { content: "新增"; margin-left: auto; flex: none; font-family: var(--font-body); font-size: 11.5px; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: var(--green); color: var(--surface); }
+@keyframes s1-flash { 50% { background: color-mix(in srgb, var(--green) 35%, var(--surface)); } }
+.s1-pool { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding: 10px 14px; border-radius: 12px; border: 2px dashed var(--line); min-height: 52px; }
+.s1-pool-lab { font-size: 13px; font-weight: 700; color: var(--muted); }
+
+/* 知识点 3：工具抽屉 */
+.s1-drawer { border-radius: 16px; background: var(--bg); border: 1px solid var(--line); border-top: 6px solid var(--line); padding: 12px; display: grid; gap: 10px; }
+.s1-tools { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.s1-tool { perspective: 1100px; padding: 0; border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; display: block; width: 100%; }
+.s1-tool-in { display: grid; height: 100%; transition: transform .6s cubic-bezier(.3, .7, .3, 1); transform-style: preserve-3d; }
+.s1-tool[aria-pressed="true"] .s1-tool-in { transform: rotateY(180deg); }
+.s1-face {
+  grid-area: 1 / 1; -webkit-backface-visibility: hidden; backface-visibility: hidden;
+  border-radius: 14px; border: 1.5px solid var(--line); background: var(--surface); padding: 14px 16px;
+  display: grid; gap: 6px; align-content: start;
+}
+.s1-tool:hover .s1-face { border-color: var(--indigo); }
+.s1-back { transform: rotateY(180deg); background: var(--indigo-soft); border-color: var(--indigo); font-size: 14px; line-height: 1.65; gap: 2px; }
+.s1-back .dt { display: block; font-size: 12px; font-weight: 700; color: var(--indigo); margin-top: 4px; }
+.s1-back .dd { display: block; }
+.s1-tname { display: block; font-size: 18px; font-weight: 700; line-height: 1.35; }
+.s1-ten { display: block; font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.s1-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.s1-one { display: block; font-size: 15px; line-height: 1.6; }
+.s1-face:not(.s1-back) { display: flex; flex-direction: column; }
+.s1-hint { display: block; font-size: 12.5px; font-weight: 600; color: var(--indigo); margin-top: auto; padding-top: 10px; }
+
+/* GPTs 尺子 */
+.s1-ruler-out { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font-size: 15px; }
+.s1-ruler-out .big-num { color: var(--indigo); }
+.s1-lab-g { fill: var(--muted) !important; font-weight: 600; }
+.s1-lab-c { fill: var(--indigo) !important; font-weight: 600; }
+
+/* 知识点 4：传送带 */
+.s1-gates { display: flex; flex-wrap: wrap; gap: 6px; }
+.s1-gate { font-size: 13px; line-height: 1.3; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); color: var(--muted); transition: background .3s, color .3s; }
+.s1-gate.cur { background: var(--indigo); color: var(--on-indigo); border-color: var(--indigo); }
+.s1-gate.done { color: var(--green); border-color: var(--green); }
+.s1-gatebox { padding: 12px 14px; border-radius: 12px; background: var(--indigo-soft); font-size: 15px; line-height: 1.7; min-height: 76px; }
+.s1-gatebox b { color: var(--indigo); }
+.s1-belt {
+  position: relative; overflow: hidden; display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start;
+  padding: 14px; border-radius: 14px; min-height: 96px; border: 2px solid var(--line);
+  background: repeating-linear-gradient(90deg, var(--bg) 0 18px, color-mix(in srgb, var(--line) 70%, var(--bg)) 18px 20px);
+}
+.s1-belt.run { animation: s1-belt .5s linear infinite; }
+@keyframes s1-belt { to { background-position: 20px 0; } }
+.s1-belt.scan::after {
+  content: ""; position: absolute; top: 0; bottom: 0; left: -60px; width: 60px; pointer-events: none;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--indigo) 30%, transparent), transparent);
+  animation: s1-scan .8s ease-in-out;
+}
+@keyframes s1-scan { to { left: 100%; } }
+.s1-card {
+  display: inline-flex; align-items: baseline; gap: 6px; padding: 7px 11px; border-radius: 10px;
+  background: var(--surface); border: 1.5px solid var(--line); font-size: 14px; line-height: 1.4; max-width: 100%;
+}
+.s1-card b { font-family: var(--font-mono); font-weight: 500; overflow-wrap: anywhere; }
+.s1-card em { font-style: normal; font-size: 11.5px; color: var(--green); white-space: nowrap; }
+.s1-card.fail { border-color: var(--amber); background: var(--amber-soft); animation: shake .45s; }
+.s1-card.keep { border-color: var(--green); background: var(--green-soft); animation: pop .45s; }
+.s1-tray { display: grid; gap: 6px; }
+.s1-tray-h { font-size: 13px; font-weight: 700; color: var(--amber); }
+.s1-out { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px; align-items: center; padding: 8px 10px; border-radius: 10px; background: var(--amber-soft); font-size: 14px; line-height: 1.6; }
+.s1-out .s1-card { background: var(--surface); border-color: var(--amber); }
+.s1-out-g { font-size: 12px; font-weight: 700; color: var(--amber); white-space: nowrap; }
+.s1-out-why { grid-column: 1 / -1; }
+@media (min-width: 640px) { .s1-out { grid-template-columns: auto auto minmax(0, 1fr); } .s1-out-why { grid-column: auto; } }
+
+/* 数一数前 10 名 */
+.s1-serp { border: 1px solid var(--line); border-radius: 14px; background: var(--bg); padding: 10px; display: grid; gap: 8px; }
+.s1-q { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-family: var(--font-mono); font-size: 14px; overflow-wrap: anywhere; }
+.s1-q::before { content: ""; flex: none; width: 11px; height: 11px; border: 2px solid var(--muted); border-radius: 50%; }
+.s1-sr-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.s1-sr { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; padding: 8px 10px; border-radius: 10px; background: var(--surface); border: 1.5px solid var(--line); transition: border-color .3s, background .3s; }
+.s1-sr-no { font-family: var(--font-mono); font-size: 12px; color: var(--muted); text-align: center; }
+.s1-sr-main { display: grid; gap: 1px; min-width: 0; }
+.s1-sr-url { font-family: var(--font-mono); font-size: 12.5px; color: var(--ink); overflow-wrap: anywhere; }
+.s1-sr-url span { color: var(--muted); }
+.s1-sr-t { font-size: 14px; color: var(--indigo); line-height: 1.45; }
+.s1-own { display: inline-block; font-family: var(--font-body); font-size: 11px; font-weight: 700; padding: 0 6px; border-radius: 6px; margin-left: 6px; background: var(--bg); color: var(--muted); border: 1px solid var(--line); vertical-align: 1px; }
+.s1-sr-btns { display: flex; gap: 4px; }
+.s1-sr-btns button { font: inherit; font-size: 13px; line-height: 1.3; padding: 5px 11px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer; touch-action: manipulation; }
+.s1-sr-btns button:hover { border-color: var(--indigo); }
+.s1-sr-res { font-size: 12.5px; font-weight: 700; padding: 3px 10px; border-radius: 999px; white-space: nowrap; animation: pop .35s; }
+.s1-sr.is-home { border-color: var(--amber); }
+.s1-sr.is-home .s1-sr-res { background: var(--amber-soft); color: var(--amber); }
+.s1-sr.is-inner { border-color: color-mix(in srgb, var(--green) 60%, var(--line)); }
+.s1-sr.is-inner .s1-sr-res { background: var(--green-soft); color: var(--green); }
+.s1-sr.shake { animation: shake .45s; border-color: var(--amber); }
+@media (max-width: 520px) { .s1-sr { grid-template-columns: 22px minmax(0, 1fr); } .s1-sr-btns, .s1-sr-res { grid-column: 2; justify-self: start; } }
+.s1-count { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14.5px; align-items: center; }
+.s1-count b { font-family: var(--font-mono); font-size: 18px; }
+.s1-count .h b { color: var(--amber); }
+.s1-count .i b { color: var(--green); }
+
+/* KD 说法不一样 */
+.s1-kd-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.s1-kd-rows li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; align-items: center; padding: 8px 12px; border-radius: 10px; background: var(--bg); font-size: 14.5px; line-height: 1.55; }
+.s1-kd-rows li b, .s1-kd-rows li span { grid-column: 1; }
+.s1-kd-rows li span { color: var(--muted); font-size: 13px; }
+.s1-kd-res { grid-column: 2; grid-row: 1 / span 2; font-style: normal; font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; white-space: nowrap; transition: background .25s, color .25s; }
+.s1-kd-res.ok { background: var(--green-soft); color: var(--green); }
+.s1-kd-res.no { background: var(--amber-soft); color: var(--amber); }
+.s1-kd-res.look { background: var(--indigo-soft); color: var(--indigo); }
+
+/* 知识点 5：拖词 */
+.s1-zones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 560px) { .s1-zones { grid-template-columns: 1fr; } }
+.s1-zones .dd-zone { min-height: 120px; }
+.s1-zone-re .dd-zone-head { color: var(--green); }
+.s1-zone-once .dd-zone-head { color: var(--amber); }
+.s1-sig { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 10px; }
+.s1-sig div { display: grid; gap: 4px; padding: 12px 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); font-size: 14.5px; line-height: 1.65; }
+.s1-sig b { font-size: 15.5px; }
+.s1-sig i { font-style: normal; font-family: var(--font-mono); font-size: 12px; color: var(--indigo); }
+
+/* 知识点 6：热度曲线、域名被抢 */
+.s1-band0 { fill: var(--green-soft); }
+.s1-band1 { fill: var(--indigo-soft); }
+.s1-band2 { fill: var(--bg); }
+.s1-band-t { font-family: var(--font-body) !important; font-size: 12px !important; font-weight: 700; }
+.s1-band-t.g { fill: var(--green) !important; }
+.s1-band-t.i { fill: var(--indigo) !important; }
+.s1-you circle { fill: var(--indigo); stroke: var(--surface); stroke-width: 3; }
+.s1-you line { stroke: var(--indigo); stroke-width: 1.5; stroke-dasharray: 3 4; }
+.s1-crowd-row { display: grid; gap: 6px; font-size: 14px; }
+.s1-crowd { display: flex; flex-wrap: wrap; gap: 3px; }
+.s1-crowd i { width: 11px; height: 11px; border-radius: 3px; background: var(--line); transition: background .25s; }
+.s1-crowd i.on { background: var(--amber); }
+.s1-race-top { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; font-size: 15px; }
+.s1-race-top .big-num { color: var(--indigo); }
+.s1-doms { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.s1-dm { display: grid; gap: 2px; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--green); background: var(--green-soft); transition: background .4s, border-color .4s, color .4s; }
+.s1-dm b { font-family: var(--font-mono); font-size: 14px; font-weight: 600; }
+.s1-dm span { font-size: 12.5px; }
+.s1-dm.taken { border-color: var(--amber); background: var(--amber-soft); }
+.s1-dm.ben { border-color: var(--indigo); background: var(--indigo-soft); }
+.s1-dm.live { border-color: var(--indigo); background: var(--indigo); color: var(--on-indigo); }
+.s1-dm.flash { animation: pop .4s; }
+
+/* 知识点 7：域名检查器 */
+.s1-dom-own { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 14.5px; }
+.s1-dom-own input {
+  font: inherit; font-family: var(--font-mono); font-size: 14px; padding: 7px 14px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink); min-width: 0; flex: 1 1 180px;
+}
+.s1-dom-body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 16px; align-items: start; }
+.s1-light { display: grid; gap: 8px; padding: 10px 9px; border-radius: 18px; background: var(--bg); border: 1px solid var(--line); }
+.s1-light i { width: 30px; height: 30px; border-radius: 50%; background: var(--line); opacity: .55; transition: background .3s, opacity .3s, box-shadow .3s; }
+.s1-light.r .r { background: var(--s1-red); opacity: 1; box-shadow: 0 0 16px var(--s1-red); }
+.s1-light.y .y { background: var(--amber); opacity: 1; box-shadow: 0 0 16px var(--amber); }
+.s1-light.g .g { background: var(--green); opacity: 1; box-shadow: 0 0 16px var(--green); }
+.s1-dom-right { display: grid; gap: 8px; min-width: 0; }
+.s1-dom-name { font-family: var(--font-mono); font-size: 17px; font-weight: 600; overflow-wrap: anywhere; }
+.s1-verdict { font-weight: 700; font-size: 17px; }
+.s1-verdict.r { color: var(--s1-red); }
+.s1-verdict.y { color: var(--amber); }
+.s1-verdict.g { color: var(--green); }
+.s1-verdict.pop { animation: pop .4s; }
+.s1-checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.s1-checks li { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 0 8px; padding: 8px 10px; border-radius: 10px; background: var(--bg); font-size: 14.5px; line-height: 1.55; }
+.s1-checks li > i { grid-row: span 2; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-weight: 700; font-size: 13px; background: var(--line); color: var(--muted); }
+.s1-checks li.ok > i { background: var(--green); color: var(--surface); }
+.s1-checks li.warn > i { background: var(--amber); color: var(--surface); }
+.s1-checks li.bad > i { background: var(--s1-red); color: var(--surface); }
+.s1-checks li.on > i { animation: pop .35s; }
+.s1-checks li span { color: var(--muted); font-size: 13.5px; }
+@media (max-width: 420px) { .s1-light i { width: 24px; height: 24px; } .s1-dom-body { gap: 10px; } }
+</style>
+</head>
+<body data-page="s1">
+<header id="topbar"></header>
+
+<div class="ph"><div class="wrap">
+  <span class="eyebrow">第 1 步 / 共 8 步</span>
+  <h1>找新词：去哪找、用什么找、值不值得做</h1>
+  <p class="lead">做 AI 工具站，第一件事是抓住一个刚出生的词。这一页讲清楚：什么算新词、每天去哪几个地方看、用哪些工具（免费的、收费的都列好了）、怎么判断值不值得做、能不能按月收费、域名能不能带模型名。</p>
+  <ul class="asks">
+    <li><a href="#k1">什么样的词才算新词？</a></li>
+    <li><a href="#k2">新词去哪找？</a></li>
+    <li><a href="#k3">用什么工具找？哪些免费、哪些收费？</a></li>
+    <li><a href="#k4">怎么判断一个新词值不值得做？</a></li>
+    <li><a href="#k5">适不适合做成按月收费的 AI 工具？</a></li>
+    <li><a href="#k6">能火多久？为什么要快？</a></li>
+    <li><a href="#k7">域名能不能带模型名？</a></li>
+  </ul>
+  <div class="gist"><span class="lab">一句话答案</span><p>每天去几个固定地方看：别人网站新上的页面、常发外链的地方、谷歌趋势的类目热门。看到没见过的名字，就去谷歌趋势拉 12 个月，确认它刚出生；再看谷歌前 10 名、用户会不会反复用、域名别碰别人的商标。过关了，当天就上站。</p></div>
+</div></div>
+
+<main class="wrap">
+
+  <!-- ===================== 知识点 1 ===================== -->
+  <section class="kp" id="k1">
+    <div class="kp-head"><span class="kp-no">知识点 1</span><h2>什么算新词：之前一直是 0，从某一天开始有人搜</h2></div>
+    <p class="kp-say">在 <button type="button" class="term" data-t="trends">谷歌趋势</button> 里把时间拉到 <b>12 个月</b>。之前一直是 0、从某一天开始往上走，那一天就是它的 <button type="button" class="term" data-t="s1-birth">出生日</button>。<b>一年内出生的都算新词，越新越好做。</b><span class="st hf">哥飞原话</span></p>
+    <p class="kp-say">坑在于：谷歌趋势的 0～100 是 <button type="button" class="term" data-t="s1-rel">相对值</button>，不是搜索量。最近一个超级高峰，会把以前的搜索「压扁」成 0，看着就像新词。<span class="st hf">哥飞原话</span></p>
+    <blockquote class="said"><p>「出现时间在最近一年内，其实都可以认为是新词。」</p><span class="who">哥飞 · 2025-04-03 小课堂</span></blockquote>
+
+    <div class="viz" id="s1-micro">
+      <div class="viz-head"><span class="viz-label">动手玩 · 拖时间、换词</span><p class="viz-title">谷歌趋势显微镜：这条线，到底是不是刚出生？</p></div>
+      <div class="seg s1-word-seg" id="s1-micro-word" role="group" aria-label="选一个词">
+        <button type="button" data-v="new" aria-pressed="true">lumibo video generator</button>
+        <button type="button" data-v="old" aria-pressed="false">ghibli</button>
+        <button type="button" data-v="season" aria-pressed="false">christmas card maker</button>
+      </div>
+      <div class="viz-controls">
+        <div class="range-wrap">
+          <label for="s1-micro-range">时间范围：<b id="s1-micro-rlab">过去 12 个月</b></label>
+          <input type="range" id="s1-micro-range" min="0" max="3" step="1" value="2">
+          <div class="ticks"><span>7 天</span><span>90 天</span><span>12 个月</span><span>5 年</span></div>
+        </div>
+      </div>
+      <label class="s1-check"><input type="checkbox" id="s1-micro-cut">不看最近一周（哥飞教的：躲开高峰再看）</label>
+      <div class="s1-chart">
+        <svg viewBox="0 0 640 228" role="img" aria-label="谷歌趋势曲线（示意）：横轴是时间，纵轴是 0～100 的相对热度">
+          <line class="s1-grid" x1="44" y1="18" x2="624" y2="18"/>
+          <line class="s1-grid" x1="44" y1="107" x2="624" y2="107"/>
+          <line class="s1-grid" x1="44" y1="196" x2="624" y2="196"/>
+          <text x="38" y="22" text-anchor="end">100</text>
+          <text x="38" y="111" text-anchor="end">50</text>
+          <text x="38" y="200" text-anchor="end">0</text>
+          <path class="s1-area" d=""/>
+          <path class="s1-line" d=""/>
+          <g id="s1-mk"></g>
+          <text id="s1-xl0" x="44" y="218" text-anchor="start"></text>
+          <text id="s1-xl1" x="334" y="218" text-anchor="middle"></text>
+          <text id="s1-xl2" x="624" y="218" text-anchor="end"></text>
+        </svg>
+      </div>
+      <p class="viz-say" id="s1-micro-say" aria-live="polite"></p>
+      <p class="viz-note">三条曲线都是按资料画的示意 <span class="st sy">示意</span>：lumibo video generator 是编的新词；ghibli 平时每天约 1.5 万次、高峰约 78 万次，是哥飞课上的真实例子；christmas card maker 代表季节词。</p>
+    </div>
+
+    <div class="box analogy"><span class="lab">打个比方</span><p>谷歌趋势像「按第一名折算的分数」：这段时间里最热的那天算 100 分。最近要是出了个超级高峰，以前每天 1.5 万次的搜索，也只能折成一两分，看着就像 0。所以哥飞说：<b>拉长时间、躲开最近的高峰再看</b>。</p></div>
+    <div class="box case"><span class="lab">真实案例 · 哥飞讲 Ghibli</span><p>吉卜力风格火的时候，ghibli 看着像新词，其实一直有人搜：平时每天约 1.5 万次，3 月 30 日那天约 78 万次，涨了 50 多倍。真正的新词是 chat gpt ghibli、ghibli style image 这种之前为 0 的说法。<span class="st hf">哥飞原话</span></p></div>
+
+    <div class="quiz" data-answer="B">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">朋友发来一张谷歌趋势截图（过去 12 个月）：前 11 个多月一直贴着 0，最近一周冲到 100。这是新词吗？</p>
+      <svg class="s1-qchart" viewBox="0 0 340 96" role="img" aria-label="过去 12 个月：前面一直贴着 0，最近一周冲到 100">
+        <line class="s1-grid" x1="30" y1="12" x2="330" y2="12"/>
+        <line class="s1-grid" x1="30" y1="84" x2="330" y2="84"/>
+        <text x="24" y="16" text-anchor="end">100</text><text x="24" y="88" text-anchor="end">0</text>
+        <path class="s1-line" d="M30 83 L120 82.5 L210 83 L300 82.5 L312 81 L318 60 L324 14 L330 26"/>
+      </svg>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">是，最近这一周就是它的出生日</button>
+        <button class="q-opt" data-l="B">先别下结论：躲开最近一周、拉到 5 年再看，前面真是 0 才算</button>
+        <button class="q-opt" data-l="C">不是，热度能冲到 100 的词一定是老词</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>谷歌趋势是相对值，一个大高峰会把以前的搜索压成 0。Ghibli 就是这样：平时每天约 1.5 万次，只是被高峰压扁了。躲开高峰、拉长时间，前面还是 0，才是真新词。<span class="st hf">哥飞原话</span></p></div>
+    </div>
+
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://new.web.cafe/tutorial/detail/lxdptf3zn4">《谷歌趋势 6 大核心用法》</a><span class="meta">哥飞 · 2025-04-03 · 新词判断和 Ghibli 例子</span></li>
+      <li><a href="https://new.web.cafe/topic/60wmnukjzg">《哥飞找词思路汇总》</a><span class="meta">梦梦.Gu 整理 · 2025-06-25 · 季节词等三类陷阱词</span></li>
+    </ul></div>
+  </section>
+
+  <!-- ===================== 知识点 2 ===================== -->
+  <section class="kp" id="k2">
+    <div class="kp-head"><span class="kp-no">知识点 2</span><h2>去哪找：靠每天看，不靠每天想</h2></div>
+    <p class="kp-say">新词不是想出来的，是<b>每天去固定几个地方看</b>出来的。有群友问「一直没发现新词怎么办」，哥飞给了<b>找词三件套</b>：看别人网站的 <button type="button" class="term" data-t="sitemap">sitemap</button> 新增了什么、看常发外链的地方冒出了哪些新站、谷歌趋势不输词只选类目看热门。<span class="st hf">哥飞原话</span></p>
+    <p class="kp-say">AI 新模型的名字，最早出现在 AI 公司官网、<button type="button" class="term" data-t="s1-x">推特 / X</button>、<button type="button" class="term" data-t="s1-hf">Hugging Face</button>。<span class="st sq">社群经验</span></p>
+    <blockquote class="said"><p>「每天看到100 个关键词，看他 1000 个网站。」</p><span class="who">哥飞 · 2025-01-04 小课堂</span></blockquote>
+
+    <div class="viz" id="s1-radar">
+      <div class="viz-head"><span class="viz-label">动手玩 · 扫一圈，再点光点</span><p class="viz-title">新词雷达：每天扫这 7 个地方</p></div>
+      <div class="viz-controls">
+        <button type="button" class="btn primary" id="s1-sweep-go">扫一圈</button>
+        <button type="button" class="btn" id="s1-trio-btn" aria-pressed="false">只看哥飞「找词三件套」</button>
+      </div>
+      <div class="s1-radar-wrap">
+        <div class="s1-scope" id="s1-scope">
+          <svg viewBox="0 0 400 400" aria-hidden="true">
+            <circle class="s1-ring" cx="200" cy="200" r="56"/>
+            <circle class="s1-ring" cx="200" cy="200" r="112"/>
+            <circle class="s1-ring out" cx="200" cy="200" r="168"/>
+            <line class="s1-ring" x1="200" y1="32" x2="200" y2="368"/>
+            <line class="s1-ring" x1="32" y1="200" x2="368" y2="200"/>
+            <g id="s1-sweep">
+              <path class="s1-sweep-fan" d="M200 200 L116 54.5 A168 168 0 0 1 200 32 Z"/>
+              <line class="s1-sweep-arm" x1="200" y1="200" x2="200" y2="32"/>
+            </g>
+            <circle class="s1-core" cx="200" cy="200" r="6"/>
+          </svg>
+        </div>
+        <div class="s1-bi" id="s1-bi" aria-live="polite"></div>
+      </div>
+      <p class="viz-say" id="s1-radar-say">靛蓝色的 3 个光点是哥飞的「找词三件套」，灰色的 4 个是群友常用的渠道。点「扫一圈」，再点任意光点看怎么用。</p>
+    </div>
+
+    <div class="viz" id="s1-diff">
+      <div class="viz-head"><span class="viz-label">看动画 · 点「对比一下」</span><p class="viz-title">三件套之一：对手站的 sitemap，昨天和今天比一比</p></div>
+      <div class="s1-diff-cols">
+        <div class="s1-sm"><div class="s1-sm-h">昨天存的<span>对手站.com/sitemap.xml</span></div><ol id="s1-sm-y"></ol></div>
+        <div class="s1-sm"><div class="s1-sm-h">今天打开<span>对手站.com/sitemap.xml</span></div><ol id="s1-sm-t"></ol></div>
+      </div>
+      <div class="viz-controls">
+        <button type="button" class="btn primary" id="s1-diff-go">对比一下</button>
+        <button type="button" class="btn" id="s1-diff-reset">清空重来</button>
+      </div>
+      <div class="s1-pool" id="s1-pool"><span class="s1-pool-lab">候选池</span><span class="chips" id="s1-pool-c"><span class="muted" style="font-size:14px">还空着</span></span></div>
+      <p class="viz-say" id="s1-diff-say" aria-live="polite">sitemap 是网站把自己所有页面列出来的清单。对手每上一个新页面，清单里就多一行。</p>
+      <p class="viz-note">对手站和网址都是编的 <span class="st sy">示意</span>。sitemap 本身是整整齐齐的清单，哥飞说可以每次和上一次比，看新增了什么；会写代码的可以让 AI 写个小脚本每天自动比。<span class="st hf">哥飞原话</span>（群聊，经哥飞 AI 转述）</p>
+    </div>
+
+    <div class="box case"><span class="lab">真实案例</span><p><b>王马扎</b>：在 X 上看到大 V 发的新词，去谷歌趋势一比，约是 GPTs 的五分之一；花 2 美元注册了域名，几个小时做完网站，上线第二天流量就来了。<b>运气选手走得远</b>（2026 年 8 月新词比赛第 3 名）：8 月 4 日上午在 Similarweb 的「新点击量」里发现词，下午上站，当晚就出词。<span class="st sq">社群经验</span></p></div>
+
+    <div class="quiz" data-answer="A">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">哥飞的「找词三件套」是哪三个？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">别人网站的 sitemap、常发外链的地方、谷歌趋势只选类目</button>
+        <button class="q-opt" data-l="B">AI 公司官网、推特、Hugging Face</button>
+        <button class="q-opt" data-l="C">问 ChatGPT、刷科技新闻、等朋友推荐</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>B 也是好渠道（新模型名最早出在那），但那是群友的经验。三件套是哥飞回答「一直没发现新词怎么办」时给的：盯别人新上的页面、盯常发外链的地方、谷歌趋势不输词只选类目。<span class="st hf">哥飞原话</span>（2026-03-11 群聊，经哥飞 AI 转述）</p></div>
+    </div>
+
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><span>找词三件套：2026-03-11 群聊，经哥飞 SEO Agent 转述，无单独文章</span></li>
+      <li><a href="https://new.web.cafe/topic/60wmnukjzg">《哥飞找词思路汇总（28 种方法）》</a><span class="meta">梦梦.Gu 整理 · 2025-06-25</span></li>
+      <li><a href="https://new.web.cafe/topic/2sf1wkwctc">《深圳线下 10 条方法》</a><span class="meta">小路 · 2026-07-07 · 新词的三个源头</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/5xyct0iie6">《新词挖掘实操指南》</a><span class="meta">哥飞 · 2025-01-04 · 从大站顺藤摸瓜挖词</span></li>
+      <li><a href="https://new.web.cafe/topic/xmsohbemzf">《王马扎：4 个月赚到 1 刀，15 天破 1000 刀》</a><span class="meta">王马扎 · 2025-09-26 · X、Hugging Face 找词</span></li>
+      <li><a href="https://new.web.cafe/topic/l8aoo7xs01">《10 月新词新站经验分享》</a><span class="meta">blank · 2024-11-06 · Similarweb 新点击量</span></li>
+      <li><a href="https://new.web.cafe/topic/6dx0cbme8c">《2026 年 8 月新词大赛第三名经验分享》</a><span class="meta">运气选手走得远 · 2026-09-23</span></li>
+    </ul></div>
+  </section>
+
+  <!-- ===================== 知识点 3 ===================== -->
+  <section class="kp" id="k3">
+    <div class="kp-head"><span class="kp-no">知识点 3</span><h2>用什么工具：免费三件套够新手起步</h2></div>
+    <p class="kp-say"><b>免费三件套</b>：谷歌趋势看是不是新词，谷歌搜索看前 10 名是谁，<button type="button" class="term" data-t="ads">谷歌 Ads 关键词规划师</button>看真实搜索量。要批量挖词、查对手，再用收费的 <button type="button" class="term" data-t="semrush">Semrush</button>、<button type="button" class="term" data-t="ahrefs">Ahrefs</button>、<button type="button" class="term" data-t="similarweb">Similarweb</button>。<span class="st hf">哥飞原话</span></p>
+    <p class="kp-say">几家工具的搜索量对不上很正常。<b>最后以谷歌自己的数据为准</b>：Similarweb、Semrush 的搜索量本来也是从谷歌那来的。<span class="st hf">哥飞原话</span></p>
+    <blockquote class="said"><p>「两家都不信，而是信谷歌的。」</p><span class="who">哥飞 · 收录在《哥飞找词思路汇总》</span></blockquote>
+
+    <div class="viz" id="s1-drawer-viz">
+      <div class="viz-head"><span class="viz-label">动手玩 · 切换免费 / 收费，点卡片翻面</span><p class="viz-title">找词工具抽屉：每样用来干什么、看哪一栏</p></div>
+      <div class="seg" id="s1-tool-seg" role="group" aria-label="按价格筛选">
+        <button type="button" data-v="all" aria-pressed="true">全部 7 样</button>
+        <button type="button" data-v="free" aria-pressed="false">免费</button>
+        <button type="button" data-v="paid" aria-pressed="false">收费</button>
+      </div>
+      <div class="s1-drawer"><div class="s1-tools" id="s1-tools"></div></div>
+      <p class="viz-say" id="s1-tool-say" aria-live="polite"></p>
+    </div>
+
+    <div class="viz" id="s1-ruler">
+      <div class="viz-head"><span class="viz-label">动手玩 · 选一个词</span><p class="viz-title">拿 GPTs 当尺子：新词还没数据，怎么估有多少人搜？</p></div>
+      <p style="font-size:15.5px">新词刚出来，工具里往往还没有搜索量。办法是在谷歌趋势里把它和 <button type="button" class="term" data-t="gpts">GPTs</button> 放在一起比：GPTs 每天大约 5000 次，看新词的线是它的几分之几。<span class="st hf">哥飞原话</span></p>
+      <div class="seg" id="s1-ruler-seg" role="group" aria-label="选一个词和 GPTs 比">
+        <button type="button" data-v="lumibo" aria-pressed="true">lumibo video generator</button>
+        <button type="button" data-v="wang" aria-pressed="false">王马扎的新词</button>
+        <button type="button" data-v="niko" aria-pressed="false">Niko 的新词</button>
+        <button type="button" data-v="mistral" aria-pressed="false">mistral ai</button>
+        <button type="button" data-v="fisch" aria-pressed="false">Fisch codes 高峰</button>
+      </div>
+      <div class="s1-chart">
+        <svg viewBox="0 0 640 186" role="img" aria-label="谷歌趋势里两条线：GPTs 和你选的词">
+          <line class="s1-grid" x1="40" y1="14" x2="540" y2="14"/>
+          <line class="s1-grid" x1="40" y1="162" x2="540" y2="162"/>
+          <text x="34" y="18" text-anchor="end">100</text>
+          <text x="34" y="166" text-anchor="end">0</text>
+          <text x="40" y="182">30 天前</text><text x="540" y="182" text-anchor="end">今天</text>
+          <path class="s1-line gray" id="s1-ru-g" d=""/>
+          <path class="s1-line" id="s1-ru-c" d=""/>
+          <text class="s1-lab-g" id="s1-ru-gl" x="548" y="0">GPTs</text>
+          <text class="s1-lab-c" id="s1-ru-cl" x="548" y="0">你的词</text>
+        </svg>
+      </div>
+      <div class="s1-ruler-out">线的高度 ≈ GPTs 的 <b id="s1-ru-ratio">1/7</b>，估算：每天约 <b class="big-num" id="s1-ru-est">0</b> 次</div>
+      <p class="viz-say" id="s1-ru-say" aria-live="polite"></p>
+      <p class="viz-note">谁的线高，谁就是 100。比 GPTs 还热的词，GPTs 自己会被压低。GPTs 每天约 5000 次是哥飞 2025 年 4 月的说法，之前有段时间降到过约 2500 次 <span class="st hf">哥飞原话</span>；尺子本身也会变，用之前先确认 <span class="st bc">补充提醒</span>。</p>
+    </div>
+
+    <div class="box warn"><span class="lab">补充提醒（不是原文内容）</span><p>收费工具的免费账号越来越抠：群友 2026 年 8 月说只能看几个关键词。<span class="st sq">社群经验</span> 新手学习阶段，先把免费三件套用熟，真要批量挖词再订阅。<span class="st tl">推出来的</span></p></div>
+
+    <div class="quiz" data-answer="C">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">Semrush 说一个词每月 1 万次，Similarweb 说每月 3 万次。信谁？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">信 Semrush，收费工具更准</button>
+        <button class="q-opt" data-l="B">两个取平均，算每月 2 万次</button>
+        <button class="q-opt" data-l="C">都不信，去谷歌 Ads 关键词规划师查谷歌自己的数</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>哥飞的原话就是「两家都不信，而是信谷歌的」。Ads 关键词规划师是谷歌自己统计的，别家的量也从这来。新词连谷歌都还没数据时，就在谷歌趋势里拿 GPTs 当尺子估。<span class="st hf">哥飞原话</span></p></div>
+    </div>
+
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://new.web.cafe/tutorial/detail/7v7tfjneg9">《如何判断关键词是否可做》</a><span class="meta">哥飞 · 2025-01-22 · 五样数据分别去哪看</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/mrozYpTgfu6MGXggeX2Kzr">《再聊挖掘需求的方法》</a><span class="meta">哥飞 · 2024-08-13 · 6 个工具每一步怎么点</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/lxdptf3zn4">《谷歌趋势 6 大核心用法》</a><span class="meta">哥飞 · 2025-04-03 · 拿 GPTs 估搜索量</span></li>
+      <li><a href="https://new.web.cafe/topic/60wmnukjzg">《哥飞找词思路汇总》</a><span class="meta">梦梦.Gu 整理 · 2025-06-25 · 「信谷歌的」</span></li>
+      <li><a href="https://new.web.cafe/topic/xmsohbemzf">《王马扎复盘》</a><span class="meta">王马扎 · 2025-09-26 · 约是 GPTs 的五分之一</span></li>
+      <li><a href="https://new.web.cafe/topic/rpg62z89h8">《新词 7 天冲到谷歌前五》</a><span class="meta">Niko · 2025-10-08</span></li>
+    </ul></div>
+  </section>
+
+  <!-- ===================== 知识点 4 ===================== -->
+  <section class="kp" id="k4">
+    <div class="kp-head"><span class="kp-no">知识点 4</span><h2>值不值得做：过 6 道关，最要紧的是看前 10 名</h2></div>
+    <p class="kp-say">候选词别一看到就做，让它过几道关：新不新、热度够不够、前 10 名是谁、能火多久、碰不碰商标、能不能收费。<span class="st hf">哥飞原话</span><span class="st tl">推出来的</span></p>
+    <p class="kp-say">最要紧的是谷歌 <button type="button" class="term" data-t="serp">搜索结果页</button>的前 10 名：<b>前排都是大站的 <button type="button" class="term" data-t="inner">内页</button>，就值得专门做一个站去打</b>；搜索量小、竞争又大的，完全不考虑。<span class="st hf">哥飞原话</span></p>
+
+    <div class="viz" id="s1-belt-viz">
+      <div class="viz-head"><span class="viz-label">看动画 · 点「下一关」</span><p class="viz-title">过关传送带：8 个候选词，最后剩几个？</p></div>
+      <div class="s1-gates" id="s1-gates"></div>
+      <div class="s1-gatebox" id="s1-gatebox" aria-live="polite"></div>
+      <div class="s1-belt" id="s1-belt"></div>
+      <div class="s1-tray"><span class="s1-tray-h">掉下去的词</span><div class="s1-tray" id="s1-tray"></div><p class="muted" id="s1-tray-empty" style="font-size:14px">还没有</p></div>
+      <div class="sp-nav">
+        <div class="sp-dots"></div>
+        <div class="seg"><button type="button" class="btn sp-prev">上一关</button><button type="button" class="btn primary sp-next">下一关</button><button type="button" class="btn" id="s1-belt-restart">重来</button></div>
+      </div>
+      <p class="viz-say" id="s1-belt-say" aria-live="polite"></p>
+      <p class="viz-note">除了 ghibli，候选词都来自模拟器的 Lumibo 2 词表，搜索量是编的 <span class="st sy">示意</span>。</p>
+    </div>
+
+    <div class="viz" id="s1-serp-viz">
+      <div class="viz-head"><span class="viz-label">动手玩 · 给每条结果标「首页」或「内页」</span><p class="viz-title">数一数前 10 名：首页几个？内页几个？</p></div>
+      <div class="seg" id="s1-serp-seg" role="group" aria-label="换一个搜索词">
+        <button type="button" data-v="a" aria-pressed="true">搜 lumibo video generator</button>
+        <button type="button" data-v="b" aria-pressed="false">搜 lumibo 2</button>
+      </div>
+      <p style="font-size:15px">看网址就能分：只有域名、后面什么都没有，是 <button type="button" class="term" data-t="home">首页</button>；域名后面还跟着「/…」，是内页。</p>
+      <div class="s1-serp">
+        <div class="s1-q" id="s1-serp-q"></div>
+        <ol class="s1-sr-list" id="s1-serp-list"></ol>
+      </div>
+      <div class="viz-controls">
+        <div class="s1-count" id="s1-serp-count"></div>
+        <button type="button" class="btn" id="s1-serp-auto">直接告诉我答案</button>
+      </div>
+      <p class="viz-say" id="s1-serp-say" aria-live="polite"></p>
+      <p class="viz-note">搜索结果是编的 <span class="st sy">示意</span>。真搜的时候，可以装 AITDK 插件，在结果页直接看到每个网站的访问量和注册时间（哥飞演示里用过）。</p>
+    </div>
+
+    <blockquote class="said"><p>「我一般不看KD，就只看搜索结果里网站首页多不多」</p><span class="who">哥飞 · 2026-04-16 小课堂</span></blockquote>
+
+    <div class="box case"><span class="lab">说法不一样：KD 要多低才做？（两边都写，不替你选）</span>
+      <p><button type="button" class="term" data-t="kd">KD</button> 是工具估出来的「排上去有多难」。拖一下，看同一个 KD 在三种说法里结论差多少：</p>
+      <div class="range-wrap">
+        <label for="s1-kd-range">假如工具显示 KD ＝ <b id="s1-kd-v" class="s1-mono">45</b></label>
+        <input type="range" id="s1-kd-range" min="0" max="100" step="1" value="45">
+        <div class="ticks"><span>0 好做</span><span>50</span><span>100 难</span></div>
+      </div>
+      <ul class="s1-kd-rows">
+        <li><b>哥飞 2024</b><span>Semrush 筛词时 KD 60 以下（《再聊挖掘需求的方法》）</span><em class="s1-kd-res" id="s1-kd-a"></em></li>
+        <li><b>群友整理</b><span>新手最好 0～29（《哥飞找词思路汇总》）</span><em class="s1-kd-res" id="s1-kd-b"></em></li>
+        <li><b>哥飞 2026</b><span>「一般不看 KD」，看前 10 名、算对手的外链账（《新词老词都可以做》）</span><em class="s1-kd-res look">先去数前 10 名</em></li>
+      </ul>
+      <p style="font-size:14.5px">还有一条：哥飞拿过「半年内出现、KD 50」和「一年前出现、KD 30」比，说前一个更容易排上。<span class="st sq">社群经验</span>（群友整理哥飞的话）新词刚出来，工具里往往连 KD 都还没有，<b>KD 只当第一遍筛子</b>。<span class="st tl">推出来的</span></p>
+    </div>
+
+    <div class="box case"><span class="lab">真实案例 · 哥飞现场挖到 Fisch codes</span><p>谷歌一搜，结果里还没有一个网站首页，全是内页，KD 也极低，是好机会。可 .com 和 .org 二十多天前就被注册了，.net 刚刚被群友注册走。看到好词，动作要快（知识点 6 接着讲）。<span class="st hf">哥飞原话</span></p></div>
+
+    <div class="quiz" data-answer="B">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">你搜 lumibo video generator，前 10 名全是大站的内页：Reddit 帖子、YouTube 视频、官网的一个子页面……做不做？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">不做，大站权重高，打不过</button>
+        <button class="q-opt" data-l="B">做，这正是机会：注册一个域名，用首页专门打它</button>
+        <button class="q-opt" data-l="C">先看 KD，超过 29 就不做</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>大站只是顺手用一个内页接住这个词，没人专门为它建站。哥飞说权重是主域名 ＞ 子域名 ＞ 子目录 ＞ 内页，最好的办法就是用这个词注册一个域名，举全站之力去打。KD 各家说法不一，哥飞 2026 年说自己一般不看。<span class="st hf">哥飞原话</span></p></div>
+    </div>
+
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://new.web.cafe/tutorial/detail/7v7tfjneg9">《如何判断关键词是否可做》</a><span class="meta">哥飞 · 2025-01-22 · 判断三步、流量 ÷ 外链算账</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/k2z73gxq2h">《新词老词都可以做》</a><span class="meta">哥飞 · 2026-04-16 · 「一般不看 KD」</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/feoogz15ou">《保小图大》</a><span class="meta">哥飞 · 公众号文章，2023 年 9 月 · 主域名 ＞ 子域名 ＞ 子目录 ＞ 内页</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/5xyct0iie6">《新词挖掘实操指南》</a><span class="meta">哥飞 · 2025-01-04 · Fisch codes</span></li>
+      <li><a href="https://new.web.cafe/topic/60wmnukjzg">《哥飞找词思路汇总》</a><span class="meta">梦梦.Gu 整理 · 2025-06-25 · KD 0～29、三类陷阱词</span></li>
+    </ul></div>
+  </section>
+
+  <!-- ===================== 知识点 5 ===================== -->
+  <section class="kp" id="k5">
+    <div class="kp-head"><span class="kp-no">知识点 5</span><h2>能不能按月收费：找用户会反复用的事</h2></div>
+    <p class="kp-say">想做成按月收费（<button type="button" class="term" data-t="subscription">订阅</button>）的 AI 工具，要找<b>用户会反复用的事</b>：生成图片、生成视频这类，今天用完明天还来。<b>查一次就走的词</b>（发布日期、是什么、怎么用），做订阅撑不起来。<span class="st tl">推出来的</span></p>
+    <p class="kp-say">怎么判断一个词背后有钱：<b>有没有人长期投广告</b>、<b>前排的网站收不收费</b>。<span class="st hf">哥飞原话</span></p>
+    <blockquote class="said"><p>「没有哪个傻子会在不赚钱的情况下持续不断的投广告.」</p><span class="who">哥飞 · 2024-08-13 · 讲 qr code generator 那个例子</span></blockquote>
+
+    <div class="viz" id="s1-sort">
+      <div class="viz-head"><span class="viz-label">动手玩 · 拖一拖（也可以先点词、再点框）</span><p class="viz-title">8 个词，哪些会反复用、哪些用一次就走？</p></div>
+      <div class="dd-zone s1-pool-zone" id="s1-sort-pool" data-k="pool"><span class="dd-zone-head">还没分的词</span></div>
+      <div class="s1-zones">
+        <div class="dd-zone s1-zone-re" data-k="re"><span class="dd-zone-head">会反复用 → 适合按月收费</span></div>
+        <div class="dd-zone s1-zone-once" data-k="once"><span class="dd-zone-head">用一次就走 → 不适合按月收费</span></div>
+      </div>
+      <div class="viz-controls">
+        <button type="button" class="btn" id="s1-sort-reset">重来</button>
+        <button type="button" class="btn" id="s1-sort-show">直接看答案</button>
+      </div>
+      <p class="viz-say" id="s1-sort-say" aria-live="polite">把 8 个词都分进下面两个框，分完自动打分。</p>
+      <p class="viz-note">词来自模拟器的 Lumibo 2 词表 <span class="st sy">示意</span>。</p>
+    </div>
+
+    <div class="s1-sig">
+      <div><i>信号 1</i><b>有没有人长期投广告</b><span>qr-code-generator.com 最近 12 个月花了 730 万美元广告费，说明这个需求真赚钱。<span class="st hf">哥飞原话</span></span></div>
+      <div><i>信号 2</i><b>前排的网站收不收费</b><span>点开它的价格页，看高级套餐卖什么，就知道用户愿意为什么掏钱。<span class="st hf">哥飞原话</span><span class="st sq">社群经验</span></span></div>
+      <div><i>信号 3</i><b>前排舍不舍得买外链</b><span>肯花钱买外链的，多半赚到了钱。这是哥飞汇总的 10 种判断方法之一。<span class="st hf">哥飞原话</span></span></div>
+      <div><i>信号 4</i><b>KD 低 ≠ 值得做</b><span>群友 Canen 的体会：「低KD 只代表可能打得过,不代表值得做。」免费工具词不一定能收钱。<span class="st sq">社群经验</span></span></div>
+    </div>
+
+    <div class="box case"><span class="lab">真实案例 · 王马扎</span><p>前后做了 20 多个站。后来用一个新词站拿流量，在它首屏放一个按钮，把人导到自己品牌名的订阅站。品牌站 8 月 19 日上线，第五天出了一笔 327 美元的年订阅，14 天收入破 1000 美元。<span class="st sq">社群经验</span></p></div>
+
+    <div class="quiz" data-answer="C">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">下面哪个词，最适合做成按月收费的 AI 工具？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">lumibo 2 release date（发布日期）</button>
+        <button class="q-opt" data-l="B">how to use lumibo 2（怎么用）</button>
+        <button class="q-opt" data-l="C">lumibo image to video（图生视频）</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>图生视频是会反复用的事，用户今天做完明天还来，才撑得起订阅。<span class="st tl">推出来的</span> 查日期、看教程都是一次就走；教程可以写成内页，给工具带人。真要做之前，再看看有没有人长期投广告、前排收不收费。<span class="st hf">哥飞原话</span></p></div>
+    </div>
+
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://new.web.cafe/tutorial/detail/mrozYpTgfu6MGXggeX2Kzr">《再聊挖掘需求的方法》</a><span class="meta">哥飞 · 2024-08-13 · 投广告的账、从变现反推</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/k2z73gxq2h">《新词老词都可以做》</a><span class="meta">哥飞 · 2026-04-16 · 判断能不能赚钱的 10 种方法</span></li>
+      <li><a href="https://new.web.cafe/topic/obajfya6rs">《参加年中出海大会的收获》</a><span class="meta">Canen · 2026-07-07 · 有没有人愿意付钱</span></li>
+      <li><a href="https://new.web.cafe/topic/xmsohbemzf">《王马扎复盘》</a><span class="meta">王马扎 · 2025-09-26 · 新词站给订阅站导流</span></li>
+    </ul></div>
+  </section>
+
+  <!-- ===================== 知识点 6 ===================== -->
+  <section class="kp" id="k6">
+    <div class="kp-head"><span class="kp-no">知识点 6</span><h2>能火多久、为什么要快：半年到一年还能抢，越早越省力</h2></div>
+    <p class="kp-say">新词<b>半年到一年内都还能抢</b>：先排上的站往往不设防、外链也不强。越往后，越要花钱买 <button type="button" class="term" data-t="external">外链</button>。<span class="st hf">哥飞原话</span></p>
+    <p class="kp-say">热点过去也不一定没流量：哥飞一个 2024 年 6 月的热点站，半年多后每天还有<b>八九百到上千个谷歌点击</b>。<span class="st hf">哥飞原话</span></p>
+
+    <div class="viz" id="s1-heat">
+      <div class="viz-head"><span class="viz-label">动手玩 · 拖滑块</span><p class="viz-title">一个新词的热度：你在第几个月进场？</p></div>
+      <div class="s1-chart">
+        <svg viewBox="0 0 640 230" role="img" aria-label="新词热度曲线（示意）：出生后很快冲高，慢慢回落，但不归零">
+          <rect class="s1-band0" x="40" y="26" width="193.3" height="164"/>
+          <rect class="s1-band1" x="233.3" y="26" width="193.3" height="164"/>
+          <rect class="s1-band2" x="426.6" y="26" width="193.4" height="164"/>
+          <text class="s1-band-t g" x="48" y="44">0～6 个月 最好抢</text>
+          <text class="s1-band-t i" x="241" y="44">6～12 个月 还能卷</text>
+          <text class="s1-band-t" x="434" y="44">1 年以后 变老词</text>
+          <line class="s1-grid" x1="40" y1="190" x2="620" y2="190"/>
+          <path class="s1-line" id="s1-heat-path" d=""/>
+          <text x="612" y="150" text-anchor="end" style="font-family:var(--font-body)">热度过了，不一定归零</text>
+          <g class="s1-you" id="s1-heat-you"><line x1="0" y1="26" x2="0" y2="190"/><circle cx="0" cy="0" r="8"/></g>
+          <text x="40" y="210">出生</text><text x="136.7" y="210" text-anchor="middle">3 个月</text><text x="233.3" y="210" text-anchor="middle">6 个月</text><text x="330" y="210" text-anchor="middle">9 个月</text><text x="426.6" y="210" text-anchor="middle">12 个月</text><text x="523.3" y="210" text-anchor="middle">15 个月</text><text x="620" y="210" text-anchor="end">18 个月</text>
+        </svg>
+      </div>
+      <div class="viz-controls">
+        <div class="range-wrap">
+          <label for="s1-heat-range">新词出生后第 <b id="s1-heat-m" class="s1-mono">0</b> 个月，你才进场</label>
+          <input type="range" id="s1-heat-range" min="0" max="18" step="1" value="0">
+        </div>
+        <button type="button" class="btn" id="s1-heat-play">从头播一遍</button>
+      </div>
+      <div class="s1-crowd-row"><span>已经在做这个词的站 <span class="st sy">示意</span>：<b id="s1-crowd-n" class="s1-mono">2</b> 个</span><div class="s1-crowd" id="s1-crowd" aria-hidden="true"></div></div>
+      <p class="viz-say" id="s1-heat-say" aria-live="polite"></p>
+    </div>
+
+    <p class="kp-say">所以<b>找到就要快</b>：提前把代码和收款准备好，新词一出来第一时间动手。<span class="st hf">哥飞原话</span></p>
+    <blockquote class="said"><p>「注册了域名，就要今晚快速上线一个网站，不然你就是浪费钱。」</p><span class="who">哥飞 · 2025-01-04 小课堂</span></blockquote>
+
+    <div class="viz" id="s1-race">
+      <div class="viz-head"><span class="viz-label">看动画 · 真实案例</span><p class="viz-title">genie3 发布那天：常见域名多快被抢光？</p></div>
+      <div class="s1-race-top"><span>发现新词以后</span><b class="big-num" id="s1-race-min">0</b><span>分钟</span></div>
+      <div class="meter ours"><i id="s1-race-bar"></i></div>
+      <div class="s1-doms" id="s1-doms"></div>
+      <div class="viz-controls"><button type="button" class="btn primary" id="s1-race-go">播放那一天</button></div>
+      <p class="viz-say" id="s1-race-say" aria-live="polite"></p>
+      <p class="viz-note">「1 小时后几乎都被注册」「2 小时上线」是 Ben 的原话 <span class="st sq">社群经验</span>；中间每个后缀被抢的分钟数是编的 <span class="st sy">示意</span>。域名带模型名有风险，下一个知识点讲。</p>
+    </div>
+
+    <div class="quiz" data-answer="A">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">一个新词出生已经 8 个月了，还能做吗？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">能。半年到一年都还能卷，只是可能要花钱买外链</button>
+        <button class="q-opt" data-l="B">不能。新词只有出生那一周能抢</button>
+        <button class="q-opt" data-l="C">能，而且比刚出生时更好做</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>哥飞说新词半年一年内都还可以卷，花些钱不断买外链能拿到排名。但越早越省力：刚出生时上站够快，前期不靠外链也能排上。<span class="st hf">哥飞原话</span></p></div>
+    </div>
+
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://new.web.cafe/tutorial/detail/k2z73gxq2h">《新词老词都可以做》</a><span class="meta">哥飞 · 2026-04-16 · 半年到一年还能卷</span></li>
+      <li><a href="https://mp.weixin.qq.com/s/oAmrfRXrIWAMBVS0uB6C8Q">《老手可以去做难而正确的事情，新手只需要去追热点追新词就行》</a><span class="meta">哥飞 · 2025-02-28 · 公众号 · 热点站半年后仍有近千点击</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/5xyct0iie6">《新词挖掘实操指南》</a><span class="meta">哥飞 · 2025-01-04 · 注册当晚就上线</span></li>
+      <li><a href="https://new.web.cafe/topic/qroffybyzo">《我单方面宣布在 genie3 抢新词大战中获胜》</a><span class="meta">Ben · 2025-08-10</span></li>
+    </ul></div>
+  </section>
+
+  <!-- ===================== 知识点 7 ===================== -->
+  <section class="kp" id="k7">
+    <div class="kp-head"><span class="kp-no">知识点 7</span><h2>域名能不能带模型名：页面里写「支持」可以，冒充官方不行</h2></div>
+    <p class="kp-say"><button type="button" class="term" data-t="domain">域名</button>里带别人的 <button type="button" class="term" data-t="trademark">商标</button>，<b>理论上就不行</b>。比如做 TikTok 视频分析工具，域名里就不能有 TikTok。<span class="st hf">哥飞原话</span></p>
+    <p class="kp-say">页面里写「支持某某模型」「接入了某某模型」没问题；<b>冒充官方不行</b>。<span class="st hf">哥飞原话</span></p>
+    <blockquote class="said"><p>「理论上你的域名带了对方的商标名称，就不行。」</p><span class="who">哥飞 · 2025-09-25 群聊，经哥飞 AI 转述</span></blockquote>
+
+    <div class="viz" id="s1-dom">
+      <div class="viz-head"><span class="viz-label">动手玩 · 选一个域名，或者自己输一个</span><p class="viz-title">域名检查器：做 Lumibo 2 的工具站，这个域名稳不稳？</p></div>
+      <div class="seg s1-word-seg" id="s1-dom-seg" role="group" aria-label="选一个候选域名">
+        <button type="button" data-v="lumibo.ai" aria-pressed="true">lumibo.ai</button>
+        <button type="button" data-v="lumibovideo.com" aria-pressed="false">lumibovideo.com</button>
+        <button type="button" data-v="framepop.com" aria-pressed="false">framepop.com</button>
+      </div>
+      <form class="s1-dom-own" id="s1-dom-form">
+        <label for="s1-dom-in">自己输一个：</label>
+        <input id="s1-dom-in" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="比如 lumibo2free.com">
+        <button type="submit" class="btn">检查</button>
+      </form>
+      <div class="s1-dom-body">
+        <div class="s1-light" id="s1-light" aria-hidden="true"><i class="r"></i><i class="y"></i><i class="g"></i></div>
+        <div class="s1-dom-right">
+          <span class="s1-dom-name" id="s1-dom-name"></span>
+          <ol class="s1-checks" id="s1-checks"></ol>
+          <p class="s1-verdict" id="s1-verdict" aria-live="polite"></p>
+        </div>
+      </div>
+      <p class="viz-say" id="s1-dom-say" aria-live="polite"></p>
+      <p class="viz-note">自己输的域名，只按这一页讲的规矩粗筛 <span class="st tl">推出来的</span>，不是法律意见。</p>
+    </div>
+
+    <div class="box case"><span class="lab">真实案例 · 两种做法</span><p><b>Ben</b> 抢注 genie3.net、2 小时上线、拿到了首页排名，社群里这样用模型名做域名抢排名的人不少。<b>王马扎</b>的新词站也用新词注册域名拿流量，但他收钱的订阅站另注册了自己的品牌域名，理由是：用新词注册域名有侵权风险、可能被收回；新词热度会降；也不利于积累品牌。<span class="st sq">社群经验</span></p></div>
+    <div class="box warn"><span class="lab">补充提醒（不是原文内容）</span><p>各国的商标规矩不一样，拿不准就别用别人的名字。页面里加一句「非官方产品」，能少很多误会。<span class="st bc">补充提醒</span></p></div>
+
+    <div class="quiz" data-answer="B">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">你要做一个 Lumibo 2 的视频工具站，哪个域名最稳？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">lumibo.ai：一看就像官方，好记</button>
+        <button class="q-opt" data-l="B">framepop.com：页面里写「支持 Lumibo 2」</button>
+        <button class="q-opt" data-l="C">lumibovideo.com：带模型名，排名快</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>哥飞说域名带了对方的商标名称，理论上就不行；页面里写支持、接入某个模型可以。lumibo.ai 是冒充官方，最不能用；lumibovideo.com 社群里有人这么抢排名，但有被品牌方找上门的风险。<span class="st hf">哥飞原话</span></p></div>
+    </div>
+
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><span>商标原话：2025-09-25（8 群）、2025-08-26（1 群）、2024-11-29（3 群）群聊，经哥飞 SEO Agent 转述，无单独文章</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/7v7tfjneg9">《如何判断关键词是否可做》</a><span class="meta">哥飞 · 2025-01-22 · stargate ai：注册域名等于做假冒官网</span></li>
+      <li><a href="https://new.web.cafe/topic/xmsohbemzf">《王马扎复盘》</a><span class="meta">王马扎 · 2025-09-26 · 为什么另注册品牌域名</span></li>
+      <li><a href="https://new.web.cafe/topic/qroffybyzo">《genie3 抢新词大战复盘》</a><span class="meta">Ben · 2025-08-10</span></li>
+      <li><a href="https://new.web.cafe/topic/xkxrqbmm79">《一次和 Google 法务沟通的完整经历》</a><span class="meta">一君 · 社群帖子 · 哥飞 SEO Agent 推荐</span></li>
+    </ul></div>
+  </section>
+
+  <!-- ===================== 小结 ===================== -->
+  <section class="kp" id="recap">
+    <div class="kp-head"><span class="kp-no">小结</span><h2>这一步记住 7 件事</h2></div>
+    <div class="recap"><ol>
+      <li><b>新词</b>：谷歌趋势拉 12 个月，之前是 0、最近才冒头。暴涨不等于新词，Ghibli 是被高峰压扁的老词。</li>
+      <li><b>去哪找</b>：靠每天看。哥飞三件套是别人的 sitemap、常发外链的地方、趋势只选类目；AI 模型名最早出在官网、推特、Hugging Face。</li>
+      <li><b>用什么找</b>：免费三件套是谷歌趋势、谷歌搜索、Ads 关键词规划师；收费的是 Semrush、Ahrefs、Similarweb。搜索量信谷歌自己的；新词没数据，拿 GPTs 当尺子。</li>
+      <li><b>值不值得做</b>：主要看前 10 名。前排是大站内页，就注册一个域名用首页去打。KD 说法不一，哥飞 2026 年说一般不看。</li>
+      <li><b>能不能收费</b>：找会反复用的事，查一次就走的词不做工具站；看有没有人长期投广告、前排收不收费。</li>
+      <li><b>能火多久</b>：半年到一年都还能抢，热点过后也不一定归零；找到就要快，注册当晚就上线。</li>
+      <li><b>域名</b>：别带别人的商标。页面里写「支持 Lumibo 2」可以，冒充官方不行。</li>
+    </ol></div>
+    <div class="scorebar" data-scorebar></div>
+    <h3>这一步该读的原文（按顺序）</h3>
+    <ol class="readlist">
+      <li><a href="https://new.web.cafe/tutorial/detail/lxdptf3zn4">《谷歌趋势 6 大核心用法》</a><label><input type="checkbox">读过了</label><span class="why">学会判断新词、拿 GPTs 估搜索量、顺着「相关查询」一层层挖词。</span><span class="meta">哥飞 · 2025-04-03</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/k2z73gxq2h">《新词老词都可以做》</a><label><input type="checkbox">读过了</label><span class="why">现在的三条路；不看 KD 看什么；新词能抢多久。</span><span class="meta">哥飞 · 2026-04-16</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/7v7tfjneg9">《如何判断关键词是否可做》</a><label><input type="checkbox">读过了</label><span class="why">五样数据去哪看，用「流量 ÷ 外链」算账，5 个真实词的判断过程。</span><span class="meta">哥飞 · 2025-01-22</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/5xyct0iie6">《新词挖掘实操指南》</a><label><input type="checkbox">读过了</label><span class="why">看哥飞现场从一个大站顺藤摸瓜，挖出新词 Fisch codes。</span><span class="meta">哥飞 · 2025-01-04</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/mrozYpTgfu6MGXggeX2Kzr">《再聊挖掘需求的方法》</a><label><input type="checkbox">读过了</label><span class="why">6 种挖需求的方法，Semrush、Similarweb、Ads 规划师每一步怎么点。</span><span class="meta">哥飞 · 2024-08-13</span></li>
+      <li><a href="https://new.web.cafe/topic/60wmnukjzg">《哥飞找词思路汇总》（工具书）</a><label><input type="checkbox">读过了</label><span class="why">28 种找词方法的索引，不用硬啃，哪个渠道不会用了回来查。</span><span class="meta">梦梦.Gu 整理 · 2025-06-25</span></li>
+    </ol>
+  </section>
+
+</main>
+
+<nav id="pager"></nav>
+<footer id="foot"></footer>
+
+<script src="assets/kit.js"></script>
+<script>
+(() => {
+  const { $, $$, svgEl, el, bindSeg, tween, sleep, fmt, replay, countUp, flip, flyTo, makeSteps, dnd, reduce, addTerms } = KIT;
+
+  addTerms({
+    's1-hf': ['Hugging Face', 'AI 模型的“集散地”：新模型常常最早在这里上架，Spaces 页面还能直接在线试用。'],
+    's1-x': ['推特 / X', '海外版的微博。AI 公司和圈内大 V 发新模型的消息，往往最先发在这里。'],
+    's1-rel': ['相对值', '谷歌趋势的 0～100 不是搜索量：它把你选的这段时间里最热的那天算 100，其余按比例折算。', '打个比方：全班按第一名折成 100 分，你得 2 分不代表没答题，可能只是第一名太高。'],
+    's1-birth': ['出生日', '在谷歌趋势里，一个词从一直是 0、到开始有人搜的那一天。'],
+  });
+
+  // ---------- 知识点 1：趋势曲线显微镜 ----------
+  (() => {
+    const root = $('#s1-micro');
+    const X0 = 44, X1 = 624, Y0 = 18, Y1 = 196, N = 160;
+    const MS = 864e5, TODAY = new Date(2026, 9, 26), HIST = 1840, BIRTH = -150;
+    const SPIKE = [.05, .25, .7, 1, .85, .7, .6];
+    const dOf = t => new Date(TODAY.getTime() + t * MS);
+    const md = d => `${d.getMonth() + 1} 月 ${d.getDate()} 日`;
+    const ym = d => `${d.getFullYear()} 年 ${d.getMonth() + 1} 月`;
+    const doy = d => Math.round((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(d.getFullYear(), 0, 0)) / MS);
+    function build(kind, seed) {
+      const r = KIT.rng(seed), a = new Float64Array(HIST);
+      for (let i = 0; i < HIST; i++) {
+        const t = i - (HIST - 1), n = 1 + (r() - .5) * .18;
+        if (kind === 'new') {
+          const d = t - BIRTH;
+          a[i] = d < 0 ? 0 : 1960 * (1 - Math.exp(-(d + 1) / 4)) * (.35 + .65 * Math.exp(-d / 45)) * n;
+        } else if (kind === 'old') {
+          a[i] = 15000 * (1 + .08 * Math.sin(t / 58)) * n + (t >= -6 ? 765000 * SPIKE[t + 6] : 0);
+        } else {
+          const g = Math.abs(doy(dOf(t)) - 349), dist = Math.min(g, 365 - g);
+          a[i] = (150 + 9000 * Math.exp(-dist * dist / 338)) * n;
+        }
+      }
+      return a;
+    }
+    const DATA = { new: build('new', 7), old: build('old', 11), season: build('season', 23) };
+    const RANGES = [
+      { lab: '过去 7 天', days: 7, step: 1, f: md },
+      { lab: '过去 90 天', days: 90, step: 1, f: md },
+      { lab: '过去 12 个月', days: 364, step: 7, f: ym },
+      { lab: '过去 5 年', days: 1820, step: 7, f: ym },
+    ];
+    function view(kind, ri, cut) {
+      const a = DATA[kind], R = RANGES[ri], end = cut ? -7 : 0, start = end - R.days + 1;
+      const pts = [];
+      for (let s = start; s + R.step - 1 <= end; s += R.step) {
+        let sum = 0;
+        for (let k = 0; k < R.step; k++) sum += a[s + k + HIST - 1];
+        pts.push(sum / R.step);
+      }
+      const max = Math.max(...pts) || 1;
+      const norm = pts.map(v => Math.round(v / max * 100));
+      const ys = Array.from({ length: N }, (_, j) => {
+        const p = j / (N - 1) * (norm.length - 1), i = Math.floor(p), f = p - i;
+        return i + 1 < norm.length ? norm[i] * (1 - f) + norm[i + 1] * f : norm[i];
+      });
+      return { ys, start, end, R };
+    }
+    const line = $('.s1-line', root), area = $('.s1-area', root), mk = $('#s1-mk'), say = $('#s1-micro-say');
+    const xAt = u => X0 + u * (X1 - X0), yAt = v => Y1 - v / 100 * (Y1 - Y0);
+    function draw(ys) {
+      let d = '';
+      ys.forEach((v, j) => { d += (j ? 'L' : 'M') + xAt(j / (N - 1)).toFixed(1) + ' ' + yAt(v).toFixed(1); });
+      line.setAttribute('d', d);
+      area.setAttribute('d', d + `L${X1} ${Y1}L${X0} ${Y1}Z`);
+    }
+    function markers(kind, v, cut) {
+      mk.innerHTML = '';
+      const span = v.end - v.start;
+      const add = (t, label, fake) => {
+        const u = (t - v.start) / span;
+        if (u < 0 || u > 1) return;
+        const g = svgEl('g', { class: 's1-mk' + (fake ? ' fake' : '') }, mk), x = xAt(u), right = u > .3;
+        svgEl('line', { x1: x, y1: Y0 - 4, x2: x, y2: Y1 }, g);
+        if (label) svgEl('text', { x: x + (right ? -6 : 6), y: Y0 + 12, 'text-anchor': right ? 'end' : 'start' }, g).textContent = label;
+      };
+      if (kind === 'new') add(BIRTH, '出生日 · ' + md(dOf(BIRTH)));
+      if (kind === 'old' && !cut) add(-6, '看着像出生日？', true);
+      if (kind === 'season' && v.R.days >= 364) {
+        const ts = [];
+        for (let y = 2021; y <= 2026; y++) ts.push(Math.round((new Date(y, 10, 20) - TODAY) / MS));
+        const inWin = ts.filter(t => t >= v.start && t <= v.end);
+        inWin.forEach((t, i) => add(t, v.R.days === 364 ? '看着像出生日？' : (i === inWin.length - 1 ? '每年这时候都来一次' : ''), true));
+      }
+    }
+    function sayFor(kind, ri, cut) {
+      if (kind === 'new') {
+        if (ri === 0) return ['bad', '只看 7 天，线一直在中间晃，<b>看不出它是哪天开始有人搜的</b>。7 天太短，往长了拉。'];
+        if (ri === 1) return ['bad', '90 天里它一直有人搜，还在慢慢往下走。出生日在更早之前，<b>再往长了拉</b>。'];
+        if (ri === 2) return ['good', `拉到 12 个月：${md(dOf(BIRTH))}以前一直是 0，那天开始往上冲，这就是它的<b>出生日</b>。不到一年，<b>算新词</b>。`];
+        return ['good', '5 年里前面全是 0，只有最近这一段有线。出生日清清楚楚，<b>是真新词</b>。'];
+      }
+      if (kind === 'old') {
+        if (!cut) return ['bad', (ri === 0 ? '7 天里从贴地冲到 100' : '前面几乎贴着 0，最近一周突然冲到 100') + '，<b>看着像新词，其实不一定</b>。勾上「不看最近一周」再看。'];
+        return ['bad', '躲开最近一周的高峰，线马上「立」起来了：它<b>一直都有人搜</b>，平时每天约 1.5 万次，只是被高峰压扁了。<b>这是老词</b>。'];
+      }
+      if (ri <= 1) return ['', '这段时间一直有人搜，只是量不大，线看着乱跳（量小的时候谷歌趋势就这样）。<b>看不出来，拉到 12 个月</b>。'];
+      if (ri === 2) return ['bad', '11 月冒出来、12 月最高、1 月又没了，<b>看着像新出生的</b>？拉到 5 年看看。'];
+      return ['bad', '5 年里每年 12 月都冒一次头：这是<b>季节词</b>，不是新词。一年只热一阵子，是群友整理的三类陷阱词之一。'];
+    }
+    const state = { kind: 'new', ri: 2, cut: false };
+    const range = $('#s1-micro-range'), cut = $('#s1-micro-cut'), rlab = $('#s1-micro-rlab');
+    let shown = null, run = 0;
+    function update(animate) {
+      const v = view(state.kind, state.ri, state.cut);
+      rlab.textContent = v.R.lab;
+      $('#s1-xl0').textContent = v.R.f(dOf(v.start));
+      $('#s1-xl1').textContent = v.R.f(dOf(Math.round((v.start + v.end) / 2)));
+      $('#s1-xl2').textContent = v.end === 0 ? '今天' : v.R.f(dOf(v.end));
+      const [cls, txt] = sayFor(state.kind, state.ri, state.cut);
+      say.className = 'viz-say ' + cls;
+      say.innerHTML = txt;
+      const my = ++run, from = shown, to = v.ys;
+      const finish = () => { if (my !== run) return; shown = to; draw(to); markers(state.kind, v, state.cut); mk.style.opacity = 1; };
+      mk.style.opacity = 0;
+      if (!animate || !from) { finish(); return; }
+      tween(700, k => {
+        if (my !== run) return;
+        shown = from.map((y, j) => y + (to[j] - y) * k);
+        draw(shown);
+      }, finish);
+    }
+    bindSeg($('#s1-micro-word'), v => { state.kind = v; update(true); });
+    range.addEventListener('input', () => { state.ri = Number(range.value); update(true); });
+    cut.addEventListener('change', () => { state.cut = cut.checked; update(true); });
+    update(false);
+  })();
+
+  // ---------- 知识点 2：新词雷达 ----------
+  (() => {
+    const HF = '<span class="st hf">哥飞原话</span><span class="muted" style="font-size:12.5px">群聊，经哥飞 AI 转述</span>';
+    const SQ = '<span class="st sq">社群经验</span>';
+    const BLIPS = [
+      { a: 40, r: .7, name: '官网·更新日志', paid: false, src: SQ,
+        use: ['收藏 3～5 家 AI 公司的官网博客、更新日志、官方推特账号。', '每天扫一眼标题。', '看到没见过的名字（比如 Lumibo 2），丢进候选池，去谷歌趋势查。'],
+        sig: '发布公告里第一次出现的模型名、版本号。' },
+      { a: 88, r: .8, name: '推特 / X', paid: false, src: SQ,
+        use: ['关注专发 AI 新模型消息的大 V。', '看到新名字，马上去谷歌趋势和 GPTs 比一比。', '反过来也行：在 Hugging Face 看到新模型，去 X 搜它、选「热门」，看谁最早发，关注他。'],
+        sig: '同一个词一天里被好几个人提，说明正在传开。',
+        cs: '王马扎在 X 上看到大 V 发的新词，约是 GPTs 的五分之一，上线第二天流量就来了。Niko 在推特看到一批新模型发布，挑了一个词，大约 7 天冲进谷歌前五。' },
+      { a: 122, r: .56, name: 'Hugging Face', paid: false, src: SQ,
+        use: ['打开 huggingface.co/spaces。', '看最近上新的模型。', '名字拿去谷歌趋势验证，顺手看看域名有没有被注册。'],
+        sig: '新模型刚上架、能在线试用。', cs: '王马扎举的例子：HunyuanImage 2.1 当时是新词，域名也还没被注册。' },
+      { a: 168, r: .82, name: '谷歌趋势·只选类目', trio: true, paid: false, src: '<span class="st hf">哥飞原话</span>',
+        use: ['打开谷歌趋势，不输入任何词。', '只选一个分类。', '看「相关查询」里最近 7 天飙升的词，一个个查：是什么、怎么火的、是不是新词。'],
+        sig: '标着「飙升」的词。', cs: '哥飞在课上演示过：用 maker 这个词根看最近 7 天搜索量上升的词，发现了 barrel roll maker。' },
+      { a: 214, r: .62, name: '别人的 sitemap', trio: true, paid: false, src: HF,
+        use: ['挑几个专门追新词的对手站。', '打开「对手域名/sitemap.xml」，存一份。', '第二天再打开，和昨天的比：多出来的网址，就是对手刚上的新页面。'],
+        sig: '新增的网址里出现没见过的词。下面有动画。' },
+      { a: 266, r: .8, name: '外链列表', trio: true, paid: false, src: HF,
+        use: ['记下大家常去发外链的地方：导航站、提交站、博客评论区。', '隔几天去看一次最近新出现的链接。', '一排陌生的新域名，就是一批新站：点进去看他们在做什么词，再查域名注册时间。'],
+        sig: '同一段时间冒出好几个名字相近的新站。', cs: '哥飞的话（收录在《哥飞找词思路汇总》）：「所有会去发外链的网站，其实都是有利可图的」。' },
+      { a: 305, r: .68, name: 'Similarweb 新点击量', paid: true, src: SQ,
+        use: ['输入一个大站，比如 crazygames.com、huggingface.co。', '关键词研究 → 着陆页 →「点击量变化」选「新点击量」。', '按点击量排序，把前面那些新页面的名字逐个放进谷歌趋势。'],
+        sig: '大站刚上线、刚开始有流量的页面。',
+        cs: 'blank 用这招盯 CrazyGames，挖出 worldguessr 等一批新词，10 月新站合计 24 万独立访客（游戏站，靠广告）。也有群友提醒：等大站页面有了流量才发现，已经不算最早，越靠近源头越好。' },
+    ];
+    const root = $('#s1-radar'), scope = $('#s1-scope'), info = $('#s1-bi'), sweep = $('#s1-sweep'), say = $('#s1-radar-say');
+    const blips = BLIPS.map((b, i) => {
+      const rad = b.a * Math.PI / 180;
+      const x = 50 + Math.sin(rad) * b.r * 42, y = 50 - Math.cos(rad) * b.r * 42;
+      const btn = el('button', { type: 'button', class: 's1-blip' + (b.trio ? ' trio' : ''), style: `left:${x.toFixed(2)}%;top:${y.toFixed(2)}%`, 'aria-pressed': 'false', 'aria-label': `${b.name}：看怎么用` }, `<i></i><span>${b.name}</span>`);
+      btn.addEventListener('click', () => pick(i));
+      scope.appendChild(btn);
+      return btn;
+    });
+    function trioCard() {
+      return `<p class="s1-bi-h">哥飞的「找词三件套」<span class="s1-tag trio">每天看</span></p>
+        <p>有群友问「一直没发现新词怎么办」，哥飞给了三个每天看的地方：</p>
+        <ol><li>别人网站的 sitemap，新增了哪些页面</li><li>常发外链的地方，最近冒出了哪些新站</li><li>谷歌趋势不输词，只选类目看热门</li></ol>
+        <p>${HF}</p>
+        <p class="muted" style="font-size:14px">点雷达上的光点，看每个地方怎么用。</p>`;
+    }
+    function pick(i) {
+      blips.forEach((b, k) => b.setAttribute('aria-pressed', String(k === i)));
+      const b = BLIPS[i];
+      info.innerHTML = `<p class="s1-bi-h">${b.name}<span class="s1-tag ${b.paid ? 'paid' : 'free'}">${b.paid ? '收费' : '免费'}</span>${b.trio ? '<span class="s1-tag trio">找词三件套</span>' : ''}</p>
+        <span class="k">怎么用</span><ol>${b.use.map(u => `<li>${u}</li>`).join('')}</ol>
+        <span class="k">看什么信号</span><p>${b.sig}</p>
+        ${b.cs ? `<p class="cs">${b.cs}</p>` : ''}
+        <p>${b.src}</p>`;
+      replay(info);
+    }
+    info.innerHTML = trioCard();
+    let sweepRun = 0;
+    $('#s1-sweep-go').addEventListener('click', () => {
+      const my = ++sweepRun;
+      blips.forEach(b => b.classList.remove('lit'));
+      say.className = 'viz-say';
+      say.textContent = '雷达扫描中……';
+      tween(3600, k => {
+        if (my !== sweepRun) return;
+        const deg = k * 360;
+        sweep.setAttribute('transform', `rotate(${deg.toFixed(1)} 200 200)`);
+        BLIPS.forEach((b, i) => { if (deg >= b.a && !blips[i].classList.contains('lit')) blips[i].classList.add('lit'); });
+      }, () => {
+        if (my !== sweepRun) return;
+        sweep.removeAttribute('transform');
+        say.className = 'viz-say good';
+        say.innerHTML = '扫完一圈，7 个地方都亮了。<b>靛蓝色的 3 个是哥飞的三件套</b>，不用花钱，每天花几十分钟扫一遍就行。点任意光点看怎么用。';
+      });
+    });
+    const trioBtn = $('#s1-trio-btn');
+    trioBtn.addEventListener('click', () => {
+      const on = trioBtn.getAttribute('aria-pressed') !== 'true';
+      trioBtn.setAttribute('aria-pressed', String(on));
+      root.classList.toggle('s1-only-trio', on);
+      if (on) { blips.forEach(b => b.setAttribute('aria-pressed', 'false')); info.innerHTML = trioCard(); replay(info); }
+    });
+  })();
+
+  // ---------- 知识点 2：sitemap 对比 ----------
+  (() => {
+    const Y = ['/', '/image-to-video', '/text-to-video', '/pricing', '/blog/how-to-make-ai-video', '/blog/best-ai-video-tools'];
+    const T = ['/', '/image-to-video', '/text-to-video', '/lumibo-2-video-generator', '/pricing', '/blog/how-to-make-ai-video', '/blog/best-ai-video-tools', '/blog/lumibo-2-prompts'];
+    const yBox = $('#s1-sm-y'), tBox = $('#s1-sm-t'), pool = $('#s1-pool-c'), say = $('#s1-diff-say');
+    const yLis = Y.map(p => { const li = el('li', { 'data-p': p }); li.textContent = p; yBox.appendChild(li); return li; });
+    const tLis = T.map(p => { const li = el('li', { 'data-p': p }); li.textContent = p; tBox.appendChild(li); return li; });
+    const EMPTY = '<span class="muted" style="font-size:14px">还空着</span>';
+    let run = 0;
+    function reset() {
+      run++;
+      [...yLis, ...tLis].forEach(li => li.classList.remove('scan', 'same', 'new'));
+      pool.innerHTML = EMPTY;
+      say.className = 'viz-say';
+      say.textContent = 'sitemap 是网站把自己所有页面列出来的清单。对手每上一个新页面，清单里就多一行。';
+    }
+    $('#s1-diff-reset').addEventListener('click', reset);
+    $('#s1-diff-go').addEventListener('click', async () => {
+      reset();
+      const my = run;
+      say.textContent = '一行一行对：昨天有的变灰，昨天没有的亮绿……';
+      for (const li of tLis) {
+        li.classList.add('scan');
+        await sleep(280);
+        if (my !== run) return;
+        li.classList.remove('scan');
+        const twin = yLis.find(x => x.dataset.p === li.dataset.p);
+        if (twin) { li.classList.add('same'); twin.classList.add('same'); } else li.classList.add('new');
+      }
+      await sleep(500);
+      if (my !== run) return;
+      const first = tLis.find(li => li.classList.contains('new'));
+      await flyTo(first, $('#s1-pool'), { html: 'lumibo 2', cls: 'chip good' });
+      if (my !== run) return;
+      pool.innerHTML = '<span class="chip good">lumibo 2</span><span style="font-size:14px">→ 下一步：去谷歌趋势拉 12 个月</span>';
+      replay(pool.firstElementChild, 'enter');
+      say.className = 'viz-say good';
+      say.innerHTML = '多出 2 行，都带着「lumibo-2」：对手刚为一个叫 <b>Lumibo 2</b> 的东西上了页面。没见过的名字，<b>丢进候选池</b>，再去谷歌趋势确认它是不是刚出生。';
+    });
+  })();
+
+  // ---------- 知识点 3：工具抽屉 ----------
+  (() => {
+    const TOOLS = [
+      { id: 'trends', name: '谷歌趋势', en: 'Google Trends', free: true, trio: true, one: '看一个词是不是刚出生、热度大概多大。',
+        use: '看出生日；和 GPTs 比热度；挖「飙升」的相关词。', col: '时间选「过去 12 个月」；右下角「相关查询」切到「搜索量上升」。', how: '0～100 是相对值，不是搜索量。想估量，就加一个 GPTs 一起比。' },
+      { id: 'google', name: '谷歌搜索', en: 'Google Search', free: true, trio: true, one: '看前 10 名是谁：首页还是内页、工具还是教程。',
+        use: '判断竞争：前排是大站内页还是专门做这个词的站。', col: '每条结果的网址：只有域名是首页，后面还有「/…」是内页。', how: '装个 AITDK 插件，结果页上直接显示每个站的访问量和注册时间。' },
+      { id: 'ads', name: '谷歌 Ads 关键词规划师', en: 'Google Ads Keyword Planner', free: true, trio: true, one: '查谷歌自己统计的搜索量，最准。',
+        use: '查真实搜索量；「发现新关键词」能扩出你没想到的说法。', col: '工具 → 规划 → 关键字规划工具 →「获取搜索量和预测数据」；语言选英语、地区删掉、时间选最近两个月。', how: '要先注册谷歌广告账号。同义词会被合成一组、给同一个量；出价低不代表不值钱。' },
+      { id: 'gpts', name: '拿 GPTs 当尺子', en: 'GPTs 参照法', free: true, one: '新词还没数据时，估一个大概的搜索量。',
+        use: '新词刚出来，工具里查不到量，就和 GPTs 比。', col: '谷歌趋势里同时输入你的词和 GPTs，看两条线谁高、差几倍。', how: 'GPTs 每天约 5000 次（哥飞 2025 年 4 月的说法）。线是它的一半，就约每天 2500 次。下面有动手玩。' },
+      { id: 'semrush', name: 'Semrush', en: 'Semrush', free: false, one: '输入一个词根，批量挖出一大串词。',
+        use: '批量挖词；看 KD；看别人的网站靠哪些词拿流量。', col: 'Keyword Magic Tool 里的「年趋势」列：前面平、最近冒头，就是新词。', how: '输入 generator，左边关键词群组选 AI，只看带 AI 的词。免费账号只能看几个词。' },
+      { id: 'ahrefs', name: 'Ahrefs', en: 'Ahrefs', free: false, one: '看一个词有多难、前几名有多少外链。',
+        use: '看 KD、前三名的流量和外链；查对手的外链。', col: '免费小工具：关键词生成器、ahrefs.com/traffic-checker（免登录看网站流量）、KD 查询。', how: '先用免费小工具。哥飞说付费版太贵，他自己一般不用。' },
+      { id: 'similarweb', name: 'Similarweb', en: 'Similarweb', free: false, one: '看一个网站多少人来、哪些页面刚有了流量。',
+        use: '看网站每月访问量和来源；看大站「新点击量」页面挖新词；看单个内页的流量。', col: '关键词研究 → 着陆页 →「点击量变化」选「新点击量」。', how: '先用免费版看个大概。看单个内页的流量是收费功能。' },
+    ];
+    const box = $('#s1-tools'), say = $('#s1-tool-say');
+    const cards = TOOLS.map(t => {
+      const b = el('button', { type: 'button', class: 's1-tool', 'aria-pressed': 'false', 'data-free': t.free ? '1' : '0' },
+        `<span class="s1-tool-in">
+          <span class="s1-face">
+            <span class="s1-tname">${t.name}</span><span class="s1-ten">${t.en}</span>
+            <span class="s1-tags"><span class="s1-tag ${t.free ? 'free' : 'paid'}">${t.free ? '免费' : '收费'}</span>${t.trio ? '<span class="s1-tag trio">免费三件套</span>' : ''}</span>
+            <span class="s1-one">${t.one}</span>
+            <span class="s1-hint">点一下翻面 →</span>
+          </span>
+          <span class="s1-face s1-back">
+            <span class="dt">用来干什么</span><span class="dd">${t.use}</span>
+            <span class="dt">看哪一栏</span><span class="dd">${t.col}</span>
+            <span class="dt">新手怎么用</span><span class="dd">${t.how}</span>
+          </span>
+        </span>`);
+      b.addEventListener('click', () => b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true')));
+      box.appendChild(b);
+      return b;
+    });
+    const SAY = {
+      all: '7 样东西，带「免费三件套」标的 3 张是哥飞最常推荐的。<b>点卡片翻面</b>，看用来干什么、看哪一栏。',
+      free: '新手先用这 4 样就够：谷歌趋势看新不新，谷歌搜索看前 10 名，Ads 规划师看真实搜索量，GPTs 当尺子估量。<b>一分钱不花</b>。',
+      paid: '收费的 3 家：要批量挖词、查对手流量和外链时才用。它们的搜索量也是从谷歌来的，<b>对不上时信谷歌</b>。',
+    };
+    function filter(v, animate) {
+      const want = c => v === 'all' || (v === 'free') === (c.dataset.free === '1');
+      const stay = cards.filter(c => !c.hidden && want(c));
+      const fresh = cards.filter(c => c.hidden && want(c));
+      const mutate = () => cards.forEach(c => { c.hidden = !want(c); });
+      if (animate) flip(stay, mutate, 450); else mutate();
+      if (animate) fresh.forEach(c => replay(c, 'enter'));
+      say.innerHTML = SAY[v];
+    }
+    bindSeg($('#s1-tool-seg'), v => filter(v, true));
+    filter('all', false);
+  })();
+
+  // ---------- 知识点 3：拿 GPTs 当尺子 ----------
+  (() => {
+    const X0 = 40, X1 = 540, Y0 = 14, Y1 = 162, N = 30;
+    const r = KIT.rng(5);
+    const gN = Array.from({ length: N }, () => 1 + (r() - .5) * .14);
+    const cN = Array.from({ length: N }, () => 1 + (r() - .5) * .2);
+    const CASES = {
+      lumibo: { k: .146, ratio: '约 1/7', cls: '', txt: 'lumibo video generator 的线约是 GPTs 的 1/7：每天约 700 多次，一个月 2 万多次。<span class="st sy">示意</span>' },
+      wang: { k: .2, ratio: '约 1/5', cls: 'good', txt: '王马扎在 X 上看到的新词，约是 GPTs 的五分之一。他花 2 美元注册域名，几个小时做完网站，<b>上线第二天流量就来了</b>，日 UV 不到 1000。<span class="st sq">社群经验</span>' },
+      niko: { k: 1, ratio: '差不多 1 倍', cls: 'good', txt: 'Niko 挑的新词「接近 GPTs 的量级」。他每天手动发外链，<b>大约 7 天冲进谷歌前五</b>。<span class="st sq">社群经验</span>' },
+      mistral: { k: 3, ratio: '约 3 倍', cls: '', txt: '哥飞课上的示范：mistral ai 的线大约是 GPTs 的 3 倍，所以每天约 1.5 万次。注意看：<b>它比 GPTs 高，GPTs 的线就被压低了</b>。<span class="st hf">哥飞原话</span>' },
+      fisch: { k: 6, ratio: '6 倍多', cls: '', txt: '哥飞现场挖到的 Fisch codes：高峰时是 GPTs 的 6 倍多，估算每天三万多次，和 Ads 规划师里的约 4 万相差不大。<span class="st hf">哥飞原话</span>' },
+    };
+    const gPath = $('#s1-ru-g'), cPath = $('#s1-ru-c'), gl = $('#s1-ru-gl'), cl = $('#s1-ru-cl');
+    const est = $('#s1-ru-est'), ratioEl = $('#s1-ru-ratio'), say = $('#s1-ru-say');
+    const xAt = i => X0 + i / (N - 1) * (X1 - X0), yAt = v => Y1 - v / 100 * (Y1 - Y0);
+    function draw(k) {
+      const g = gN.map(n => 5000 * n), c = cN.map(n => 5000 * k * n);
+      const max = Math.max(...g, ...c);
+      const path = arr => arr.map((v, i) => (i ? 'L' : 'M') + xAt(i).toFixed(1) + ' ' + yAt(v / max * 100).toFixed(1)).join('');
+      gPath.setAttribute('d', path(g));
+      cPath.setAttribute('d', path(c));
+      let yg = yAt(g[N - 1] / max * 100) + 4, yc = yAt(c[N - 1] / max * 100) + 4;
+      if (Math.abs(yg - yc) < 15) { if (yg <= yc) { yg -= 8; yc += 8; } else { yg += 8; yc -= 8; } }
+      gl.setAttribute('y', yg.toFixed(1));
+      cl.setAttribute('y', yc.toFixed(1));
+    }
+    let cur = CASES.lumibo.k;
+    function pick(key, animate) {
+      const c = CASES[key], from = cur;
+      cur = c.k;
+      cl.textContent = { lumibo: 'lumibo（示意）', wang: '王马扎的词', niko: 'Niko 的词', mistral: 'mistral ai', fisch: 'Fisch codes' }[key];
+      ratioEl.textContent = c.ratio;
+      say.className = 'viz-say ' + c.cls;
+      say.innerHTML = c.txt;
+      if (animate) {
+        tween(700, t => draw(from + (c.k - from) * t));
+        countUp(est, 5000 * c.k);
+      } else { draw(c.k); est.textContent = fmt(5000 * c.k); est.dataset.val = 5000 * c.k; }
+    }
+    bindSeg($('#s1-ruler-seg'), v => pick(v, true));
+    pick('lumibo', false);
+  })();
+
+  // ---------- 知识点 4：过关传送带 ----------
+  (() => {
+    const GATES = [
+      { short: '新不新', how: '谷歌趋势拉 12 个月：之前一直是 0、最近才冒头，才算新词。', st: '<span class="st hf">哥飞原话</span>' },
+      { short: '热度够不够', how: '拿 GPTs 当尺子比一比。几乎贴地的，先放进观察池，过几天再看。', st: '<span class="st hf">哥飞原话</span><span class="st tl">推出来的</span>' },
+      { short: '前 10 名是谁', how: '谷歌搜一下：前排都是大站的内页，有机会；第一名是官网首页，别正面打。', st: '<span class="st hf">哥飞原话</span><span class="st tl">推出来的</span>' },
+      { short: '能火多久', how: '模型、工具这类词，半年到一年都还能卷；新闻类的词，过几天就凉。', st: '<span class="st hf">哥飞原话</span><span class="st tl">推出来的</span>' },
+      { short: '商标', how: '要接住这个需求，是不是非得冒充官方、域名非得带别人的牌子？是，就别碰。', st: '<span class="st hf">哥飞原话</span>' },
+      { short: '能不能收费', how: '用户会不会反复用？有没有人长期投广告、前排收不收费？查一次就走的，做不成订阅。', st: '<span class="st hf">哥飞原话</span><span class="st tl">推出来的</span>' },
+    ];
+    const NO = ['①', '②', '③', '④', '⑤', '⑥'];
+    const CARDS = [
+      { w: 'lumibo video generator', fail: 0 },
+      { w: 'ghibli', fail: 1, why: '老词：平时每天就有约 1.5 万人搜，只是被这次的高峰压扁了；前排早被老网页占着。' },
+      { w: 'lumibo 2', fail: 3, why: '光秃秃的模型名：第一名是官网首页，搜的人多半是想找官网。' },
+      { w: 'lumibo for tiktok', fail: 2, why: '每月才 700 次左右，现在为它单独做站太小。先放观察池，等主站做起来，再当一个用途页。' },
+      { w: 'lumibo image to video', fail: 0 },
+      { w: 'lumibo 2 release date', fail: 4, why: '新闻词：发布那几天一过就没人搜了，热得快凉得快。' },
+      { w: 'how to use lumibo 2', fail: 6, why: '看完教程就走，没人为它按月付钱。可以写成教程页给工具带人，不值得为它做工具。' },
+      { w: 'lumibo 2 download', fail: 5, why: '想下载官方 App。你给不了，硬做就成了冒充官方。' },
+    ];
+    const root = $('#s1-belt-viz'), belt = $('#s1-belt'), tray = $('#s1-tray'), trayEmpty = $('#s1-tray-empty');
+    const gbox = $('#s1-gatebox'), say = $('#s1-belt-say'), gatesBox = $('#s1-gates');
+    const pills = GATES.map((g, i) => { const p = el('span', { class: 's1-gate' }, `${NO[i]} ${g.short}`); gatesBox.appendChild(p); return p; });
+    const nodes = CARDS.map(c => el('span', { class: 's1-card' }, `<b>${c.w}</b><em></em>`));
+    const rows = CARDS.map((c, k) => c.fail ? el('div', { class: 's1-out' }, `<span class="s1-out-g">掉在 ${NO[c.fail - 1]} ${GATES[c.fail - 1].short}</span><span class="s1-out-why">${c.why}</span>`) : null);
+    rows.forEach((r, k) => { if (r) r.prepend(nodes[k]); });
+    function place(i) {
+      flip(nodes, () => {
+        belt.classList.remove('run', 'scan');
+        CARDS.forEach((c, k) => {
+          const n = nodes[k], out = c.fail && c.fail <= i;
+          n.style.visibility = '';
+          n.classList.remove('fail');
+          n.classList.toggle('keep', i === 6 && !c.fail);
+          const passed = out ? c.fail - 1 : i;
+          $('em', n).textContent = passed ? `过 ${passed} 关` : '';
+          if (!out) belt.appendChild(n);
+          else if (n.parentElement !== rows[k]) rows[k].prepend(n);
+        });
+        tray.innerHTML = '';
+        CARDS.map((c, k) => k).filter(k => CARDS[k].fail && CARDS[k].fail <= i)
+          .sort((a, b) => CARDS[a].fail - CARDS[b].fail).forEach(k => tray.appendChild(rows[k]));
+        trayEmpty.hidden = tray.children.length > 0;
+      }, 500);
+    }
+    function head(i) {
+      pills.forEach((p, k) => { p.classList.toggle('cur', k === i - 1); p.classList.toggle('done', k < i - 1); });
+      if (i === 0) gbox.innerHTML = '<b>8 个候选词排好队了。</b>点「下一关」，看它们一关一关过：不合格的会掉下去。';
+      else gbox.innerHTML = `<b>第 ${i} 关 · ${GATES[i - 1].short}</b>　${GATES[i - 1].how} ${GATES[i - 1].st}`;
+    }
+    function tell(i) {
+      if (i === 0) { say.className = 'viz-say'; say.innerHTML = '这 8 个词，有的是新词，有的是老词，有的看着热闹却收不了钱。'; return; }
+      const left = CARDS.filter(c => !c.fail || c.fail > i).length;
+      if (i === 6) {
+        say.className = 'viz-say good';
+        say.innerHTML = `过完 6 关，<b>剩下 ${left} 个</b>：lumibo video generator 当首页主打，lumibo image to video 做一个内页。怎么收更多词、怎么分页，第 2、3 步讲。`;
+        return;
+      }
+      const k = CARDS.findIndex(c => c.fail === i);
+      say.className = 'viz-say bad';
+      say.innerHTML = `<b>${CARDS[k].w}</b> 掉下去了：${CARDS[k].why} 传送带上还剩 ${left} 个。`;
+    }
+    let cur = 0, run = 0;
+    async function paint(i, animate) {
+      const my = ++run, prev = cur;
+      cur = i;
+      head(i);
+      if (!animate || i !== prev + 1 || reduce) { place(i); tell(i); if (animate && i === 6) KIT.confetti(root); return; }
+      place(prev);
+      say.className = 'viz-say';
+      say.textContent = `第 ${i} 关检查中……`;
+      belt.classList.add('run', 'scan');
+      await sleep(850);
+      if (my !== run) return;
+      const k = CARDS.findIndex(c => c.fail === i);
+      if (k >= 0) {
+        nodes[k].classList.add('fail');
+        await sleep(550);
+        if (my !== run) return;
+        const flying = flyTo(nodes[k], tray.children.length ? tray : trayEmpty, { html: CARDS[k].w, cls: 'chip bad' });
+        nodes[k].style.visibility = 'hidden';
+        await flying;
+        if (my !== run) return;
+      }
+      place(i);
+      tell(i);
+      if (i === 6) KIT.confetti(root);
+    }
+    const steps = makeSteps(root, ['排队', '1', '2', '3', '4', '5', '6'], paint);
+    $('#s1-belt-restart').addEventListener('click', () => steps.go(0, true));
+  })();
+
+  // ---------- 知识点 4：数一数前 10 名 ----------
+  (() => {
+    const SERPS = {
+      a: { q: 'lumibo video generator', rows: [
+        ['lumibo.ai', '/video', 'Lumibo 2 Video – Official', '官网', 'inner'],
+        ['reddit.com', '/r/aivideo/comments/lumibo_2_is_wild', 'Lumibo 2 video generator is wild', '大站', 'inner'],
+        ['youtube.com', '/watch?v=lumibo2demo', 'How to make videos with Lumibo 2', '大站', 'inner'],
+        ['huggingface.co', '/spaces/lumibo/lumibo-2-demo', 'Lumibo 2 Demo – a Hugging Face Space', '大站', 'inner'],
+        ['lumibovideo.app', '', 'Lumibo Video Generator – Free Online', '刚上线的小站', 'home'],
+        ['medium.com', '/@aiweekly/lumibo-2-review', 'I tried Lumibo 2 for a week', '大站', 'inner'],
+        ['x.com', '/lumibo_ai/status/1840…', 'Lumibo on X: "Lumibo 2 is here"', '大站', 'inner'],
+        ['producthunt.com', '/products/lumibo', 'Lumibo 2 – Product Hunt', '大站', 'inner'],
+        ['github.com', '/awesome-ai/awesome-lumibo', 'awesome-lumibo: prompts and tools', '大站', 'inner'],
+        ['toolify.ai', '/tool/lumibo-2', 'Lumibo 2: features, pricing, alternatives', '大站', 'inner'],
+      ] },
+      b: { q: 'lumibo 2', rows: [
+        ['lumibo.ai', '', 'Lumibo 2 – Official Site', '官网', 'home'],
+        ['lumibo.ai', '/blog/introducing-lumibo-2', 'Introducing Lumibo 2', '官网', 'inner'],
+        ['en.wikipedia.org', '/wiki/Lumibo', 'Lumibo – Wikipedia', '大站', 'inner'],
+        ['x.com', '/lumibo_ai', 'Lumibo (@lumibo_ai) on X', '大站', 'inner'],
+        ['youtube.com', '/watch?v=lumibo2launch', 'Lumibo 2 launch event', '大站', 'inner'],
+        ['reddit.com', '/r/singularity/comments/lumibo_2', 'Lumibo 2 just dropped', '大站', 'inner'],
+        ['news.ycombinator.com', '/item?id=4120…', 'Lumibo 2 | Hacker News', '大站', 'inner'],
+        ['apps.apple.com', '/app/lumibo/id6…', 'Lumibo on the App Store', '大站', 'inner'],
+        ['huggingface.co', '/lumibo/lumibo-2', 'lumibo/lumibo-2 · Hugging Face', '大站', 'inner'],
+        ['lumibo2.org', '', 'Lumibo 2 – Try it free', '刚上线的小站', 'home'],
+      ] },
+    };
+    const list = $('#s1-serp-list'), q = $('#s1-serp-q'), count = $('#s1-serp-count'), say = $('#s1-serp-say'), autoBtn = $('#s1-serp-auto');
+    let key = 'a', done = [], run = 0;
+    function render() {
+      run++;
+      const s = SERPS[key];
+      q.textContent = s.q;
+      done = s.rows.map(() => null);
+      list.innerHTML = s.rows.map((r, i) => `<li class="s1-sr" data-i="${i}"><span class="s1-sr-no">${i + 1}</span>
+        <span class="s1-sr-main"><span class="s1-sr-url">${r[0]}<span>${r[1]}</span><span class="s1-own">${r[3]}</span></span><span class="s1-sr-t">${r[2]}</span></span>
+        <span class="s1-sr-btns"><button type="button" data-v="home">首页</button><button type="button" data-v="inner">内页</button></span></li>`).join('');
+      autoBtn.disabled = false;
+      tally();
+      say.className = 'viz-say';
+      say.innerHTML = '一条一条标：这条网址是<b>首页</b>还是<b>内页</b>？标完 10 条自动给结论。';
+    }
+    function mark(i, v) {
+      const li = list.children[i];
+      done[i] = v;
+      li.classList.add(v === 'home' ? 'is-home' : 'is-inner');
+      li.querySelector('.s1-sr-btns').outerHTML = `<span class="s1-sr-res">${v === 'home' ? '首页' : '内页'}</span>`;
+    }
+    function tally() {
+      const h = done.filter(v => v === 'home').length, n = done.filter(v => v === 'inner').length, left = done.length - h - n;
+      count.innerHTML = `<span class="h">首页 <b>${h}</b></span><span class="i">内页 <b>${n}</b></span><span class="muted">还剩 ${left} 条</span>`;
+      if (left === 0) conclude();
+    }
+    function conclude() {
+      autoBtn.disabled = true;
+      if (key === 'a') {
+        say.className = 'viz-say good';
+        say.innerHTML = '前 10 名里 <b>9 个是内页</b>（大站和官网的），唯一的首页还是个刚上线的小站。没有强站专门为这个词建站，<b>值得注册一个域名，用首页去打它们的内页</b>。<span class="st hf">哥飞原话</span>';
+      } else {
+        say.className = 'viz-say bad';
+        say.innerHTML = '第 1 名就是<b>官网首页</b>，第 2 名还是官网。搜光秃秃模型名的人，多半是想找官网。<b>别正面打它</b>，去做「模型名 + 用途」的词，比如 lumibo video generator。<span class="st tl">推出来的</span>';
+      }
+    }
+    list.addEventListener('click', e => {
+      const b = e.target.closest('button[data-v]');
+      if (!b) return;
+      const li = b.closest('.s1-sr'), i = Number(li.dataset.i), right = SERPS[key].rows[i][4];
+      if (b.dataset.v === right) { mark(i, right); tally(); return; }
+      li.classList.remove('shake'); void li.offsetWidth; li.classList.add('shake');
+      say.className = 'viz-say bad';
+      say.innerHTML = right === 'inner'
+        ? `第 ${i + 1} 条再看看：域名 <b>${SERPS[key].rows[i][0]}</b> 后面还跟着「${SERPS[key].rows[i][1]}」，这是<b>内页</b>。`
+        : `第 ${i + 1} 条再看看：网址只有域名 <b>${SERPS[key].rows[i][0]}</b>，后面什么都没有，这是<b>首页</b>。`;
+    });
+    autoBtn.addEventListener('click', async () => {
+      const my = run;
+      autoBtn.disabled = true;
+      for (let i = 0; i < done.length; i++) {
+        if (done[i]) continue;
+        mark(i, SERPS[key].rows[i][4]);
+        tally();
+        await sleep(140);
+        if (my !== run) return;
+      }
+    });
+    bindSeg($('#s1-serp-seg'), v => { key = v; render(); });
+    render();
+  })();
+
+  // ---------- 知识点 4：KD 说法不一样 ----------
+  (() => {
+    const range = $('#s1-kd-range'), v = $('#s1-kd-v'), a = $('#s1-kd-a'), b = $('#s1-kd-b');
+    function upd() {
+      const kd = Number(range.value);
+      v.textContent = kd;
+      a.className = 's1-kd-res ' + (kd < 60 ? 'ok' : 'no');
+      a.textContent = kd < 60 ? '能做' : '不建议';
+      b.className = 's1-kd-res ' + (kd <= 29 ? 'ok' : 'no');
+      b.textContent = kd <= 29 ? '能做' : '不建议';
+    }
+    range.addEventListener('input', upd);
+    upd();
+  })();
+
+  // ---------- 知识点 5：拖词分类 ----------
+  (() => {
+    const WORDS = [
+      { w: 'lumibo video generator', k: 're', why: '做视频是消耗型的事：今天做一个，明天还要做。' },
+      { w: 'lumibo 2 release date', k: 'once', why: '查到发布日期就走了。' },
+      { w: 'lumibo image to video', k: 're', why: '有图就想变视频，会一次次回来用。' },
+      { w: 'how to use lumibo 2', k: 'once', why: '看完教程就走。可以写成教程页，给工具带人。' },
+      { w: 'lumibo video generator no watermark', k: 're', why: '要无水印的成品，说明要拿去用，最可能掏钱。' },
+      { w: 'lumibo 2 vs sora', k: 'once', why: '看完对比就走，适合写一篇对比页。' },
+      { w: 'lumibo text to video', k: 're', why: '打字出视频，也是用完还会再用。' },
+      { w: 'lumibo 2 download', k: 'once', why: '想下载官方 App，不是你的用户。' },
+    ];
+    const root = $('#s1-sort'), pool = $('#s1-sort-pool'), say = $('#s1-sort-say');
+    const zones = { re: $('.s1-zone-re', root), once: $('.s1-zone-once', root) };
+    const items = WORDS.map(x => { const b = el('button', { type: 'button', class: 'dd-item', 'data-k': x.k }); b.textContent = x.w; pool.appendChild(b); return b; });
+    const clearMarks = () => items.forEach(i => i.classList.remove('right', 'wrong'));
+    function check() {
+      const left = items.filter(i => i.parentElement === pool).length;
+      clearMarks();
+      if (left) {
+        say.className = 'viz-say';
+        say.innerHTML = `还剩 <b>${left}</b> 个没分。`;
+        return;
+      }
+      const wrong = [];
+      items.forEach((it, k) => {
+        const ok = it.parentElement.dataset.k === it.dataset.k;
+        it.classList.add(ok ? 'right' : 'wrong');
+        if (!ok) wrong.push(WORDS[k]);
+      });
+      if (!wrong.length) {
+        say.className = 'viz-say good';
+        say.innerHTML = '<b>全对！</b>左边 4 个都是「生成视频」这类会反复用的事，才撑得起按月收费。右边 4 个查一次就走：可以写成内页给工具带人，但别指望它们收订阅费。';
+        KIT.confetti(root);
+      } else {
+        say.className = 'viz-say bad';
+        say.innerHTML = `对了 <b>${8 - wrong.length}</b> / 8。黄色的放错了：` + wrong.map(x => `<br><b>${x.w}</b>：${x.why}`).join('');
+      }
+    }
+    dnd(root, { items: '.dd-item', zones: '.dd-zone', onMove: check });
+    function moveAll(target) {
+      flip(items, () => items.forEach(it => target(it).appendChild(it)), 450);
+      check();
+    }
+    $('#s1-sort-reset').addEventListener('click', () => moveAll(() => pool));
+    $('#s1-sort-show').addEventListener('click', () => moveAll(it => zones[it.dataset.k]));
+  })();
+
+  // ---------- 知识点 6：热度曲线 ----------
+  (() => {
+    const X0 = 40, X1 = 620, Y0 = 56, Y1 = 190;
+    const h = m => m <= .4 ? 100 * m / .4 : 22 + 78 * Math.exp(-(m - .4) / 3.2);
+    const xAt = m => X0 + m / 18 * (X1 - X0), yAt = v => Y1 - v / 100 * (Y1 - Y0);
+    let d = '';
+    for (let i = 0; i <= 180; i++) { const m = i / 10; d += (i ? 'L' : 'M') + xAt(m).toFixed(1) + ' ' + yAt(h(m)).toFixed(1); }
+    $('#s1-heat-path').setAttribute('d', d);
+    const you = $('#s1-heat-you'), range = $('#s1-heat-range'), mEl = $('#s1-heat-m'), say = $('#s1-heat-say');
+    const crowd = $('#s1-crowd'), crowdN = $('#s1-crowd-n');
+    const dots = Array.from({ length: 60 }, () => { const i = el('i'); crowd.appendChild(i); return i; });
+    const comp = m => Math.round(2 + 58 * (1 - Math.exp(-m / 2.2)));
+    function phase(m) {
+      if (m === 0) return ['good', '<b>出生当天进场：最好的时候。</b>大家同一天起跑，上站够快，前期不靠外链也能拿排名。前提是代码、收款提前备好。<span class="st hf">哥飞原话</span>'];
+      if (m < 6) return ['good', `<b>出生第 ${m} 个月：还很好抢。</b>先排上的站往往不设防、外链也不强，晚来也有机会。<span class="st hf">哥飞原话</span>`];
+      if (m <= 12) return ['', `<b>出生第 ${m} 个月：还能卷。</b>哥飞说半年到一年内都还可以卷，花些钱不断买外链，能拿到排名。<span class="st hf">哥飞原话</span>`];
+      return ['bad', `<b>出生 ${m} 个月：已经算老词了。</b>热度下来了，但不一定归零：哥飞一个 2024 年 6 月的热点站，半年多后每天还有八九百到上千个谷歌点击。<span class="st hf">哥飞原话</span> 那是早就站稳的站；现在才进场，就得拼外链、拼体验了。<span class="st tl">推出来的</span>`];
+    }
+    let lastPhase = '';
+    function show(mf, fromPlay) {
+      const m = Math.round(mf);
+      you.setAttribute('transform', `translate(${xAt(mf).toFixed(1)} 0)`);
+      $('circle', you).setAttribute('cy', yAt(h(mf)).toFixed(1));
+      mEl.textContent = m;
+      const n = comp(mf);
+      crowdN.textContent = n;
+      dots.forEach((dt, i) => dt.classList.toggle('on', i < n));
+      const [cls, txt] = phase(m);
+      if (txt !== lastPhase || !fromPlay) { say.className = 'viz-say ' + cls; say.innerHTML = txt; lastPhase = txt; }
+    }
+    let run = 0;
+    range.addEventListener('input', () => { run++; show(Number(range.value)); });
+    $('#s1-heat-play').addEventListener('click', () => {
+      const my = ++run;
+      tween(5200, k => { if (my !== run) return; const mf = k * 18; range.value = Math.round(mf); show(mf, true); });
+    });
+    show(0);
+  })();
+
+  // ---------- 知识点 6：genie3 那天的域名 ----------
+  (() => {
+    const DOMS = ['com', 'net', 'ai', 'org', 'io', 'app'];
+    const EVENTS = [
+      { m: 3, d: 'net', st: 'ben', txt: 'Ben 拿下' },
+      { m: 11, d: 'ai', st: 'taken', txt: '被别人注册' },
+      { m: 24, d: 'org', st: 'taken', txt: '被别人注册' },
+      { m: 38, d: 'io', st: 'taken', txt: '被别人注册' },
+      { m: 54, d: 'app', st: 'taken', txt: '被别人注册' },
+      { m: 120, d: 'net', st: 'live', txt: '网站上线了' },
+    ];
+    const box = $('#s1-doms'), minEl = $('#s1-race-min'), bar = $('#s1-race-bar'), say = $('#s1-race-say');
+    const cards = {};
+    DOMS.forEach(x => { const c = el('div', { class: 's1-dm' }, `<b>genie3.${x}</b><span></span>`); box.appendChild(c); cards[x] = c; });
+    function setCard(x, st, txt, pop) {
+      const c = cards[x];
+      c.className = 's1-dm' + (st ? ' ' + st : '');
+      $('span', c).textContent = txt;
+      if (pop) replay(c, 'flash');
+    }
+    function base() {
+      DOMS.forEach(x => setCard(x, '', '还能注册'));
+      setCard('com', 'taken', '几个月前就被注册了');
+      minEl.textContent = '0';
+      bar.style.width = '0%';
+      say.className = 'viz-say';
+      say.innerHTML = '2025 年 8 月，谷歌发布 genie3。群友 <b>Ben</b> 第一时间去买域名：那时除了 .com，其他后缀都还没人注册。点「播放那一天」。';
+    }
+    let run = 0;
+    $('#s1-race-go').addEventListener('click', () => {
+      const my = ++run;
+      base();
+      let fired = 0, told = false;
+      tween(6000, k => {
+        if (my !== run) return;
+        const m = k * 120;
+        minEl.textContent = Math.round(m);
+        bar.style.width = (k * 100).toFixed(1) + '%';
+        while (fired < EVENTS.length && EVENTS[fired].m <= m) {
+          const e = EVENTS[fired++];
+          setCard(e.d, e.st, e.txt, true);
+        }
+        if (!told && m >= 60) { told = true; say.className = 'viz-say bad'; say.innerHTML = 'Ben 的原话：「1个小时后，几乎常见的域名都被注册了」。晚一小时，连好域名都没了。'; }
+      }, () => {
+        if (my !== run) return;
+        say.className = 'viz-say good';
+        say.innerHTML = '「大概花了2 个小时上线了genie3.net 网站」：上线后去 GSC 提交，发了五六个外链，拿到了首页排名。反面：买到 genie3.ai 的人没去提交，三四天后还没被谷歌收录。';
+      });
+    });
+    base();
+  })();
+
+  // ---------- 知识点 7：域名检查器 ----------
+  (() => {
+    const PRESET = {
+      'lumibo.ai': { light: 'r', verdict: '红灯：不能用', checks: [
+        ['bad', '像不像官网？', '模型名 + .ai，用户一看就以为这是 Lumibo 官方。'],
+        ['bad', '域名里有没有别人的牌子？', '整个域名就是别人的名字。'],
+        ['bad', '页面怎么写？', '域名本身就在冒充，页面写什么都救不回来。']],
+        say: '哥飞讲 stargate ai 时说过：拿别人的名字注册域名建站，等于做假冒官网，「直接不建议」。<span class="st hf">哥飞原话</span>' },
+      'lumibovideo.com': { light: 'y', verdict: '黄灯：有风险', checks: [
+        ['ok', '像不像官网？', '多了 video，页面写清「非官方」，不算冒充。'],
+        ['warn', '域名里有没有别人的牌子？', '有 lumibo，就是别人的模型名。'],
+        ['ok', '页面怎么写？', '写清「支持 Lumibo 2，非官方产品」，能少些误会，但域名的问题还在。']],
+        say: '哥飞说<b>理论上带了对方的商标就不行</b>。<span class="st hf">哥飞原话</span> 社群里不少人照样这么抢排名（比如 Ben 的 genie3.net）<span class="st sq">社群经验</span>，代价是可能被品牌方找上门：发律师函、要你把域名转给对方。哥飞在 3 群给过的建议就是「换个域名，把现在域名转给对方」。<span class="st hf">哥飞原话</span>（群聊，经哥飞 AI 转述）' },
+      'framepop.com': { light: 'g', verdict: '绿灯：最稳', checks: [
+        ['ok', '像不像官网？', '自己的品牌名，没人会当成官网。'],
+        ['ok', '域名里有没有别人的牌子？', '干干净净。'],
+        ['ok', '页面怎么写？', '页面里写「支持 Lumibo 2」，再加一句「非官方产品」。']],
+        say: '哥飞举过例子：Canva 说自己接入了 Veo 3，也没问题。<span class="st hf">哥飞原话</span> 域名用自己的品牌，页面里大方写「支持 Lumibo 2」，最稳；热度过了还能接着做别的模型。<span class="st tl">推出来的</span>' },
+    };
+    const OTHER = ['tiktok', 'openai', 'chatgpt', 'sora', 'veo', 'google', 'canva', 'midjourney', 'youtube', 'genie3', 'gemini', 'claude'];
+    function judge(raw) {
+      const d = raw.trim().toLowerCase().replace(/^[a-z]+:\/\//, '').replace(/^www\./, '').split(/[/?#]/)[0];
+      if (!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(d)) return { name: raw.trim() || '（空）', light: '', verdict: '看着不像域名', checks: [], say: '试试这样的格式：lumibo2free.com、clipmuse.ai。' };
+      if (PRESET[d]) return Object.assign({ name: d }, PRESET[d]);
+      const label = d.split('.').slice(0, -1).join('.');
+      const tld = d.split('.').pop();
+      const hasL = label.includes('lumibo'), other = OTHER.find(b => label.includes(b));
+      const asOfficial = /official|login|app$/.test(label) || /^lumibo-?2?$/.test(label);
+      if (hasL && asOfficial) return { name: d, light: 'r', verdict: '红灯：不能用', checks: [
+        ['bad', '像不像官网？', `「${label}」加上 .${tld}，很容易被当成官方。`],
+        ['bad', '域名里有没有别人的牌子？', '有 lumibo。'],
+        ['bad', '页面怎么写？', '域名在冒充，页面救不回来。']], say: '冒充官方是红线。换一个自己的品牌名吧。<span class="st hf">哥飞原话</span>' };
+      if (hasL || other) return { name: d, light: 'y', verdict: '黄灯：有风险', checks: [
+        ['ok', '像不像官网？', '看着不像官网。'],
+        ['warn', '域名里有没有别人的牌子？', `有「${hasL ? 'lumibo' : other}」，是别人的名字。`],
+        ['ok', '页面怎么写？', '写清「非官方」能少些误会，但域名的问题还在。']], say: '哥飞说域名带了对方的商标名称，理论上就不行，比如做 TikTok 工具，域名里不能有 TikTok。<span class="st hf">哥飞原话</span> 想长期收钱，换成自己的品牌名更稳。' };
+      return { name: d, light: 'g', verdict: '绿灯：最稳', checks: [
+        ['ok', '像不像官网？', '自己的名字，不像谁的官网。'],
+        ['ok', '域名里有没有别人的牌子？', '没看到这一页提到的模型名、大牌子。'],
+        ['ok', '页面怎么写？', '页面里写「支持 Lumibo 2」「非官方产品」。']], say: '按这一页的规矩，这个域名是稳的。真要注册前，再搜一下这个名字有没有被别人注册成商标。<span class="st bc">补充提醒</span>' };
+    }
+    const light = $('#s1-light'), nameEl = $('#s1-dom-name'), list = $('#s1-checks'), verdict = $('#s1-verdict'), say = $('#s1-dom-say');
+    const ICON = { ok: '✓', warn: '!', bad: '✕' };
+    let run = 0;
+    async function show(res, animate) {
+      const my = ++run;
+      nameEl.textContent = res.name;
+      light.className = 's1-light';
+      verdict.className = 's1-verdict';
+      verdict.textContent = animate ? '检查中……' : '';
+      say.className = 'viz-say';
+      say.innerHTML = animate ? '一条一条查……' : '';
+      list.innerHTML = res.checks.map(c => `<li><i>…</i><b>${c[1]}</b><span>${c[2]}</span></li>`).join('');
+      const lis = [...list.children];
+      for (let i = 0; i < lis.length; i++) {
+        if (animate) { await sleep(420); if (my !== run) return; }
+        lis[i].className = res.checks[i][0] + (animate ? ' on' : '');
+        $('i', lis[i]).textContent = ICON[res.checks[i][0]];
+      }
+      if (animate) { await sleep(300); if (my !== run) return; }
+      if (res.light) light.classList.add(res.light);
+      verdict.className = 's1-verdict ' + res.light + (animate ? ' pop' : '');
+      verdict.textContent = res.verdict;
+      say.className = 'viz-say ' + (res.light === 'g' ? 'good' : res.light ? 'bad' : '');
+      say.innerHTML = res.say;
+    }
+    const seg = $('#s1-dom-seg');
+    bindSeg(seg, v => show(judge(v), true));
+    $('#s1-dom-form').addEventListener('submit', e => {
+      e.preventDefault();
+      $$('button', seg).forEach(b => b.setAttribute('aria-pressed', 'false'));
+      show(judge($('#s1-dom-in').value), true);
+    });
+    show(judge('lumibo.ai'), false);
+  })();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1197 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>第 3 步 一页放几个词 · AI 新词站白话课</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<style>
+/* ===== 第 3 步专用样式（类名都带 s3- 前缀） ===== */
+@keyframes s3-glow { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--green) 55%, transparent); } 50% { box-shadow: 0 0 0 5px transparent; } }
+@keyframes s3-ring { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--amber) 55%, transparent); } 50% { box-shadow: 0 0 0 6px transparent; } }
+@keyframes s3-ping { 0% { transform: scale(1); } 40% { transform: scale(1.18); } 100% { transform: scale(1); } }
+.s3-pop { animation: pop .45s both; }
+
+/* 开关按钮 */
+.s3-switch { display: inline-flex; align-items: center; gap: 8px; }
+.s3-knob { width: 34px; height: 20px; border-radius: 999px; background: var(--line); position: relative; transition: background .25s; flex: none; }
+.s3-knob::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--surface); transition: transform .25s; box-shadow: 0 1px 2px rgba(0, 0, 0, .25); }
+.s3-switch[aria-pressed="true"] { border-color: var(--indigo); color: var(--indigo); background: var(--indigo-soft); }
+.s3-switch[aria-pressed="true"] .s3-knob { background: var(--indigo); }
+.s3-switch[aria-pressed="true"] .s3-knob::after { transform: translateX(14px); }
+
+/* ---------- 知识点 1：页面透视 ---------- */
+.s3-k1 { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (max-width: 680px) { .s3-k1 { grid-template-columns: 1fr; } }
+.s3-pg { border: 1.5px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--surface); }
+.s3-pg-bar { display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: var(--bg); border-bottom: 1px solid var(--line); }
+.s3-pg-bar i { width: 9px; height: 9px; border-radius: 50%; background: var(--line); flex: none; }
+.s3-pg-url { flex: 1; min-width: 0; margin-left: 6px; font-family: var(--font-mono); font-size: 12px; color: var(--muted); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 1px 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.s3-pg-row { display: grid; grid-template-columns: 50px minmax(0, 1fr); gap: 10px; padding: 9px 12px; border-bottom: 1px dashed var(--line); align-items: baseline; }
+.s3-pg-row:last-child { border-bottom: 0; }
+.s3-pg-lab { font-size: 12px; color: var(--muted); font-weight: 650; white-space: nowrap; }
+.s3-pg-c { font-size: 14px; line-height: 1.75; color: var(--ink); transition: color .45s; overflow-wrap: anywhere; }
+.s3-pg-row.title .s3-pg-c { font-size: 13.5px; font-weight: 600; }
+.s3-pg-row.h1 .s3-pg-c { font-size: 20px; font-weight: 800; line-height: 1.4; }
+.s3-pg-row.h2 .s3-pg-c { font-size: 15px; font-weight: 700; }
+.s3-pg-row.faq .s3-pg-c { font-size: 13.5px; }
+.s3-tool { display: flex; gap: 6px; flex-wrap: wrap; transition: opacity .45s; }
+.s3-tools { display: grid; gap: 6px; }
+.s3-tool-in { flex: 1 1 140px; min-width: 0; font-size: 12.5px; color: var(--muted); border: 1px solid var(--line); border-radius: 8px; padding: 4px 10px; background: var(--bg); }
+.s3-tool-go { font-size: 12.5px; font-weight: 700; border-radius: 8px; padding: 4px 12px; background: var(--indigo); color: var(--on-indigo); }
+.s3-w { border-radius: 5px; padding: 0 2px; margin: 0 -2px; position: relative; transition: background .3s, color .3s, box-shadow .3s, outline-color .3s; outline: 1.5px dashed transparent; outline-offset: 1px; }
+.s3-pg.eye .s3-pg-c { color: color-mix(in srgb, var(--ink) 24%, var(--surface)); }
+.s3-pg.eye .s3-tool { opacity: .25; }
+.s3-w.lit.core { background: var(--indigo); color: var(--on-indigo); box-shadow: 0 0 0 3px color-mix(in srgb, var(--indigo) 28%, transparent); }
+.s3-w.lit.rel { color: var(--green); background: var(--green-soft); }
+.s3-w.lit.rel::after { content: ""; position: absolute; top: -4px; right: -4px; width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: s3-glow 1.6s infinite; }
+.s3-w.lit.multi { color: var(--amber); background: var(--amber-soft); outline-color: var(--amber); }
+.s3-w.lit.multi::after { content: "?"; position: absolute; top: -9px; right: -7px; font-size: 11px; font-weight: 800; line-height: 15px; width: 15px; height: 15px; border-radius: 50%; text-align: center; background: var(--amber); color: var(--surface); }
+.s3-w.lit.lnk { color: var(--muted); outline-color: var(--muted); }
+.s3-w.s3-ping { animation: s3-ping .5s; display: inline-block; }
+.s3-lg { display: grid; gap: 12px; align-content: start; }
+.s3-lg-sum { font-size: 15px; padding: 10px 12px; border-radius: 12px; background: var(--bg); }
+.s3-lg-sum b { font-family: var(--font-mono); font-size: 18px; color: var(--indigo); }
+.s3-pg.bad ~ .s3-lg .s3-lg-sum b, .s3-lg.bad .s3-lg-sum b { color: var(--amber); }
+.s3-lg-sec { display: grid; gap: 6px; }
+.s3-lg-t { font-size: 12.5px; font-weight: 700; color: var(--muted); }
+.s3-lg-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.s3-lg-chip {
+  font: inherit; display: inline-grid; gap: 0; text-align: left; cursor: pointer; line-height: 1.3;
+  padding: 5px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--muted); opacity: .5;
+}
+.s3-lg-chip b { font-family: var(--font-mono); font-size: 12.5px; font-weight: 600; }
+.s3-lg-chip span { font-size: 11.5px; }
+.s3-lg-chip.on { opacity: 1; animation: pop .4s; }
+.s3-lg-chip.on.core { border-color: var(--indigo); background: var(--indigo); color: var(--on-indigo); }
+.s3-lg-chip.on.rel { border-color: var(--green); background: var(--green-soft); color: var(--green); }
+.s3-lg-chip.on.multi { border-color: var(--amber); background: var(--amber-soft); color: var(--amber); }
+.s3-lg-chip.on.lnk { border-style: dashed; border-color: var(--muted); color: var(--ink); }
+
+/* ---------- 知识点 2：判断器 ---------- */
+.s3-pairs button { display: inline-grid; text-align: left; gap: 0; line-height: 1.3; padding: 7px 12px; border-radius: 12px; }
+.s3-pairs small { font-family: var(--font-mono); font-size: 11.5px; font-weight: 500; opacity: .8; }
+.s3-j { --mid: 72px; display: grid; gap: 8px; }
+.s3-j-heads, .s3-serp { display: grid; grid-template-columns: minmax(0, 1fr) var(--mid) minmax(0, 1fr); }
+.s3-j-head { display: grid; gap: 1px; align-content: start; padding: 8px 10px; border-radius: 10px; background: var(--bg); }
+.s3-j-head .lab { font-size: 11.5px; color: var(--muted); font-weight: 650; }
+.s3-j-head b { font-family: var(--font-mono); font-size: 13px; line-height: 1.4; overflow-wrap: anywhere; }
+.s3-j-head.L b { color: var(--indigo); }
+.s3-j-head.R b { color: var(--green); }
+.s3-j-head .vol { font-size: 11.5px; color: var(--muted); }
+.s3-j-mid { display: grid; place-items: center; font-size: 11.5px; color: var(--muted); text-align: center; line-height: 1.3; padding: 0 4px; }
+.s3-serp { position: relative; }
+.s3-serp ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.s3-serp li {
+  display: grid; grid-template-columns: 14px 20px minmax(0, 1fr); gap: 6px; align-items: center; min-height: 28px;
+  padding: 3px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); font-size: 13px; line-height: 1.3;
+  transition: background .3s, border-color .3s;
+}
+.s3-serp li.hit { background: var(--green-soft); border-color: var(--green); }
+.s3-serp li.s3-in { animation: rise .35s both; }
+.s3-rk { font-family: var(--font-mono); font-size: 11px; color: var(--muted); text-align: right; }
+.s3-bd { width: 20px; height: 20px; border-radius: 6px; display: grid; place-items: center; font-family: var(--font-mono); font-size: 11px; font-weight: 600; background: var(--indigo-soft); color: var(--indigo); }
+.s3-bd.new { background: var(--bg); color: var(--muted); font-family: var(--font-body); font-weight: 600; font-size: 10.5px; }
+.s3-nm { overflow-wrap: anywhere; }
+.s3-lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+.s3-lines path { fill: none; stroke: var(--green); stroke-width: 2; stroke-linecap: round; opacity: .8; }
+@media (max-width: 560px) {
+  .s3-j { --mid: 26px; }
+  .s3-serp li { grid-template-columns: 18px minmax(0, 1fr); padding: 3px 6px; font-size: 12px; gap: 5px; }
+  .s3-serp .s3-rk { display: none; }
+  .s3-bd { width: 18px; height: 18px; }
+  .s3-j-mid { font-size: 0; }
+}
+.s3-vrow { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 16px; align-items: center; }
+@media (max-width: 620px) { .s3-vrow { grid-template-columns: 1fr; } }
+.s3-venn { display: grid; gap: 4px; justify-items: center; }
+.s3-venn svg { max-width: 300px; }
+.s3-vc { stroke-width: 2; }
+.s3-vc.L { fill: var(--indigo); fill-opacity: .16; stroke: var(--indigo); }
+.s3-vc.R { fill: var(--green); fill-opacity: .16; stroke: var(--green); }
+.s3-vn { font-family: var(--font-mono); font-size: 26px; font-weight: 600; fill: var(--ink); }
+.s3-vs { font-size: 11.5px; fill: var(--muted); font-family: var(--font-body); }
+.s3-vn, .s3-vs { paint-order: stroke; stroke: var(--surface); stroke-width: 5px; stroke-linejoin: round; }
+.s3-verdict { display: grid; gap: 6px; transition: opacity .3s; }
+.s3-verdict.wait { opacity: .25; }
+.s3-vtag { justify-self: start; font-weight: 700; font-size: 16px; padding: 4px 14px; border-radius: 999px; }
+.s3-vtag.same, .s3-vtag.text { background: var(--indigo); color: var(--on-indigo); }
+.s3-vtag.can { background: var(--green); color: var(--surface); }
+.s3-vtag.split { background: var(--amber); color: var(--surface); }
+.s3-verdict p { font-size: 15px; line-height: 1.75; }
+.s3-rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 10px; }
+.s3-rule {
+  display: grid; gap: 6px; align-content: start; padding: 12px 14px; border-radius: 14px;
+  background: var(--surface); border: 1.5px solid var(--line); font-size: 14.5px; line-height: 1.6; transition: border-color .3s, box-shadow .3s;
+}
+.s3-rule .no { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.s3-rule .to { font-weight: 700; font-size: 15.5px; }
+.s3-rule .to.same { color: var(--indigo); }
+.s3-rule .to.can { color: var(--green); }
+.s3-rule .to.split { color: var(--amber); }
+.s3-rule small { font-size: 12.5px; color: var(--muted); line-height: 1.55; }
+.s3-rule.on { border-color: var(--indigo); box-shadow: 0 0 0 3px color-mix(in srgb, var(--indigo) 22%, transparent); }
+.s3-rule.on .no::after { content: " · 刚才那对词"; color: var(--indigo); font-family: var(--font-body); font-weight: 700; }
+
+/* ---------- 知识点 3：分拣游戏 ---------- */
+.s3-g-hud { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; font-size: 14px; }
+.s3-g-hud b { font-family: var(--font-mono); }
+.s3-g-hud .meter { flex: 1 1 100px; min-width: 80px; }
+.s3-pool { display: flex; flex-wrap: wrap; gap: 8px; min-height: 56px; padding: 10px; border-radius: 14px; background: var(--bg); border: 1px solid var(--line); }
+.s3-pool:empty::before { content: "词都分完了"; font-size: 13px; color: var(--muted); }
+.s3-zones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.s3-zones .dd-zone { min-height: 100px; }
+/* 手机上：词小一点、四个框两列排，选了词不用滚太远就能点到框 */
+@media (max-width: 600px) {
+  .s3-pool { gap: 6px; padding: 8px; }
+  .s3-game .dd-item { font-size: 12.5px; padding: 5px 8px; gap: 4px; }
+  .s3-game .dd-item small { font-size: 10px; }
+  .s3-zones { gap: 8px; }
+  .s3-zones .dd-zone { min-height: 92px; padding: 8px; gap: 6px; }
+  .s3-zones .dd-zone-head b { font-size: 13.5px; }
+  .s3-zones .dd-zone-head small { font-size: 11px; }
+}
+.s3-zones .dd-zone-head { display: grid; gap: 0; line-height: 1.45; }
+.s3-zones .dd-zone-head b { font-size: 14.5px; color: var(--ink); }
+.s3-zones .dd-zone-head small { font-weight: 500; font-size: 12px; color: var(--muted); }
+.s3-game .dd-item { flex-wrap: wrap; row-gap: 0; }
+.s3-game .dd-item small { font-family: var(--font-body); font-size: 11px; color: var(--muted); }
+.s3-game .dd-item em { font-style: normal; font-family: var(--font-body); font-size: 11px; font-weight: 700; }
+.s3-game .dd-item.right em { color: var(--green); }
+.s3-game .dd-item.s3-ok { border-color: var(--amber); border-style: dashed; background: var(--amber-soft); }
+.s3-game .dd-item.s3-ok em { color: var(--amber); }
+.s3-game .dd-item:disabled { cursor: default; }
+.s3-game .dd-item.s3-missed::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--amber); flex: none; }
+.s3-g-end { position: relative; overflow: hidden; display: grid; gap: 10px; padding: 18px 20px; border-radius: 16px; background: var(--green-soft); }
+.s3-g-end.meh { background: var(--amber-soft); }
+.s3-g-end .lab { font-size: 12.5px; font-weight: 700; letter-spacing: .06em; color: var(--green); }
+.s3-g-end.meh .lab { color: var(--amber); }
+.s3-g-end .big-num small { font-size: 16px; color: var(--muted); }
+.s3-g-notes { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; font-size: 14.5px; line-height: 1.65; }
+.s3-g-notes b { font-family: var(--font-mono); font-size: 13.5px; }
+.s3-g-end a.btn { text-decoration: none; display: inline-block; }
+
+/* ---------- 知识点 4：蚕食 ---------- */
+.s3-can { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 16px; align-items: center; }
+@media (max-width: 660px) { .s3-can { grid-template-columns: 1fr; } }
+.s3-can-stage { background: var(--bg); border-radius: 14px; padding: 6px; }
+.s3-can svg { max-width: 460px; margin: 0 auto; }
+.s3-can svg text { font-family: var(--font-body); }
+.s3-sub rect { fill: var(--surface); stroke: var(--indigo); stroke-width: 1.5; }
+.s3-sub .nm { font-size: 13px; font-weight: 650; fill: var(--ink); }
+.s3-sub .pt { font-size: 10px; fill: var(--muted); font-family: var(--font-mono); }
+.s3-home-c { fill: var(--indigo); }
+.s3-home-t { fill: var(--on-indigo); font-size: 14px; font-weight: 700; }
+.s3-home-kw { font-size: 11px; fill: var(--indigo); font-family: var(--font-mono); }
+.s3-up { fill: none; stroke: var(--indigo); stroke-width: 2.5; stroke-linecap: round; }
+.s3-down { fill: none; stroke: var(--indigo); stroke-width: 1.6; stroke-linecap: round; opacity: .55; }
+.s3-ball { fill: var(--indigo); transition: opacity .3s; }
+.s3-newtag rect { fill: var(--green-soft); stroke: var(--green); stroke-width: 1; }
+.s3-newtag text { fill: var(--green); font-size: 10px; font-weight: 700; }
+.s3-can-side { display: grid; gap: 10px; }
+.s3-can-rules { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.s3-can-rules li { padding: 10px 12px; border-radius: 12px; background: var(--bg); font-size: 14.5px; line-height: 1.6; border: 1.5px solid transparent; transition: border-color .3s, background .3s; }
+.s3-can-rules li b { font-family: var(--font-mono); color: var(--indigo); margin-right: 4px; }
+.s3-can-rules li.on { border-color: var(--indigo); background: var(--indigo-soft); }
+.s3-can-meter { display: grid; gap: 4px; font-size: 13.5px; color: var(--muted); }
+
+/* ---------- 知识点 5：模板对比 ---------- */
+.s3-tpl { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 720px) { .s3-tpl { grid-template-columns: 1fr; } }
+.s3-tpl-g { position: relative; display: grid; gap: 10px; align-content: start; padding: 12px; border-radius: 14px; background: var(--bg); border: 1.5px solid var(--line); transition: border-color .3s; }
+.s3-tpl-g.bad { border-color: var(--amber); }
+.s3-tpl-g.good { border-color: var(--green); }
+.s3-tpl-h { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 14px; line-height: 1.4; }
+.s3-tpl-h b { font-size: 15.5px; }
+.s3-tpl-h span { color: var(--muted); }
+.s3-light { margin-left: auto; width: 16px; height: 16px; border-radius: 50%; background: var(--line); flex: none; transition: background .3s, box-shadow .3s; }
+.s3-light.bad { background: var(--amber); box-shadow: 0 0 0 4px var(--amber-soft), 0 0 14px var(--amber); }
+.s3-light.good { background: var(--green); box-shadow: 0 0 0 4px var(--green-soft), 0 0 14px var(--green); }
+.s3-tpl-pages { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; overflow: hidden; align-items: start; }
+.s3-mini { display: grid; gap: 3px; align-content: start; padding: 6px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); min-width: 0; }
+.s3-mini-h { font-size: 12px; font-weight: 700; line-height: 1.3; }
+.s3-mini-code { font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); letter-spacing: .04em; overflow-wrap: anywhere; line-height: 1.3; margin-bottom: 2px; }
+.s3-blk { display: flex; gap: 4px; align-items: flex-start; font-style: normal; font-size: 11px; line-height: 1.35; padding: 4px 5px; border-radius: 6px; background: var(--bg); border: 1px solid var(--line); min-height: 22px; transition: background .3s, border-color .3s; overflow-wrap: anywhere; min-width: 0; }
+.s3-blk > b { font-family: var(--font-mono); font-size: 10.5px; color: var(--indigo); flex: none; }
+.s3-blk .kw { display: block; font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
+.s3-blk.tall { min-height: 42px; }
+.s3-blk.mid { min-height: 32px; }
+.s3-blk.same { background: var(--amber-soft); border-color: var(--amber); }
+.s3-blk.uniq { background: var(--green-soft); border-color: var(--green); }
+.s3-scan { position: absolute; left: 0; right: 0; top: 0; height: 3px; border-radius: 2px; background: var(--indigo); box-shadow: 0 0 10px var(--indigo); opacity: 0; pointer-events: none; transition: opacity .2s; }
+.s3-tpl-m { font-size: 13.5px; color: var(--muted); }
+.s3-tpl-m b { font-family: var(--font-mono); font-size: 16px; color: var(--ink); }
+.s3-stamp {
+  position: absolute; left: 50%; top: 52%; z-index: 2; pointer-events: none; white-space: nowrap;
+  transform: translate(-50%, -50%) rotate(-11deg) scale(1.7); opacity: 0;
+  font-family: var(--font-display); font-weight: 900; font-size: 24px; letter-spacing: .08em;
+  padding: 4px 16px; border-radius: 10px; border: 3px solid currentColor;
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  transition: transform .4s cubic-bezier(.3, 1.6, .5, 1), opacity .25s;
+}
+.s3-stamp.bad { color: var(--amber); }
+.s3-stamp.good { color: var(--green); font-size: 18px; }
+.s3-stamp.on { opacity: 1; transform: translate(-50%, -50%) rotate(-11deg) scale(1); }
+
+/* ---------- 知识点 6：时间条 ---------- */
+.s3-tl-stage { display: grid; gap: 10px; }
+.s3-tl-home { display: grid; gap: 4px; padding: 12px 14px; border-radius: 14px; background: var(--indigo-soft); border: 1.5px solid var(--indigo); }
+.s3-tl-path { font-family: var(--font-mono); font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+.s3-tl-home > b { font-size: 16px; }
+.s3-tl-kw { font-family: var(--font-mono); font-size: 13px; color: var(--indigo); overflow-wrap: anywhere; line-height: 1.4; }
+.s3-tl-text { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 4px; }
+.s3-tl-text .lab { font-size: 12.5px; color: var(--muted); font-weight: 650; }
+.s3-tl-text .chip { font-size: 12px; padding: 3px 9px; }
+.s3-tl-text .chip.s3-hot { border-color: var(--amber); color: var(--amber); background: var(--amber-soft); animation: s3-ring 1.2s 3; }
+.s3-tl-text .chip.s3-moved { border-color: var(--green); color: var(--green); background: var(--green-soft); }
+.s3-tl-text .chip.s3-moved::after { content: "→ 有单独一页了"; font-family: var(--font-body); font-size: 11px; }
+.s3-tl-kids { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; padding-top: 12px; border-top: 2px dashed var(--line); }
+.s3-tl-kids::before { content: "↑ 每一页都链回首页"; grid-column: 1 / -1; font-size: 12.5px; color: var(--muted); margin-top: -4px; }
+.s3-tl-card { display: grid; gap: 2px; align-content: start; padding: 10px 12px; border-radius: 12px; background: var(--surface); border: 1.5px solid var(--line); min-width: 0; }
+.s3-tl-card b { font-size: 14.5px; }
+.s3-tl-card .s3-tl-kw { font-size: 12px; }
+.s3-tl-card.new { border-color: var(--green); background: var(--green-soft); }
+.s3-tl-card .up { font-size: 12px; color: var(--green); font-weight: 650; }
+.s3-tl-must { font-size: 13px; color: var(--muted); }
+.s3-tl-gsc { display: grid; gap: 4px; padding: 10px 14px; border-radius: 12px; background: var(--surface); border: 1.5px solid var(--amber); font-size: 13.5px; }
+.s3-tl-gsc .lab { font-size: 12px; font-weight: 700; color: var(--amber); }
+.s3-tl-gsc .nums { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.s3-tl-gsc .nums b { font-family: var(--font-mono); font-size: 16px; }
+.s3-tl-gsc code { font-size: .9em; }
+
+/* ---------- 小结：判断流程 ---------- */
+.s3-flow { display: grid; gap: 10px; }
+.s3-fq { padding: 12px 14px; border-radius: 12px; background: var(--indigo); color: var(--on-indigo); font-weight: 650; font-size: 15px; line-height: 1.6; }
+.s3-fq small { display: block; font-weight: 500; font-size: 13px; opacity: .85; }
+.s3-fq.sm { background: var(--indigo-soft); color: var(--indigo); }
+.s3-fbr { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+.s3-fcol { display: grid; gap: 8px; align-content: start; padding-left: 12px; border-left: 2px solid var(--line); min-width: 0; }
+.s3-fa { font-size: 13px; color: var(--muted); font-weight: 650; }
+.s3-fa::before { content: "↳ "; }
+.s3-fres { padding: 10px 12px; border-radius: 12px; font-weight: 700; font-size: 15px; line-height: 1.5; }
+.s3-fres small { display: block; font-weight: 500; font-size: 12.5px; }
+.s3-fres.own { background: var(--amber-soft); color: var(--amber); }
+.s3-fres.text { background: var(--indigo-soft); color: var(--indigo); }
+.s3-fres.can { background: var(--green-soft); color: var(--green); }
+.s3-fside { font-size: 14px; color: var(--muted); padding: 10px 12px; border-radius: 12px; border: 1px dashed var(--line); background: var(--surface); }
+</style>
+</head>
+<body data-page="s3">
+<header id="topbar"></header>
+
+<div class="ph"><div class="wrap">
+  <span class="eyebrow">第 3 步 / 共 8 步</span>
+  <h1>一页放一个词，还是好几个词？</h1>
+  <p class="lead">单复数要不要分开做？意思一样的词能不能放一页？换个说法要不要单独做？这一页用虚构的新词 Lumibo 2，一样一样拆开给你看。</p>
+  <ul class="asks">
+    <li><a href="#k1">「一个关键词一个页面」，是说页面上只能出现一个词吗？</a></li>
+    <li><a href="#k2">两个词算不算一回事，怎么判断？</a></li>
+    <li><a href="#k3">一堆词摆在面前，哪个放首页、哪个单独做、哪个写进文字？</a></li>
+    <li><a href="#k4">好几个页面沾同一个词，会不会自己抢自己？</a></li>
+    <li><a href="#k5">同一件事各做一页，2026 年还能这么干吗？</a></li>
+    <li><a href="#k6">新站第一周，先做哪些页？</a></li>
+  </ul>
+  <div class="gist"><span class="lab">一句话答案</span><p>一个页面只<b>主攻</b>一个词，但页面上可以、也应该出现它的单复数和各种说法。要不要拆页，看是不是<b>同一件事</b>：写法差一点、加个 free，放同一页；不同的功能，一定分开；同一件事换个叫法、也有人搜，可以各做一页，但新站先把主词那页做好。</p></div>
+</div></div>
+
+<main class="wrap">
+
+  <!-- ========== 知识点 1 ========== -->
+  <section class="kp" id="k1">
+    <div class="kp-head"><span class="kp-no">知识点 1</span><h2>一页只主攻一个词，不是只能出现一个词</h2></div>
+    <p class="kp-say">哥飞说，<b>一个页面只主攻一个词、一件事</b>，首页也一样。<span class="st hf">哥飞原话</span> 主攻的那个 <button type="button" class="term" data-t="core">核心词</button>，写进 <button type="button" class="term" data-t="title">Title</button> 和 <button type="button" class="term" data-t="h1">H1</button>；正文里，它的单复数、换个说法、用户关心的小问题，都可以自然地写进去。<span class="st tl">推出来的</span></p>
+    <blockquote class="said"><p>「其实首页、列表页面，跟内页是一样的，都应该遵循一个页面一个关键词原则。」</p><span class="who">哥飞 · 2025-01-14</span></blockquote>
+
+    <div class="viz" id="s3-eye">
+      <div class="viz-head"><span class="viz-label">动手玩 · 用谷歌的眼睛看</span><p class="viz-title">FramePop 的首页，谷歌是怎么读的？</p></div>
+      <div class="viz-controls">
+        <div class="seg" id="s3-eye-ver" role="group" aria-label="选一个版本">
+          <button type="button" data-v="good" aria-pressed="true">正确：一页主攻一件事</button>
+          <button type="button" data-v="bad" aria-pressed="false">错误：一页塞三件事</button>
+        </div>
+        <button type="button" class="btn s3-switch" id="s3-eye-btn" aria-pressed="false"><span class="s3-knob" aria-hidden="true"></span><span class="s3-eye-lab">谷歌眼里：关</span></button>
+      </div>
+      <div class="s3-k1">
+        <div class="s3-pg">
+          <div class="s3-pg-bar" aria-hidden="true"><i></i><i></i><i></i><span class="s3-pg-url">framepop.com</span></div>
+          <div class="s3-pg-body"></div>
+        </div>
+        <div class="s3-lg" aria-live="polite"></div>
+      </div>
+      <p class="viz-say" aria-live="polite"></p>
+      <p class="viz-note">页面是编的示意。点右边亮起来的小标签，页面里对应的词会跳一下。</p>
+    </div>
+
+    <div class="box analogy"><span class="lab">打个比方</span><p>一家面馆，招牌上写「牛肉面」，这是主攻；菜单上写着「大碗、小碗、加辣、不要香菜」，这是各种说法。招牌只写一个，菜单可以写很多。要是招牌上写「牛肉面、火锅、奶茶」，路过的人反而不知道这家主打什么，奶茶该去隔壁另开一家。</p></div>
+
+    <div class="quiz" data-answer="B">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">「一个关键词一个页面」是什么意思？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">页面上只能出现这一个词，复数、同义说法都不能写，不然会被当成抢词</button>
+        <button class="q-opt" data-l="B">一页只主攻一个词（标题、H1 写它），正文里可以、也应该自然出现它的各种说法</button>
+        <button class="q-opt" data-l="C">一个页面可以同时主攻好几个功能，放的词越多，能排上的词就越多</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>哥飞说「正确的做法就是一个页面放一个功能，让每一个页面的核心关键词都足够突出」，首页也一样。<span class="st hf">哥飞原话</span> 主攻一个，不等于只能出现一个：复数、加 free、换个叫法写进正文，正好接住搜这些词的人。<span class="st tl">推出来的</span></p></div>
+    </div>
+
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://new.web.cafe/tutorial/detail/b65kyom8b2">《两大 SEO 原则：分门别类罗列、一个关键词一个页面》</a><span class="meta">哥飞 · 2025-01-14</span></li>
+    </ul></div>
+  </section>
+
+  <!-- ========== 知识点 2 ========== -->
+  <section class="kp" id="k2">
+    <div class="kp-head"><span class="kp-no">知识点 2</span><h2>两个词算不算一回事？分别搜一下，比前 10 名</h2></div>
+    <p class="kp-say">最直接的判断法：<b>在谷歌分别搜这两个词，数一数前 10 名里有几个网页是一样的</b>。大部分一样，说明谷歌把它们当成一回事；几乎全换了一批，就是两回事。<span class="st tl">推出来的</span> 前 10 名就是 <button type="button" class="term" data-t="serp">搜索结果页</button> 最上面那 10 条。</p>
+
+    <div class="viz" id="s3-judge">
+      <div class="viz-head"><span class="viz-label">动手玩 · 选一对词</span><p class="viz-title">lumibo video generator 和谁是一回事？</p></div>
+      <div class="seg s3-pairs" id="s3-pairs" role="group" aria-label="选一个要比的词">
+        <button type="button" data-v="0" aria-pressed="true"><b>加个 s</b><small>generators</small></button>
+        <button type="button" data-v="1" aria-pressed="false"><b>加个 free</b><small>free … generator</small></button>
+        <button type="button" data-v="2" aria-pressed="false"><b>换个叫法</b><small>video maker</small></button>
+        <button type="button" data-v="3" aria-pressed="false"><b>另一个功能</b><small>image to video</small></button>
+        <button type="button" data-v="4" aria-pressed="false"><b>光秃秃模型名</b><small>lumibo 2</small></button>
+      </div>
+      <div class="s3-j">
+        <div class="s3-j-heads">
+          <div class="s3-j-head L"><span class="lab">核心词 · 搜它</span><b>lumibo video generator</b><span class="vol">每月约 22,000 次 · 示意</span></div>
+          <div class="s3-j-mid">连线 =<br>同一个网页</div>
+          <div class="s3-j-head R"><span class="lab">要比的词 · 搜它</span><b class="s3-rw"></b><span class="vol s3-rv"></span></div>
+        </div>
+        <div class="s3-serp">
+          <ol class="L" aria-label="核心词的前 10 名"></ol>
+          <div aria-hidden="true"></div>
+          <ol class="R" aria-label="要比的词的前 10 名"></ol>
+          <svg class="s3-lines" aria-hidden="true"></svg>
+        </div>
+      </div>
+      <div class="s3-vrow">
+        <div class="s3-venn">
+          <svg viewBox="0 0 300 124" role="img" aria-label="两个圆圈的重合程度，表示两个词前 10 名里相同网页的多少">
+            <circle class="s3-vc L" cx="100" cy="62" r="46"/>
+            <circle class="s3-vc R" cx="200" cy="62" r="46"/>
+            <text class="s3-vn" x="150" y="64" text-anchor="middle">0</text>
+            <text class="s3-vs" x="150" y="82" text-anchor="middle">/ 10 个一样</text>
+          </svg>
+          <div class="legend-row"><span><i class="sw ours"></i>核心词的前 10</span><span><i class="sw good"></i>要比的词的前 10</span></div>
+        </div>
+        <div class="s3-verdict" aria-live="polite"></div>
+      </div>
+      <div class="viz-controls"><button type="button" class="btn" id="s3-judge-again">再比一遍</button><span class="viz-note">搜索结果是编的，数字都是示意。字母相同 = 同一个网页；「新」= 左边没有的网页。</span></div>
+    </div>
+
+    <h3>新手判断四条</h3>
+    <div class="s3-rules" id="s3-rules">
+      <div class="s3-rule"><span class="no">第 ① 条</span><span>写法差一点：单复数、多个 ai、少个横杠</span><span class="to same">→ 同一页</span><small>谷歌自己的 <button type="button" class="term" data-t="ads">关键词规划师</button> 都把它们算成一组。<span class="st tl">推出来的</span></small></div>
+      <div class="s3-rule"><span class="no">第 ② 条</span><span>同一件事的 <button type="button" class="term" data-t="s3syn">另一种叫法</button>，各自都有人搜</span><span class="to can">→ 可以各做一页</span><small>但新站先把主词那页做好；每页内容要真不一样。<span class="st hf">哥飞原话</span></small></div>
+      <div class="s3-rule"><span class="no">第 ③ 条</span><span>不同的事：不同功能、不同用途</span><span class="to split">→ 一定分开</span><small>一个页面放一个功能。<span class="st hf">哥飞原话</span></small></div>
+      <div class="s3-rule"><span class="no">第 ④ 条</span><span>只是加了 <button type="button" class="term" data-t="s3mod">修饰词</button>：free（免费）、online（在线）、no watermark（无水印），要的还是同一个工具</span><span class="to same">→ 写进页面文字</span><small>不单独做页，写进标题、正文或常见问题。<span class="st tl">推出来的</span></small></div>
+    </div>
+
+    <div class="box analogy"><span class="lab">打个比方</span><p>「番茄炒蛋」和「西红柿炒鸡蛋」，去十家馆子点，端上来九盘都一样，那就是同一道菜。「番茄炒蛋」和「番茄牛腩」，端上来全不一样，就是两道菜，菜单上要分开写。</p></div>
+    <div class="box warn"><span class="lab">补充提醒（不是原文内容）</span><p>自己动手比的时候，最好开浏览器的无痕窗口再搜，免得谷歌按你自己的浏览记录调整结果。</p></div>
+
+    <div class="quiz" data-answer="C">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">分别搜 lumibo text to video（打字变视频）和 lumibo video generator，前 10 名只有 1 个网页一样。text to video 该怎么处理？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">同一页：在首页正文里提一句就行</button>
+        <button class="q-opt" data-l="B">写进首页的常见问题（FAQ）里</button>
+        <button class="q-opt" data-l="C">一定分开：打字变视频是另一个功能，单独做一页</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>前 10 名几乎全换了一批，说明谷歌把它们当成两回事。<span class="st tl">推出来的</span> 打字变视频本来就是另一个功能，哥飞的原则是一个页面放一个功能。<span class="st hf">哥飞原话</span></p></div>
+    </div>
+
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://new.web.cafe/tutorial/detail/b65kyom8b2">《两大 SEO 原则：分门别类罗列、一个关键词一个页面》</a><span class="meta">哥飞 · 2025-01-14 · 「一个页面放一个功能」</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/d2bbhguqe8">《精品工具页面的思路》</a><span class="meta">哥飞 · 2025-01-16 · 「一个工具做三个页面」</span></li>
+      <li><span>「分别搜、比前 10 名」是按原文推出来的方法，原文没有直接这样写。</span></li>
+    </ul></div>
+  </section>
+
+  <!-- ========== 知识点 3 ========== -->
+  <section class="kp" id="k3">
+    <div class="kp-head"><span class="kp-no">知识点 3</span><h2>分拣游戏：12 个词，各回各家</h2></div>
+    <p class="kp-say">照上面四条，把 Lumibo 2 的词拖进 4 个框。多出来的「先不做」框，装你接不住的词（比如想下载官方 App 的）和太大的 <button type="button" class="term" data-t="parent">父词</button>。哥飞说过：「做页面，只做用户可能会搜索的关键词。」<span class="st hf">哥飞原话</span> 每个词放哪，是按原文推出来的答案。<span class="st tl">推出来的</span></p>
+
+    <div class="viz s3-game" id="s3-game">
+      <div class="viz-head"><span class="viz-label">动手玩 · 拖一拖</span><p class="viz-title">把词拖进框里，放进去马上判</p></div>
+      <div class="s3-g-hud">
+        <span>已分 <b class="s3-n-placed">0</b> / <b class="s3-n-total">12</b></span>
+        <span class="meter"><i></i></span>
+        <span>一次放对 <b class="s3-n-best">0</b> · 也说得通 <b class="s3-n-ok">0</b> · 放错过 <b class="s3-n-miss">0</b></span>
+        <button type="button" class="btn" id="s3-g-new">换一批词重来</button>
+      </div>
+      <p class="dd-hint">电脑上直接拖；手机上先点一下词，再点框。<b>绿色</b>是最佳答案，<b>黄色虚线</b>是也说得通，错的会弹回来并告诉你为什么。</p>
+      <div class="s3-pool" aria-label="待分的词"></div>
+      <div class="s3-zones">
+        <div class="dd-zone" data-b="home"><span class="dd-zone-head"><b>首页主打</b><small>核心词，全站只有 1 个</small></span></div>
+        <div class="dd-zone" data-b="own"><span class="dd-zone-head"><b>单独做一页</b><small>另一件事：不同功能、教程、对比</small></span></div>
+        <div class="dd-zone" data-b="text"><span class="dd-zone-head"><b>写进页面文字</b><small>同一件事的单复数、修饰词、小问题</small></span></div>
+        <div class="dd-zone" data-b="later"><span class="dd-zone-head"><b>先不做</b><small>接不住的、太大的、等有数据再说的</small></span></div>
+      </div>
+      <p class="viz-say" aria-live="polite"></p>
+      <div class="s3-g-end" hidden aria-live="polite"></div>
+      <p class="viz-note">这里是练习，不记模拟器的分。词和搜索量（示意）跟模拟器第 3 关是同一份。</p>
+    </div>
+
+    <div class="quiz" data-answer="A">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">lumibo video generator no watermark（不带水印的生成器）这个词，最好怎么放？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">写进首页的常见问题：回答「有没有水印」</button>
+        <button class="q-opt" data-l="B">单独做一个「无水印」页面，专门抢这个词</button>
+        <button class="q-opt" data-l="C">不管它，水印这种小事没人在乎</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>搜它的人要的还是同一个生成器，只是多关心一句水印。这种同一件事的小问题，写进首页的 <button type="button" class="term" data-t="faq">FAQ</button> 就能接住；单独做页，只会做出一个跟首页差不多的页面。<span class="st tl">推出来的</span></p></div>
+    </div>
+
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://new.web.cafe/tutorial/detail/b65kyom8b2">《两大 SEO 原则：分门别类罗列、一个关键词一个页面》</a><span class="meta">哥飞 · 2025-01-14 · 「只做用户可能会搜索的关键词」</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/d2bbhguqe8">《精品工具页面的思路》</a><span class="meta">哥飞 · 2025-01-16</span></li>
+    </ul></div>
+  </section>
+
+  <!-- ========== 知识点 4 ========== -->
+  <section class="kp" id="k4">
+    <div class="kp-head"><span class="kp-no">知识点 4</span><h2>好几个页面沾同一个词，不怕「自己抢自己」，怕不连</h2></div>
+    <p class="kp-say">好几个页面抢同一个词，叫 <button type="button" class="term" data-t="cannibal">关键词蚕食</button>。哥飞说，<b>以为一个词只能有一个页面，是误解</b>：细分说法可以各做一页，做完最要紧的是用 <button type="button" class="term" data-t="internal">内链</button> 把它们连起来，把 <button type="button" class="term" data-t="weight">权重</button> 一层层汇到首页。<span class="st hf">哥飞原话</span></p>
+    <blockquote class="said"><p>「有很多人会有误解，认为一个网站对于一个关键词只能做一个页面。这个理解是错误的。」</p><span class="who">哥飞 · 2025-01-14</span></blockquote>
+
+    <div class="viz" id="s3-can">
+      <div class="viz-head"><span class="viz-label">看动画 · 两种结局</span><p class="viz-title">三个页面都跟「Lumibo 做视频」沾边，连不连差多少？</p></div>
+      <div class="viz-controls">
+        <div class="seg" id="s3-can-seg" role="group" aria-label="选一种结局">
+          <button type="button" data-v="off" aria-pressed="true">各做各的，不连</button>
+          <button type="button" data-v="on" aria-pressed="false">用内链连起来</button>
+        </div>
+        <button type="button" class="btn" id="s3-can-again">再播一次</button>
+      </div>
+      <div class="s3-can">
+        <div class="s3-can-stage"><svg viewBox="0 0 400 330" role="img" aria-label="首页和三个页面，小球代表力量"></svg></div>
+        <div class="s3-can-side">
+          <ol class="s3-can-rules">
+            <li data-r="0"><b>①</b>每个页面都链回上一层，一层层传到首页</li>
+            <li data-r="1"><b>②</b>首页链到最新的页面，帮它加权重、更快被收录</li>
+          </ol>
+          <div class="s3-can-meter"><span>首页收到的力量（示意）</span><span class="meter ours"><i></i></span></div>
+          <p class="viz-note">这两条是哥飞在《关于关键词蚕食》评论区说的。<span class="st hf">哥飞原话</span></p>
+        </div>
+      </div>
+      <p class="viz-say" aria-live="polite"></p>
+    </div>
+
+    <div class="box analogy"><span class="lab">打个比方</span><p>三家分店各自揽客，客人进来逛一圈就走了。在每家门口都立块牌子「总店往这边走」，客人就一路被引到总店，总店越来越旺。</p></div>
+
+    <div class="quiz" data-answer="A">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">网站里好几个页面都跟 lumibo video generator 沾边，哥飞怎么看「关键词蚕食」？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">不用怕：细分说法可以各做一页，关键是用内链连起来，把力量汇到首页</button>
+        <button class="q-opt" data-l="B">很危险：一个词只能有一个页面，多出来的要删掉</button>
+        <button class="q-opt" data-l="C">无所谓：页面做出来就行，连不连内链都一样</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>哥飞说「一个网站对于一个关键词只能做一个页面」的想法是错的；做完之后「最重要的一件事情就是整合」，用内链把权重从最末端的页面一层层汇到核心词页面。<span class="st hf">哥飞原话</span></p></div>
+    </div>
+
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://new.web.cafe/tutorial/detail/c8z1ixs1md">《关于关键词蚕食，关于页面结构，关于如何举全站之力优化关键词》</a><span class="meta">哥飞 · 2025-01-14 · 内链三条在评论区</span></li>
+    </ul></div>
+  </section>
+
+  <!-- ========== 知识点 5 ========== -->
+  <section class="kp" id="k5">
+    <div class="kp-head"><span class="kp-no">知识点 5</span><h2>2026 年更严了：可以各做一页，但不能只换个词</h2></div>
+    <p class="kp-say">2026 年 3 月底，谷歌开始打击 <button type="button" class="term" data-t="template">套模板</button> 的页面：一堆页面结构一模一样，只换了个词。哥飞说，问题不在用不用同一个工具，而在<b>「懒且贪」</b>：本来可以一页一页认真做，却拿一套公式批量复制，贪的是海量关键词的流量。<span class="st hf">哥飞原话</span></p>
+    <blockquote class="said"><p>「结果你懒，统一都用 ABCDEFG 去做页面，这就是套模板。」「如果能够做成不一样的，你为什么要做成相似的？」</p><span class="who">哥飞 · 2026-04-30 群聊</span></blockquote>
+
+    <div class="viz" id="s3-tpl">
+      <div class="viz-head"><span class="viz-label">动手玩 · 谷歌来检查</span><p class="viz-title">同样三个页面：懒版和认真版</p></div>
+      <div class="viz-controls">
+        <button type="button" class="btn primary" id="s3-tpl-go">谷歌来检查</button>
+        <button type="button" class="btn" id="s3-tpl-reset">重来</button>
+      </div>
+      <div class="s3-tpl">
+        <div class="s3-tpl-g" data-g="lazy">
+          <div class="s3-tpl-h"><b>懒版</b><span>三页只换了标题里的词</span><i class="s3-light" aria-hidden="true"></i></div>
+          <div class="s3-tpl-pages"><div class="s3-scan"></div></div>
+          <p class="s3-tpl-m">相似度 <b class="s3-sim">?</b> <span class="st sy">示意</span></p>
+          <span class="s3-stamp bad" aria-hidden="true">套模板</span>
+        </div>
+        <div class="s3-tpl-g" data-g="real">
+          <div class="s3-tpl-h"><b>认真版</b><span>工具可以差不多，内容各写各的</span><i class="s3-light" aria-hidden="true"></i></div>
+          <div class="s3-tpl-pages"><div class="s3-scan"></div></div>
+          <p class="s3-tpl-m">相似度 <b class="s3-sim">?</b> <span class="st sy">示意</span></p>
+          <span class="s3-stamp good" aria-hidden="true">每页都不一样</span>
+        </div>
+      </div>
+      <p class="viz-say" aria-live="polite"></p>
+      <p class="viz-note">字母是哥飞打的比方：把页面上常用的模块叫 A、B、C……认真做的页面，会按这个词的需要挑模块、排顺序。</p>
+    </div>
+
+    <div class="box case"><span class="lab">资料前后说法不一样（两边都写给你）</span>
+      <p><b>2025 年 1 月</b>：哥飞说「你可以一个工具，做三个页面，对应同一个功能需求的三种不同说法」。群友转述他在群里的话：内页和首页可以用同一个工具，文字针对当前页面的关键词来写。<span class="st hf">哥飞原话</span></p>
+      <p><b>2026 年 4 月</b>：谷歌打击套模板之后，哥飞强调每页的内容结构要真的不一样。他也说，做了相似页面不一定就不收录，最后要看 <button type="button" class="term" data-t="gsc">GSC</button> 的数据。<span class="st hf">哥飞原话</span></p>
+      <p>这一课的讲法：<b>工具可以共用，示例、问答、文字各写各的；新站先把主词那页做好。</b><span class="st tl">推出来的</span></p>
+    </div>
+
+    <div class="quiz" data-answer="C">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">下面哪种，最容易被谷歌当成「套模板」？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">三个页面用同一个生成工具，但示例、问答、文字都围绕自己的词单独写</button>
+        <button class="q-opt" data-l="B">三个页面模块不一样：一个放前后对比图，一个放提示词技巧</button>
+        <button class="q-opt" data-l="C">三个页面一字不差，只把标题里的词换了一下，模块顺序都是 ABCDEFG</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>群友转述哥飞：内页和首页可以用同一个工具，所以 A 没问题。问题出在内容结构一模一样：「统一都用 ABCDEFG 去做页面，这就是套模板」。<span class="st hf">哥飞原话</span></p></div>
+    </div>
+
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://new.web.cafe/tutorial/detail/qw95txij7a">《模板化页面算法更新引热议》</a><span class="meta">哥飞.ai 群聊日报 · 2026-04-30 · 哥飞原话在帖子的「来源」群聊记录里</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/d2bbhguqe8">《精品工具页面的思路》</a><span class="meta">哥飞 · 2025-01-16 · 「一个工具做三个页面」和评论区群友转述</span></li>
+    </ul></div>
+  </section>
+
+  <!-- ========== 知识点 6 ========== -->
+  <section class="kp" id="k6">
+    <div class="kp-head"><span class="kp-no">知识点 6</span><h2>新站先做主词，有数据再拆</h2></div>
+    <p class="kp-say">同一件事的另一种叫法，新站<b>先写进首页的文字里</b>。第一周只做首页和几个不同功能的页面；等 <button type="button" class="term" data-t="gsc">GSC</button> 里看到这个说法真有人搜、有 <button type="button" class="term" data-t="impr">曝光</button>，再把它拆出来单独做一页。<span class="st tl">推出来的</span> 哥飞也说，新站别一口气上一堆页面，要按 GSC 数据来调整。<span class="st hf">哥飞原话</span></p>
+    <blockquote class="said"><p>「SEO 只靠理论是没用的，一定要结合实际，一定要根据 GSC 数据去调整我们的做法。」</p><span class="who">哥飞 · 2026-04-30 群聊</span></blockquote>
+
+    <div class="viz" id="s3-tl">
+      <div class="viz-head"><span class="viz-label">一步步看 · 点「下一步」</span><p class="viz-title">FramePop 的页面是怎么一页页长出来的</p></div>
+      <div class="s3-tl-stage">
+        <div class="s3-tl-home">
+          <span class="s3-tl-path">framepop.com/</span>
+          <b>首页</b>
+          <span class="s3-tl-kw">主攻：lumibo video generator</span>
+          <div class="s3-tl-text"><span class="lab">文字里顺带写着：</span><span class="chip">generators</span><span class="chip">free</span><span class="chip">online</span><span class="chip">no watermark</span><span class="chip">Lumibo 2</span><span class="chip" id="s3-tl-maker">video maker</span></div>
+        </div>
+        <div class="s3-tl-kids"></div>
+        <p class="s3-tl-must"></p>
+        <div class="s3-tl-gsc" hidden>
+          <span class="lab">GSC 后台（示意）</span>
+          <span>有人搜 <code>lumibo video maker</code>，谷歌拿你的首页去排：</span>
+          <span class="nums"><span>曝光 <b class="s3-tl-impr">0</b></span><span>点击 <b class="s3-tl-clk">0</b></span><span>平均排名 第 <b class="s3-tl-pos">0</b> 名</span></span>
+        </div>
+      </div>
+      <p class="viz-say" aria-live="polite"></p>
+      <div class="sp-nav"><div class="sp-dots"></div><div class="seg"><button type="button" class="btn sp-prev">上一步</button><button type="button" class="btn primary sp-next">下一步</button></div></div>
+    </div>
+
+    <div class="quiz" data-answer="B">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">新站第一周，lumibo video maker（同一件事的另一种叫法，也有人搜）怎么处理最稳？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">第一天就单独做一页，页面越多越好</button>
+        <button class="q-opt" data-l="B">先写进首页文字，等 GSC 里看到它有曝光、有排名，再拆出来单独做一页</button>
+        <button class="q-opt" data-l="C">永远不碰：换个说法的词都没用</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>哥飞说可以各做一页，但新站别批量上页面，要看 GSC 数据调整。<span class="st hf">哥飞原话</span>「先写进首页、有数据再拆」是这一课按原文推出来的顺序。<span class="st tl">推出来的</span></p></div>
+    </div>
+
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://mp.weixin.qq.com/s/X4lIBRE_tjjLNMhU1jfQdA">《新站批量化上页面，必死》</a><span class="meta">哥飞公众号 · 2025-03-20</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/qw95txij7a">《模板化页面算法更新引热议》</a><span class="meta">哥飞.ai 群聊日报 · 2026-04-30</span></li>
+    </ul></div>
+  </section>
+
+  <!-- ========== 小结 ========== -->
+  <section class="kp" id="recap">
+    <div class="kp-head"><span class="kp-no">小结</span><h2>这一步记住 5 件事</h2></div>
+    <div class="recap"><ol>
+      <li>一页只<b>主攻</b>一个词（标题、H1 写它），正文里可以出现很多相关说法。首页也一样。</li>
+      <li>两个词算不算一回事：分别搜，<b>前 10 名大部分一样 = 一回事</b>。</li>
+      <li>四条：写法差一点 → 同一页；不同的事 → 一定分开；修饰词 → 写进文字；同一件事换个叫法、也有人搜 → 可以各做一页，但先做主词。</li>
+      <li>不怕「自己抢自己」，怕的是不连：<b>用内链把力量汇到首页</b>。</li>
+      <li>2026 年起，各做一页的内容必须真不一样，<b>别只换个词</b>。新站先做主词，有数据再拆。</li>
+    </ol></div>
+
+    <h3>带走一张判断图</h3>
+    <div class="s3-flow">
+      <div class="s3-fq">拿到一个词，先问：它和核心词是<b>同一件事</b>吗？<small>分别搜一下，前 10 名大部分一样，就是同一件事</small></div>
+      <div class="s3-fbr">
+        <div class="s3-fcol">
+          <span class="s3-fa">不是，是另一个功能、另一种用途</span>
+          <div class="s3-fres own">单独做一页</div>
+        </div>
+        <div class="s3-fcol">
+          <span class="s3-fa">是同一件事</span>
+          <div class="s3-fq sm">只差单复数，或者只加了 free、online 这种修饰词？</div>
+          <div class="s3-fbr">
+            <div class="s3-fcol"><span class="s3-fa">是</span><div class="s3-fres text">写进同一页的文字</div></div>
+            <div class="s3-fcol"><span class="s3-fa">不是，是另一种叫法，也有人搜</span><div class="s3-fres can">可以各做一页<small>新站先写进首页，有数据再拆，内容要真不一样</small></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="s3-fside">另外：你接不住的（想下载官方 App、找官方接口）和太大的父词，先不做。</div>
+    </div>
+
+    <div class="scorebar" data-scorebar></div>
+
+    <h3>这一步该读的原文（按顺序）</h3>
+    <ol class="readlist">
+      <li><a href="https://new.web.cafe/tutorial/detail/b65kyom8b2">《两大 SEO 原则：分门别类罗列、一个关键词一个页面》</a><label><input type="checkbox">读过了</label><span class="why">一页主攻一个词，首页也一样；没人搜的词不做页面。</span><span class="meta">哥飞 · 2025-01-14</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/c8z1ixs1md">《关于关键词蚕食，关于页面结构，关于如何举全站之力优化关键词》</a><label><input type="checkbox">读过了</label><span class="why">一个词不是只能做一页；细分说法各做一页，用内链汇到首页。记得看评论区。</span><span class="meta">哥飞 · 2025-01-14</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/d2bbhguqe8">《精品工具页面的思路》</a><label><input type="checkbox">读过了</label><span class="why">一个工具可以做几个页面，对应同一需求的不同说法；精品工具页面的三个公式。</span><span class="meta">哥飞 · 2025-01-16</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/qw95txij7a">《模板化页面算法更新引热议》</a><label><input type="checkbox">读过了</label><span class="why">2026 年谷歌打击套模板后，哥飞讲「懒且贪」和 ABCDEFG。重点读群聊原话。</span><span class="meta">哥飞.ai 群聊日报 · 2026-04-30</span></li>
+    </ol>
+  </section>
+
+</main>
+
+<nav id="pager"></nav>
+<footer id="foot"></footer>
+<script src="assets/kit.js"></script>
+<script>
+(() => {
+  const { $, $$, svgEl, el, bindSeg, tween, sleep, fmt, replay, countUp, flip, flyTo, makeSteps, dnd, reduce, store, SIM, addTerms } = KIT;
+  addTerms({
+    s3mod: ['修饰词', '加在词前后的小词，比如 free（免费）、online（在线）、no watermark（无水印）。加了它，要的还是同一个东西。'],
+    s3syn: ['另一种叫法', '同一件事换个说法，比如 video generator（视频生成器）和 video maker（视频制作器）。'],
+  });
+  const WORD = Object.fromEntries(SIM.words.map(w => [w.w, w]));
+  const BK = SIM.buckets;
+  const say = (node, html, tone) => { node.className = 'viz-say' + (tone ? ' ' + tone : ''); node.innerHTML = html; };
+
+  // ================= 知识点 1：页面透视 =================
+  {
+    const root = $('#s3-eye');
+    const pg = $('.s3-pg', root), body = $('.s3-pg-body', pg), lg = $('.s3-lg', root), sayBox = $('.viz-say', root);
+    const eyeBtn = $('#s3-eye-btn'), eyeLab = $('.s3-eye-lab', eyeBtn);
+    const w = (k, i, t) => `<span class="s3-w ${k}" data-k="${k}" data-i="${i}">${t}</span>`;
+    const tool = (txt, go) => `<span class="s3-tool"><span class="s3-tool-in">${txt}</span><span class="s3-tool-go">${go}</span></span>`;
+    const PG = {
+      good: {
+        rows: [
+          ['标题', 'title', `${w('core', 0, 'Lumibo Video Generator')} – ${w('rel', 0, 'Free')} ${w('rel', 1, 'AI Video Maker')} | FramePop`],
+          ['大标题', 'h1', w('core', 0, 'Lumibo Video Generator')],
+          ['工具', 'tool', tool('A cat surfing at sunset…', 'Generate')],
+          ['正文', 'p', `FramePop is a ${w('rel', 2, 'Lumibo AI video generator')} that runs ${w('rel', 3, 'online')}, built on ${w('rel', 4, 'Lumibo 2')}. Type an idea, get a 5-second clip.`],
+          ['小标题', 'h2', `FramePop vs other ${w('rel', 5, 'Lumibo video generators')}`],
+          ['问答', 'faq', `Q: Does it add a watermark?<br>A: ${w('rel', 6, 'No watermark')}, on every plan.`],
+          ['链接', 'links', `${w('lnk', 0, 'Image to Video →')} &nbsp; ${w('lnk', 0, 'Text to Video →')}`],
+        ],
+        sum: '主攻 <b>1</b> 个词 · 顺带出现 <b class="s3-cnt">?</b> 种说法',
+        legend: [
+          { k: 'core', t: '主攻的词：只在标题、大标题（蓝）', chips: [['lumibo video generator', '核心词']] },
+          { k: 'rel', t: '顺带出现的说法（绿点）', chips: [['Free', '免费 · 修饰词'], ['AI Video Maker', '换个叫法'], ['Lumibo AI video generator', '多了个 ai'], ['online', '在线 · 修饰词'], ['Lumibo 2', '模型名'], ['video generators', '复数'], ['No watermark', '无水印 · 用户关心']] },
+          { k: 'lnk', t: '链到别的页（虚线）', chips: [['Image / Text to Video', '别的功能，交给别的页']] },
+        ],
+        off: '现在是普通人看到的样子。打开<b>「谷歌眼里」</b>，看谷歌怎么读这一页。',
+        on: '<b>主攻 1 个词</b>：lumibo video generator，只写在标题和大标题里（蓝）。<b>顺带出现 7 种说法</b>（绿点）：复数、加 free、换个叫法……不用单独做页，写在这里就能接住搜这些词的人。图生视频、文生视频是别的事，用链接交给别的页。',
+      },
+      bad: {
+        rows: [
+          ['标题', 'title', `${w('multi', 0, 'Video Generator')}, ${w('multi', 1, 'Image to Video')} &amp; ${w('multi', 2, 'Text to Video')} | FramePop`],
+          ['大标题', 'h1', `${w('multi', 0, 'Video Generator')} + ${w('multi', 1, 'Image to Video')} + ${w('multi', 2, 'Text to Video')}`],
+          ['工具', 'tool', `<span class="s3-tools">${tool('Type an idea…', 'Go')}${tool('Upload a photo…', 'Go')}${tool('Paste a script…', 'Go')}</span>`],
+          ['正文', 'p', 'Make videos from ideas, photos or scripts. Everything on one page.'],
+          ['小标题', 'h2', 'Video tips · Photo tips · Script tips'],
+          ['问答', 'faq', 'Q: Which tool should I use?'],
+        ],
+        sum: '主攻 <b>3</b> 件事？',
+        legend: [
+          { k: 'multi', t: '主攻的词？标题里塞了 3 个（黄）', chips: [['video generator', '生成器'], ['image to video', '图生视频'], ['text to video', '文生视频']] },
+        ],
+        off: '这是一页塞了三件事的首页。打开<b>「谷歌眼里」</b>，看看谷歌能不能读懂它主攻什么。',
+        on: '标题和大标题里塞了 <b>3 件事</b>：生成器、图生视频、文生视频。谷歌拿不准这一页主要回答哪个问题，三个词都不够突出。哥飞的说法是「一个页面放一个功能」。',
+      },
+    };
+    let ver = 'good', eyeOn = false, run = 0;
+    function render() {
+      const P = PG[ver];
+      run++;
+      pg.classList.remove('eye');
+      pg.classList.toggle('bad', ver === 'bad');
+      lg.classList.toggle('bad', ver === 'bad');
+      body.innerHTML = P.rows.map(([lab, cls, html]) => `<div class="s3-pg-row ${cls}"><span class="s3-pg-lab">${lab}</span><div class="s3-pg-c">${html}</div></div>`).join('');
+      lg.innerHTML = `<p class="s3-lg-sum">${P.sum}</p>` + P.legend.map(sec => `<div class="s3-lg-sec"><span class="s3-lg-t">${sec.t}</span><div class="s3-lg-chips">${
+        sec.chips.map((c, i) => `<button type="button" class="s3-lg-chip ${sec.k}" data-k="${sec.k}" data-i="${i}"><b>${c[0]}</b><span>${c[1]}</span></button>`).join('')
+      }</div></div>`).join('');
+      say(sayBox, P.off);
+    }
+    async function reveal() {
+      const my = ++run;
+      const P = PG[ver];
+      pg.classList.add('eye');
+      say(sayBox, '谷歌正在读这一页：先把普通文字放一边，只看<b>写在关键位置的词</b>……');
+      await sleep(450);
+      const cnt = $('.s3-cnt', lg);
+      if (cnt) cnt.textContent = '0';
+      let n = 0;
+      for (const sec of P.legend) {
+        for (const chip of $$(`.s3-lg-chip[data-k="${sec.k}"]`, lg)) {
+          if (my !== run) return;
+          $$(`.s3-w[data-k="${sec.k}"][data-i="${chip.dataset.i}"]`, pg).forEach(x => x.classList.add('lit'));
+          chip.classList.add('on');
+          if (sec.k === 'rel' && cnt) cnt.textContent = ++n;
+          await sleep(sec.k === 'rel' ? 280 : 480);
+        }
+      }
+      if (my !== run) return;
+      say(sayBox, P.on, ver === 'good' ? 'good' : 'bad');
+    }
+    function setEye(on) {
+      eyeOn = on;
+      eyeBtn.setAttribute('aria-pressed', String(on));
+      eyeLab.textContent = on ? '谷歌眼里：开' : '谷歌眼里：关';
+      if (on) reveal(); else render();
+    }
+    bindSeg($('#s3-eye-ver'), v => { ver = v; render(); if (eyeOn) reveal(); });
+    eyeBtn.addEventListener('click', () => setEye(!eyeOn));
+    lg.addEventListener('click', e => {
+      const chip = e.target.closest('.s3-lg-chip');
+      if (!chip) return;
+      if (!eyeOn) { setEye(true); return; }
+      $$(`.s3-w[data-k="${chip.dataset.k}"][data-i="${chip.dataset.i}"]`, pg).forEach(x => replay(x, 's3-ping'));
+    });
+    render();
+  }
+
+  // ================= 知识点 2：判断器 =================
+  {
+    const root = $('#s3-judge');
+    const L = $('.s3-serp .L', root), R = $('.s3-serp .R', root), serp = $('.s3-serp', root), lines = $('.s3-lines', root);
+    const rw = $('.s3-rw', root), rv = $('.s3-rv', root), verdict = $('.s3-verdict', root);
+    const vL = $('.s3-vc.L', root), vR = $('.s3-vc.R', root), vN = $('.s3-vn', root);
+    const rules = $$('#s3-rules .s3-rule');
+    const BASE = [['A', '视频生成工具'], ['B', '在线生成器'], ['C', 'Lumibo 官网'], ['D', 'AI 视频工具'], ['E', '视频生成工具'], ['F', 'YouTube 教程'], ['G', 'Reddit 讨论帖'], ['H', 'AI 工具榜单'], ['I', '在线生成器'], ['J', 'AI 视频工具']];
+    const NAME = Object.fromEntries(BASE);
+    const VLAB = { same: '同一页', text: '写进文字', can: '可以各做一页（先做主词）', split: '一定分开' };
+    const PAIRS = [
+      { w: 'lumibo video generators', list: ['A', 'B', 'D', 'C', 'E', 'H', 'F', 'I', '+视频生成工具', 'J'], v: 'same', rule: 0,
+        why: '只差一个复数 s，前 10 名有 9 个一样：谷歌当成同一个词。不用另做页，首页正文里自然写到 generators 就行。<span class="st tl">推出来的</span>' },
+      { w: 'free lumibo video generator', list: ['A', 'B', 'D', 'E', '+免费工具合集', 'I', 'J', 'H', 'F', '+在线生成器'], v: 'text', rule: 3,
+        why: '前 10 名有 8 个一样：搜 free 的人，要的还是这个生成器。free（免费）只是修饰词，写进首页的标题或正文就行，比如「每天免费 3 次」。<span class="st tl">推出来的</span>' },
+      { w: 'lumibo video maker', list: ['A', '+视频剪辑工具', 'E', '+模板视频站', 'B', 'H', '+剪辑 App', 'F', '+AI 视频工具', '+剪辑教程博客'], v: 'can', rule: 1,
+        why: '同一件事的另一种叫法：前 10 名一半一样，它自己每月也有人搜。哥飞说一个工具可以做几个页面，对应同一需求的不同说法。<span class="st hf">哥飞原话</span> 但新站先把首页做好，有数据了再拆，拆出来的页内容要真不一样。' },
+      { w: 'lumibo image to video', list: ['+图生视频工具', '+照片动起来', '+图生视频工具', 'H', '+YouTube 教程', '+AI 修图站', '+照片转视频 App', '+图生视频工具', '+Reddit 讨论帖', '+图片工具榜单'], v: 'split', rule: 2,
+        why: '上传图片变视频，是另一个功能。前 10 名几乎全换了一批，谷歌也当成两回事。单独做一页 /image-to-video。哥飞的原则：一个页面放一个功能。<span class="st hf">哥飞原话</span>' },
+      { w: 'lumibo 2', list: ['C', '+科技新闻', '+官方推特', '+科技新闻', '+维基百科', '+YouTube 发布会', '+应用商店', '+科技新闻', '+Reddit 讨论帖', '+模型评测博客'], v: 'text', rule: -1,
+        why: '前 10 名几乎全是官网、新闻、应用商店：搜光秃秃模型名的人，多半想找官方。是两回事，但这件事你接不住，正文里提一句「支持 Lumibo 2」就行，不单独做页。这是四条之外的情况：<b>两回事，也要先问自己接不接得住</b>。<span class="st tl">推出来的</span>' },
+    ];
+    const row = (rank, id, nm) => `<li data-id="${id}"><span class="s3-rk">${rank}</span><span class="s3-bd${id ? '' : ' new'}">${id || '新'}</span><span class="s3-nm">${nm}</span></li>`;
+    L.innerHTML = BASE.map(([id, nm], i) => row(i + 1, id, nm)).join('');
+    const shared = P => BASE.map(b => b[0]).filter(id => P.list.includes(id));
+    const dist = n => 100 - n * 9.4;
+    let vd = 100, cur = 0, run = 0, busy = false;
+    function setVenn(d) { vd = d; vL.setAttribute('cx', 150 - d / 2); vR.setAttribute('cx', 150 + d / 2); }
+    function fillRight(P) {
+      rw.textContent = P.w;
+      rv.textContent = `每月约 ${fmt(WORD[P.w].v)} 次 · 示意`;
+      R.innerHTML = P.list.map((x, i) => x[0] === '+' ? row(i + 1, '', x.slice(1)) : row(i + 1, x, NAME[x])).join('');
+    }
+    function linePath(id) {
+      const g = serp.getBoundingClientRect();
+      const a = $(`li[data-id="${id}"]`, L).getBoundingClientRect(), b = $(`li[data-id="${id}"]`, R).getBoundingClientRect();
+      const x1 = a.right - g.left, y1 = a.top + a.height / 2 - g.top, x2 = b.left - g.left, y2 = b.top + b.height / 2 - g.top, dx = (x2 - x1) / 2;
+      return `M${x1} ${y1} C${x1 + dx} ${y1} ${x2 - dx} ${y2} ${x2} ${y2}`;
+    }
+    function sizeLines() { const g = serp.getBoundingClientRect(); lines.setAttribute('viewBox', `0 0 ${g.width} ${g.height}`); }
+    function showVerdict(P, animate) {
+      verdict.classList.remove('wait');
+      verdict.innerHTML = `<span class="s3-vtag ${P.v}">${VLAB[P.v]}</span><p>${P.why}</p>`;
+      if (animate) replay($('.s3-vtag', verdict), 's3-pop');
+      rules.forEach((r, i) => r.classList.toggle('on', i === P.rule));
+    }
+    function paintFinal(i) {
+      run++;
+      busy = false;
+      const P = PAIRS[i], ids = shared(P);
+      fillRight(P);
+      $$('li', serp).forEach(li => li.classList.toggle('hit', ids.includes(li.dataset.id)));
+      sizeLines();
+      lines.innerHTML = '';
+      ids.forEach(id => svgEl('path', { d: linePath(id) }, lines));
+      setVenn(dist(ids.length));
+      vN.textContent = ids.length;
+      showVerdict(P, false);
+    }
+    async function play(i) {
+      const my = ++run;
+      busy = true;
+      const P = PAIRS[i], ids = shared(P);
+      verdict.classList.add('wait');
+      rules.forEach(r => r.classList.remove('on'));
+      lines.innerHTML = '';
+      $$('li', L).forEach(li => li.classList.remove('hit'));
+      fillRight(P);
+      $$('li', R).forEach((li, k) => { li.style.animationDelay = (k * 45) + 'ms'; li.classList.add('s3-in'); });
+      vN.textContent = '0';
+      const d0 = vd;
+      tween(450, k => setVenn(d0 + (100 - d0) * k));
+      await sleep(700);
+      if (my !== run) return;
+      sizeLines();
+      let n = 0;
+      for (const id of ids) {
+        if (my !== run) return;
+        const p = svgEl('path', { d: linePath(id) }, lines);
+        const len = p.getTotalLength();
+        p.style.strokeDasharray = len;
+        p.style.strokeDashoffset = len;
+        tween(260, k => { p.style.strokeDashoffset = len * (1 - k); });
+        $(`li[data-id="${id}"]`, L).classList.add('hit');
+        $(`li[data-id="${id}"]`, R).classList.add('hit');
+        vN.textContent = ++n;
+        await sleep(200);
+      }
+      if (my !== run) return;
+      const d1 = dist(ids.length);
+      tween(850, k => setVenn(100 + (d1 - 100) * k));
+      await sleep(900);
+      if (my !== run) return;
+      showVerdict(P, true);
+      busy = false;
+    }
+    bindSeg($('#s3-pairs'), v => { cur = +v; play(cur); });
+    $('#s3-judge-again').addEventListener('click', () => play(cur));
+    paintFinal(0);
+    // 宽度变了（转屏、拉窗口），连线重新对齐
+    let lastW = serp.getBoundingClientRect().width;
+    new ResizeObserver(() => {
+      const wNow = serp.getBoundingClientRect().width;
+      if (Math.abs(wNow - lastW) < 1 || busy) return;
+      lastW = wNow;
+      paintFinal(cur);
+    }).observe(serp);
+    // 网页字体晚到一步，行高可能变一点点，到了再对齐一次
+    if (document.fonts) document.fonts.ready.then(() => { if (!busy) paintFinal(cur); });
+  }
+
+  // ================= 知识点 3：分拣游戏 =================
+  {
+    const root = $('#s3-game');
+    const pool = $('.s3-pool', root), zones = $$('.dd-zone', root), sayBox = $('.viz-say', root), end = $('.s3-g-end', root);
+    const FIRST = ['lumibo image to video', 'free lumibo video generator', 'lumibo 2', 'lumibo video generator', 'lumibo video maker', 'lumibo video generators',
+      'lumibo 2 download', 'lumibo prompts', 'lumibo video generator no watermark', 'ai video generator', 'lumibo text to video', 'lumibo 2 vs sora'];
+    FIRST.forEach(x => { if (!WORD[x]) throw new Error(`KIT.SIM.words 里没有这个词：${x}`); });
+    let round = null;
+    const hintSay = '先想一句：<b>它和核心词 lumibo video generator 是同一件事吗？</b>是同一件事，多半放首页或写进文字；是另一件事，单独做一页；你接不住的，先不做。';
+    function shuffle(arr) {
+      const a = arr.slice();
+      for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+      return a;
+    }
+    function newRound(list) {
+      round = { list, first: {}, placed: 0 };
+      zones.forEach(z => $$('.dd-item', z).forEach(x => x.remove()));
+      pool.innerHTML = list.map(x => `<button type="button" class="dd-item" data-w="${x}">${x}<small>${fmt(WORD[x].v)}/月</small></button>`).join('');
+      end.hidden = true;
+      end.innerHTML = '';
+      say(sayBox, hintSay);
+      paintHud();
+    }
+    function counts() {
+      const v = Object.values(round.first);
+      return { best: v.filter(x => x.res === 'best').length, ok: v.filter(x => x.res === 'ok').length, miss: v.filter(x => x.res === 'miss').length };
+    }
+    function paintHud() {
+      const c = counts();
+      $('.s3-n-placed', root).textContent = round.placed;
+      $('.s3-n-total', root).textContent = round.list.length;
+      $('.s3-n-best', root).textContent = c.best;
+      $('.s3-n-ok', root).textContent = c.ok;
+      $('.s3-n-miss', root).textContent = c.miss;
+      $('.s3-g-hud .meter i', root).style.width = (round.placed / round.list.length * 100) + '%';
+    }
+    function finish() {
+      const c = counts(), total = round.list.length;
+      const score = Math.round((c.best + c.ok * 0.5) / total * 100);
+      const notes = round.list.filter(x => round.first[x].res !== 'best').map(x => {
+        const f = round.first[x], wd = WORD[x];
+        return `<li><b>${x}</b>：你先放了「${BK[f.b]}」${f.res === 'ok' ? '，也说得通' : '，放错了'}；最佳是「${BK[wd.bucket]}」。${wd.why}</li>`;
+      });
+      end.className = 's3-g-end' + (score >= 80 ? '' : ' meh');
+      end.innerHTML = `<span class="lab">${score === 100 ? '全部一次放对' : '分完了'}</span>
+        <div class="big-num"><span class="s3-g-score">0</span><small> / 100</small></div>
+        <p>一次放对 ${c.best} 个，也说得通 ${c.ok} 个（算一半分），放错过 ${c.miss} 个。${score === 100 ? '这一关的判断你已经会了，去模拟器拿分吧。' : '下面是没一次放对的词，看看为什么：'}</p>
+        ${notes.length ? `<ul class="s3-g-notes">${notes.join('')}</ul>` : ''}
+        <div class="viz-controls"><button type="button" class="btn primary" data-again>再来一局（换一批词）</button><a class="btn soft" href="sim-3.html">去模拟器第 3 关 →</a></div>`;
+      end.hidden = false;
+      countUp($('.s3-g-score', end), score, 900);
+      KIT.confetti(end);
+      say(sayBox, `<b>12 个词都分好了。</b>得分 ${score} / 100。`, score >= 80 ? 'good' : 'bad');
+    }
+    dnd(root, {
+      accept(item, zone) {
+        const wd = WORD[item.dataset.w], b = zone.dataset.b;
+        const res = b === wd.bucket ? 'best' : (wd.ok || []).includes(b) ? 'ok' : 'miss';
+        if (!round.first[wd.w]) round.first[wd.w] = { res, b };
+        if (res === 'miss') {
+          item.classList.add('s3-missed');
+          setTimeout(() => item.classList.remove('wrong'), 520);
+          say(sayBox, `<b>「${wd.w}」不放「${BK[b]}」</b>，弹回去了。${wd.why} 再试一个框。`, 'bad');
+          paintHud();
+          return false;
+        }
+        item.dataset.res = res;
+        return true;
+      },
+      onMove(item) {
+        const wd = WORD[item.dataset.w], res = item.dataset.res;
+        item.disabled = true;
+        item.classList.add(res === 'best' ? 'right' : 's3-ok');
+        const missed = round.first[wd.w].res === 'miss';
+        item.insertAdjacentHTML('beforeend', `<em>${res === 'best' ? (missed ? '改对了' : '放对了') : '也说得通'}</em>`);
+        round.placed++;
+        if (res === 'best') say(sayBox, `<b>放对了！</b>${wd.why}`, 'good');
+        else say(sayBox, `<b>也说得通。</b>${wd.why} 最佳答案是「${BK[wd.bucket]}」。`);
+        paintHud();
+        if (round.placed === round.list.length) finish();
+      },
+    });
+    const freshList = () => shuffle([SIM.core, ...shuffle(SIM.words.map(x => x.w).filter(x => x !== SIM.core)).slice(0, 11)]);
+    $('#s3-g-new').addEventListener('click', () => newRound(freshList()));
+    end.addEventListener('click', e => {
+      if (!e.target.closest('[data-again]')) return;
+      newRound(freshList());
+      root.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    });
+    newRound(FIRST);
+  }
+
+  // ================= 知识点 4：蚕食，两种结局 =================
+  {
+    const root = $('#s3-can'), svg = $('svg', root), sayBox = $('.viz-say', root);
+    const meterI = $('.s3-can-meter .meter i', root), rules = $$('.s3-can-rules li', root);
+    const SUBS = [{ x: 70, nm: '换个叫法页', pt: '/video-maker', ux: 52 }, { x: 200, nm: '图生视频页', pt: '/image-to-video', ux: 200 }, { x: 330, nm: '文生视频页', pt: '/text-to-video', ux: 330 }];
+    const SY = 262, HX = 200, HY = 84, R0 = 24, R1 = 46;
+    // 连线的一头藏在首页圆圈下面：圆圈变大时自然盖住
+    const ups = SUBS.map(s => svgEl('path', { class: 's3-up', d: `M${s.ux} 238 C${s.ux} 186 ${HX} 190 ${HX} ${HY + R0 - 2}` }, svg));
+    const down = svgEl('path', { class: 's3-down', d: `M${HX - 12} ${HY + R0 - 6} C150 170 96 184 96 238` }, svg);
+    [...ups, down].forEach(p => { p.len = p.getTotalLength(); p.style.strokeDasharray = p.len; p.style.strokeDashoffset = p.len; });
+    SUBS.forEach((s, i) => {
+      const g = svgEl('g', { class: 's3-sub' }, svg);
+      svgEl('rect', { x: s.x - 55, y: 240, width: 110, height: 48, rx: 10 }, g);
+      svgEl('text', { class: 'nm', x: s.x, y: 260, 'text-anchor': 'middle' }, g).textContent = s.nm;
+      svgEl('text', { class: 'pt', x: s.x, y: 278, 'text-anchor': 'middle' }, g).textContent = s.pt;
+      if (i === 0) {
+        const t = svgEl('g', { class: 's3-newtag' }, svg);
+        svgEl('rect', { x: 98, y: 228, width: 34, height: 17, rx: 8.5 }, t);
+        svgEl('text', { x: 115, y: 240, 'text-anchor': 'middle' }, t).textContent = '最新';
+      }
+    });
+    const balls = Array.from({ length: 12 }, () => svgEl('circle', { class: 's3-ball', r: 4.5, cx: 0, cy: 0 }, svg));
+    const homeC = svgEl('circle', { class: 's3-home-c', cx: HX, cy: HY, r: R0 }, svg);
+    svgEl('text', { class: 's3-home-t', x: HX, y: HY + 5, 'text-anchor': 'middle' }, svg).textContent = '首页';
+    svgEl('text', { class: 's3-home-kw', x: HX, y: 22, 'text-anchor': 'middle' }, svg).textContent = 'lumibo video generator';
+    const rnd = KIT.rng(11);
+    const SCAT = balls.map((_, i) => {
+      const s = SUBS[Math.floor(i / 4)], a = (i % 4) / 4 * Math.PI * 2 + rnd() * 1.2, d = 46 + rnd() * 30;
+      return [Math.max(8, Math.min(392, s.x + Math.cos(a) * d * 1.25)), Math.max(150, Math.min(322, SY + Math.sin(a) * d))];
+    });
+    const START = balls.map((_, i) => [SUBS[Math.floor(i / 4)].ux + ((i % 4) - 1.5) * 7, 238]);
+    const place = (b, x, y) => { b.setAttribute('cx', x); b.setAttribute('cy', y); };
+    const linkK = k => [...ups, down].forEach(p => { p.style.strokeDashoffset = p.len * (1 - k); });
+    const SAY = {
+      off: ['三个页面各做各的，谁也不链谁。每个页面攒下的一点<b>力量</b>，就这么散掉了，首页还是小小的。', 'bad'],
+      on: ['每个页面都<b>链回首页</b>，首页也链到最新的页面。力量顺着内链一路汇过去，首页越长越大。这就是哥飞说的<b>「整合」</b>。', 'good'],
+    };
+    let state = 'off', run = 0, drawn = 0;
+    function final(st) {
+      run++;
+      state = st;
+      if (st === 'off') {
+        linkK(0); drawn = 0;
+        homeC.setAttribute('r', R0);
+        balls.forEach((b, i) => { place(b, ...SCAT[i]); b.style.opacity = .4; });
+        meterI.style.width = '14%';
+        rules.forEach(r => r.classList.remove('on'));
+      } else {
+        linkK(1); drawn = 1;
+        homeC.setAttribute('r', R1);
+        balls.forEach(b => { b.style.opacity = 0; });
+        meterI.style.width = '88%';
+        rules.forEach(r => r.classList.add('on'));
+      }
+      say(sayBox, ...SAY[st]);
+    }
+    async function playOff() {
+      const my = ++run;
+      state = 'off';
+      rules.forEach(r => r.classList.remove('on'));
+      say(sayBox, '先看<b>不连</b>的结局：每个页面都攒了一点力量……');
+      const k0 = drawn, r0 = +homeC.getAttribute('r');
+      tween(500, k => { if (my !== run) return; linkK(k0 * (1 - k)); homeC.setAttribute('r', r0 + (R0 - r0) * k); });
+      drawn = 0;
+      meterI.style.width = '14%';
+      balls.forEach((b, i) => { place(b, ...START[i]); b.style.opacity = 1; });
+      await sleep(500);
+      if (my !== run) return;
+      balls.forEach((b, i) => {
+        const [x0, y0] = START[i], [x1, y1] = SCAT[i];
+        setTimeout(() => {
+          if (my !== run) return;
+          tween(1100, k => { if (my !== run) return; place(b, x0 + (x1 - x0) * k, y0 + (y1 - y0) * k); b.style.opacity = 1 - .6 * k; });
+        }, reduce ? 0 : i * 60);
+      });
+      await sleep(1900);
+      if (my !== run) return;
+      say(sayBox, ...SAY.off);
+    }
+    async function playOn() {
+      const my = ++run;
+      state = 'on';
+      rules.forEach(r => r.classList.remove('on'));
+      say(sayBox, '先把<b>内链</b>连上……');
+      homeC.setAttribute('r', R0);
+      meterI.style.width = '14%';
+      balls.forEach((b, i) => { place(b, ...START[i]); b.style.opacity = 1; });
+      drawn = 0;
+      linkK(0);
+      tween(700, k => { if (my !== run) return; ups.forEach(p => { p.style.strokeDashoffset = p.len * (1 - k); }); });
+      rules[0].classList.add('on');
+      await sleep(760);
+      if (my !== run) return;
+      tween(500, k => { if (my !== run) return; down.style.strokeDashoffset = down.len * (1 - k); });
+      rules[1].classList.add('on');
+      drawn = 1;
+      await sleep(560);
+      if (my !== run) return;
+      say(sayBox, '力量顺着内链往首页跑……');
+      let got = 0;
+      balls.forEach((b, i) => {
+        const path = ups[Math.floor(i / 4)];
+        setTimeout(() => {
+          if (my !== run) return;
+          tween(950, k => { if (my !== run) return; const pt = path.getPointAtLength(path.len * k); place(b, pt.x, pt.y); }, () => {
+            if (my !== run) return;
+            b.style.opacity = 0;
+            got++;
+            homeC.setAttribute('r', R0 + (R1 - R0) * got / balls.length);
+            meterI.style.width = (14 + 74 * got / balls.length) + '%';
+            if (got === balls.length) say(sayBox, ...SAY.on);
+          });
+        }, reduce ? 0 : i * 140);
+      });
+    }
+    const playState = st => (st === 'on' ? playOn() : playOff());
+    bindSeg($('#s3-can-seg'), v => playState(v));
+    $('#s3-can-again').addEventListener('click', () => playState(state));
+    final('off');
+  }
+
+  // ================= 知识点 5：模板对比 =================
+  {
+    const root = $('#s3-tpl'), sayBox = $('.viz-say', root);
+    const KW = ['generator', 'image to video', 'text to video'], NAMES = ['首页', '图生视频页', '文生视频页'];
+    const H = { B: 'tall', H: 'mid', I: 'mid', K: 'mid' };
+    const LAZY = KW.map((kw, i) => ({ name: NAMES[i], blocks: [['A', '标题', kw], ['B', '工具框'], ['C', '三步用法'], ['D', '功能介绍'], ['E', '用户评价'], ['F', '常见问题'], ['G', '按钮']] }));
+    const REAL = [
+      { name: NAMES[0], blocks: [['A', '标题', KW[0]], ['B', '生成工具'], ['H', '作品展示墙'], ['D', '功能介绍'], ['F', '常见问题'], ['G', '按钮']] },
+      { name: NAMES[1], blocks: [['A', '标题', KW[1]], ['B', '上传图片'], ['I', '前后对比'], ['J', '哪种照片好'], ['F', '图片格式问答']] },
+      { name: NAMES[2], blocks: [['A', '标题', KW[2]], ['B', '输入文字'], ['K', '提示词示例'], ['L', '提示词技巧'], ['C', '三步用法'], ['F', '字数问答']] },
+    ];
+    const groups = { lazy: $('[data-g="lazy"]', root), real: $('[data-g="real"]', root) };
+    function build(g, pages, mark) {
+      $('.s3-tpl-pages', g).insertAdjacentHTML('beforeend', pages.map(p => `<div class="s3-mini"><span class="s3-mini-h">${p.name}</span><span class="s3-mini-code">${p.blocks.map(b => b[0]).join('')}</span>${
+        p.blocks.map(([l, t, kw]) => `<i class="s3-blk ${H[l] || ''}" data-c="${mark(l)}"><b>${l}</b><span>${t}${kw ? `<span class="kw">${kw}</span>` : ''}</span></i>`).join('')
+      }</div>`).join(''));
+    }
+    build(groups.lazy, LAZY, l => (l === 'A' ? '' : 'same'));
+    build(groups.real, REAL, () => 'uniq');
+    let run = 0;
+    const OFF = '点<b>「谷歌来检查」</b>，看谷歌怎么比这两组页面。左边是懒版，右边是认真版，都是首页、图生视频页、文生视频页三页。';
+    function reset() {
+      run++;
+      $('#s3-tpl-go').disabled = false;
+      Object.values(groups).forEach(g => {
+        g.classList.remove('bad', 'good');
+        $$('.s3-blk', g).forEach(b => b.classList.remove('same', 'uniq'));
+        $('.s3-light', g).className = 's3-light';
+        $('.s3-stamp', g).classList.remove('on');
+        const sim = $('.s3-sim', g); sim.textContent = '?'; sim.dataset.val = 0;
+        const bar = $('.s3-scan', g); bar.style.opacity = 0; bar.style.transform = '';
+      });
+      say(sayBox, OFF);
+    }
+    function scan(g, my) {
+      const pagesBox = $('.s3-tpl-pages', g), bar = $('.s3-scan', g), h = pagesBox.offsetHeight;
+      const blks = $$('.s3-blk', pagesBox).map(b => [b, b.offsetTop + b.offsetHeight / 2]);
+      bar.style.opacity = 1;
+      return new Promise(res => tween(1600, k => {
+        if (my !== run) return;
+        bar.style.transform = `translateY(${k * h}px)`;
+        blks.forEach(([b, y]) => { if (y <= k * h && b.dataset.c) b.classList.add(b.dataset.c); });
+      }, () => { bar.style.opacity = 0; res(); }));
+    }
+    async function check() {
+      reset();
+      const my = run;
+      $('#s3-tpl-go').disabled = true;
+      say(sayBox, '谷歌从上往下扫：把三页的模块一块块对比……');
+      await Promise.all([scan(groups.lazy, my), scan(groups.real, my)]);
+      if (my !== run) return;
+      const pct = x => Math.round(x) + '%';
+      countUp($('.s3-sim', groups.lazy), 95, 900, pct);
+      countUp($('.s3-sim', groups.real), 30, 900, pct);
+      await sleep(950);
+      if (my !== run) return;
+      groups.lazy.classList.add('bad'); $('.s3-light', groups.lazy).classList.add('bad'); $('.s3-stamp', groups.lazy).classList.add('on');
+      await sleep(350);
+      if (my !== run) return;
+      groups.real.classList.add('good'); $('.s3-light', groups.real).classList.add('good'); $('.s3-stamp', groups.real).classList.add('on');
+      say(sayBox, '左边三页从上到下都是 <b>A B C D E F G</b>，只有标题里的词不一样，相似度 95%（示意）：这就是哥飞说的<b>套模板</b>。右边三页用的工具差不多，但示例、问答、模块顺序各不相同，每页都给了这个词<b>自己的内容</b>。');
+      $('#s3-tpl-go').disabled = false;
+    }
+    $('#s3-tpl-go').addEventListener('click', check);
+    $('#s3-tpl-reset').addEventListener('click', reset);
+    reset();
+  }
+
+  // ================= 知识点 6：新站先做主词 =================
+  {
+    const root = $('#s3-tl'), sayBox = $('.viz-say', root), kids = $('.s3-tl-kids', root), gsc = $('.s3-tl-gsc', root), chip = $('#s3-tl-maker');
+    const page = id => { const p = SIM.pages.find(x => x.id === id); if (!p) throw new Error(`KIT.SIM.pages 里没有：${id}`); return p; };
+    const KIDS = [['i2v', 0], ['t2v', 0], ['prompts', 1], ['howto', 1], ['vs', 1], ['tiktok', 1]];
+    kids.innerHTML = KIDS.map(([id, st]) => { const p = page(id); return `<div class="s3-tl-card" data-step="${st}"><span class="s3-tl-path">${p.path}</span><b>${p.name}</b><span class="s3-tl-kw">${p.kw}</span></div>`; }).join('')
+      + '<div class="s3-tl-card new" data-step="3" id="s3-tl-mp"><span class="s3-tl-path">/video-maker</span><b>换个叫法页</b><span class="s3-tl-kw">lumibo video maker</span><span class="up">内容按这个说法重写，链回首页</span></div>';
+    $('.s3-tl-must', root).textContent = '第一天还要有的必备页：' + SIM.pages.filter(p => p.need && p.id !== 'home').map(p => p.name).join(' · ') + '（第 4 步细讲）';
+    const mp = $('#s3-tl-mp');
+    const impr = $('.s3-tl-impr', root), clk = $('.s3-tl-clk', root), pos = $('.s3-tl-pos', root);
+    const NUM = [[impr, 1300], [clk, 12], [pos, 18]];
+    const SAYS = [
+      '<b>第 1 周</b>：首页主攻 lumibo video generator，复数、free、video maker 这些说法，先<b>写进首页文字</b>；不同功能的图生视频、文生视频，各做一页。',
+      '<b>接下来几周</b>：再补提示词、教程、对比、用途这些<b>另一件事</b>的页面。一页一页认真做，不一口气上一堆。',
+      '<b>后台有数据了</b>：GSC 里看到，有人搜 lumibo video maker 时，谷歌拿你的首页去排，有曝光但排得靠后（示意）。说明这个说法真有人搜，值得单独接一下。',
+      '<b>拆出新页</b>：/video-maker 单独主攻 lumibo video maker，内容按这个说法重新写，比如模板和剪辑示例（示意），并链回首页。工具可以和首页共用。',
+    ];
+    let run = 0;
+    function paint(i, animate) {
+      const my = ++run;
+      $$('.s3-tl-card', kids).forEach((c, k) => {
+        const show = +c.dataset.step <= i, was = !c.hidden;
+        c.hidden = !show;
+        c.style.visibility = '';
+        if (show && !was && animate && c !== mp) { c.style.animationDelay = (k % 4) * 90 + 'ms'; replay(c, 'enter'); }
+      });
+      gsc.hidden = i < 2;
+      if (i >= 2) {
+        if (animate && i === 2) { replay(gsc, 'enter'); NUM.forEach(([n, v]) => countUp(n, v, 900)); }
+        else NUM.forEach(([n, v]) => { n.textContent = fmt(v); n.dataset.val = v; });
+      } else NUM.forEach(([n]) => { n.textContent = '0'; n.dataset.val = 0; });
+      chip.classList.toggle('s3-hot', i === 2);
+      chip.classList.toggle('s3-moved', i >= 3);
+      if (i === 3 && animate) {
+        mp.style.visibility = 'hidden';
+        flyTo(chip, mp, { html: 'video maker', cls: 'chip good' }).then(() => {
+          if (my !== run) return;
+          mp.style.visibility = '';
+          replay(mp, 's3-pop');
+        });
+      }
+      say(sayBox, SAYS[i], i === 3 ? 'good' : '');
+    }
+    makeSteps(root, ['第 1 周', '接下来几周', '后台有数据', '拆出新页'], paint);
+  }
+})();
+</script>
+</body>
+</html>

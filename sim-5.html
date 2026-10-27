@@ -1,0 +1,789 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>第 5 关 写首页 · 站长模拟器 · AI 新词站白话课</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<style>
+/* 第 5 关：往首页线框里拖词卡，实时看谷歌预览和体检清单，上线后看 GSC 出词 */
+.s5-play { padding-bottom: 36px; }
+.s5-top { display: grid; gap: 18px; }
+.s5-from { font-size: 14.5px; color: var(--muted); }
+.s5-last { font-size: 13px; color: var(--muted); }
+.s5-cheat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px; }
+.s5-cheat summary { cursor: pointer; font-weight: 650; color: var(--indigo); font-size: 15.5px; }
+.s5-cheat[open] summary { margin-bottom: 10px; }
+.s5-cheat ol { margin: 0; padding-left: 1.3em; display: grid; gap: 8px; font-size: 15px; line-height: 1.7; }
+.s5-cheat li::marker { color: var(--indigo); font-family: var(--font-mono); }
+
+.s5-wrap { max-width: 1120px; margin: 0 auto; width: 100%; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.s5-board { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.s5-left, .s5-right { display: grid; gap: 14px; min-width: 0; }
+.s5-right { position: sticky; top: 64px; }
+
+/* 线框 */
+.s5-browser { border: 1.5px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--surface); }
+.s5-chrome { display: flex; gap: 6px; align-items: center; padding: 8px 12px; background: var(--bg); border-bottom: 1px solid var(--line); }
+.s5-chrome i { width: 9px; height: 9px; border-radius: 50%; background: var(--line); }
+.s5-addr { margin-left: 8px; font-family: var(--font-mono); font-size: 12px; padding: 1px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); color: var(--muted); }
+.s5-part { padding: 12px; display: grid; gap: 10px; }
+.s5-part.head { background: color-mix(in srgb, var(--indigo-soft) 55%, var(--surface)); border-bottom: 1px dashed var(--line); }
+.s5-sec { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
+.s5-slot { min-height: 54px; padding: 8px 10px; gap: 6px; background: var(--surface); }
+.s5-slot .dd-zone-head { display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; font-weight: 500; font-size: 12.5px; }
+.s5-tag { font-family: var(--font-mono); font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 6px; background: var(--indigo); color: var(--on-indigo); }
+.s5-ph { font-size: 13px; color: var(--muted); opacity: .8; }
+.s5-slot.filled .s5-ph { display: none; }
+.s5-slot.s5-boom { border-color: var(--amber); border-style: solid; background: var(--amber-soft); animation: shake .5s 2; }
+.s5-kwrow { display: grid; gap: 6px; }
+.s5-kw { display: inline-flex; gap: 8px; align-items: center; font-size: 14px; cursor: pointer; justify-self: start; padding: 4px 12px 4px 8px; border-radius: 999px; border: 1px dashed var(--line); background: var(--surface); }
+.s5-kw input { width: 17px; height: 17px; margin: 0; accent-color: var(--amber); }
+.s5-kwcode { font-size: 12px; justify-self: start; background: var(--amber-soft); color: var(--amber); animation: rise .3s both; }
+.s5-tool { display: grid; gap: 8px; padding: 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); }
+.s5-input { min-height: 40px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); font-size: 13px; color: var(--muted); padding: 8px 10px; }
+.s5-tbtns { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 12.5px; color: var(--muted); }
+.s5-fbtn { font-size: 12.5px; padding: 3px 14px; border-radius: 999px; background: var(--indigo); color: var(--on-indigo); font-weight: 650; }
+.s5-fbtn.ghost { background: var(--surface); color: var(--ink); border: 1px solid var(--line); font-weight: 500; }
+.s5-h2box { display: grid; gap: 6px; }
+.s5-lines { display: grid; gap: 5px; padding: 0 4px; }
+.s5-lines i { height: 6px; border-radius: 4px; background: var(--line); }
+.s5-lines i:nth-child(2) { width: 78%; }
+
+/* 卡片 */
+.s5-card { flex-direction: column; align-items: flex-start; gap: 1px; font-size: 13.5px; padding: 6px 10px; }
+.s5-en { font-family: var(--font-mono); }
+.s5-zh { font-family: var(--font-body); font-size: 11.5px; color: var(--muted); }
+.s5-card.s5-pop { animation: pop .35s; }
+[data-slot="h1"] .s5-card .s5-en { font-family: var(--font-body); font-size: 19px; font-weight: 750; line-height: 1.3; }
+[data-slot^="h2"] .s5-card .s5-en { font-family: var(--font-body); font-size: 15.5px; font-weight: 650; }
+.s5-pool { display: grid; gap: 12px; }
+.s5-group { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; }
+.s5-gh { flex-basis: 100%; font-size: 13px; font-weight: 700; color: var(--muted); }
+.s5-locked .s5-card { cursor: default; }
+
+/* 谷歌预览 */
+.s5-g { display: grid; gap: 10px; padding: 12px; border-radius: 12px; background: var(--bg); }
+.s5-gq { display: flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-size: 14px; }
+.s5-gq::before { content: ""; width: 12px; height: 12px; border: 2px solid var(--muted); border-radius: 50%; flex: none; }
+.s5-gr { display: grid; gap: 4px; padding: 4px 2px; }
+.s5-gsite { display: flex; gap: 8px; align-items: center; font-size: 12.5px; line-height: 1.35; }
+.s5-gsite i { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--indigo); color: var(--on-indigo); font-style: normal; font-weight: 700; font-size: 12px; flex: none; }
+.s5-gsite b { display: block; font-weight: 600; }
+.s5-gsite span { color: var(--muted); font-family: var(--font-mono); font-size: 11.5px; }
+.s5-gt { font-size: 18px; line-height: 1.4; color: var(--indigo); overflow-wrap: anywhere; }
+.s5-gd { font-size: 14px; line-height: 1.6; color: var(--muted); overflow-wrap: anywhere; }
+.s5-gd b { color: var(--ink); }
+.s5-gt.empty, .s5-gd.empty { font-size: 13.5px; color: var(--muted); font-style: italic; }
+.s5-cut { color: var(--amber); font-weight: 700; }
+.s5-len { font-size: 12.5px; color: var(--muted); }
+.s5-len b.over { color: var(--amber); }
+
+/* 体检清单 */
+.s5-checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.s5-checks li { display: grid; grid-template-columns: 16px 1fr; gap: 8px; align-items: start; padding: 5px 8px; border-radius: 9px; font-size: 14px; line-height: 1.5; }
+.s5-checks li i { width: 12px; height: 12px; border-radius: 50%; margin-top: 5px; background: var(--line); }
+.s5-checks li span { display: block; font-size: 12.5px; color: var(--muted); }
+.s5-checks li[data-st="ok"] i { background: var(--green); }
+.s5-checks li[data-st="half"] i { background: var(--amber); opacity: .65; }
+.s5-checks li[data-st="bad"] i { background: var(--amber); }
+.s5-checks li[data-st="bad"] { background: var(--amber-soft); }
+.s5-checks li.s5-flash { animation: flashGood .8s; }
+.s5-checks li[data-st="bad"].s5-flash { animation: shake .4s; }
+.s5-pass b { font-family: var(--font-mono); }
+.s5-btns { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+/* 上线 */
+.s5-launch { margin-top: 16px; }
+.s5-ai { display: grid; gap: 10px; padding: 14px 16px; border-radius: 14px; background: var(--amber-soft); border: 1.5px solid var(--amber); animation: rise .35s both; }
+.s5-ai .lab { font-size: 12.5px; font-weight: 700; letter-spacing: .06em; color: var(--amber); }
+.s5-ai p { font-size: 15.5px; }
+.s5-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.s5-steps li { font-size: 13.5px; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); color: var(--muted); transition: background .3s, color .3s, border-color .3s; }
+.s5-steps li.on { background: var(--indigo); border-color: var(--indigo); color: var(--on-indigo); }
+.s5-gsc { display: grid; gap: 6px; }
+.s5-gsc-h, .s5-gsc-r { display: grid; grid-template-columns: minmax(0, 1fr) 52px 66px 62px; gap: 8px; align-items: center; }
+.s5-gsc-h { font-size: 12px; color: var(--muted); font-weight: 650; padding: 0 10px; }
+.s5-gsc-h span:not(:first-child), .s5-gsc-r > span:not(:first-child) { text-align: right; font-family: var(--font-mono); }
+.s5-gsc-r { padding: 8px 10px; border-radius: 10px; background: var(--bg); font-size: 14px; animation: rise .35s both; }
+.s5-gsc-r.core { background: var(--indigo-soft); }
+.s5-gsc-r.bad { background: var(--amber-soft); }
+.s5-gsc-q { display: grid; gap: 4px; min-width: 0; }
+.s5-gsc-q code { background: none; padding: 0; color: var(--ink); font-size: 13px; }
+.s5-gsc-r.bad .s5-gsc-q code { color: var(--amber); font-weight: 600; }
+.s5-gsc-q em { font-style: normal; font-size: 11.5px; color: var(--amber); font-weight: 700; }
+.s5-bar-i { height: 5px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.s5-bar-i i { display: block; height: 100%; width: 0; background: var(--indigo); border-radius: 3px; }
+.s5-gsc-r.bad .s5-bar-i i { background: var(--amber); }
+
+/* 手机快捷条 */
+.s5-qbar {
+  position: fixed; left: 12px; right: 12px; bottom: max(12px, env(safe-area-inset-bottom, 0px)); z-index: 55;
+  max-width: 780px; margin: 0 auto; background: var(--surface); border: 1.5px solid var(--indigo); border-radius: 16px;
+  box-shadow: var(--shadow); padding: 10px 12px; display: grid; gap: 8px; animation: rise .25s both;
+}
+.s5-qbar-t { font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+.s5-qbar-t code { font-size: 12.5px; }
+.s5-qbar-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.s5-qbar-btns .btn { padding: 6px 12px; font-size: 13.5px; }
+
+.s5-res-top { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.s5-res-num { display: flex; align-items: baseline; gap: 6px; font-family: var(--font-mono); }
+.s5-res-num span:last-child { color: var(--muted); }
+.s5-res-top h3 { font-size: 19px; }
+.s5-res-top p { font-size: 15px; }
+.s5-res-list { margin: 0; padding-left: 1.2em; display: grid; gap: 8px; font-size: 15px; line-height: 1.7; }
+.s5-res-list span { display: block; color: var(--muted); font-size: 14px; }
+.s5-next { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.s5-next a.btn { text-decoration: none; }
+
+@media (max-width: 920px) {
+  .s5-board { grid-template-columns: minmax(0, 1fr); }
+  .s5-right { position: static; }
+}
+@media (max-width: 480px) {
+  .s5-gsc-h, .s5-gsc-r { grid-template-columns: minmax(0, 1fr) 40px 54px 44px; gap: 6px; }
+  .s5-gsc-r { font-size: 13px; padding: 8px; }
+  .s5-gt { font-size: 16.5px; }
+}
+</style>
+</head>
+<body data-page="sim-5">
+<header id="topbar"></header>
+<div class="ph"><div class="wrap">
+  <span class="eyebrow">站长模拟器 · 第 5 关 / 共 8 关</span>
+  <h1>第 5 关：写首页</h1>
+  <p class="lead">树搭好了，先把最重要的那一页写出来：framepop.com 的首页。谷歌靠这一页的标题、描述和大标题，判断你的网站是干什么的。</p>
+</div></div>
+
+<main>
+  <section class="kp s5-play" id="play">
+    <div class="wrap s5-top">
+      <div class="sim-hud"><span class="lv">第 5 关</span><span>站：FramePop（示意）</span><span class="s5-last" id="s5-last" hidden></span><span class="pts">得分 <b id="s5-pts">0</b> / 100</span></div>
+      <div class="sim-task">
+        <span class="lab">本关任务</span>
+        <p>给首页填上 <button type="button" class="term" data-t="title">Title</button>、<button type="button" class="term" data-t="desc">Description</button>、<button type="button" class="term" data-t="h1">H1</button>、3 个 <button type="button" class="term" data-t="h2">H2</button> 和 <button type="button" class="term" data-t="faq">FAQ</button>：从卡片堆里拖进线框的槽位。旁边实时显示谷歌搜索结果的样子，体检清单跟着变。写好了点「上线」，快进两周，看谷歌后台出了什么词。</p>
+        <p class="s5-from" id="s5-from">首页主打词：lumibo video generator（第 3 关的默认答案）。</p>
+      </div>
+      <details class="s5-cheat">
+        <summary>忘了规矩？打开站长小抄</summary>
+        <ol>
+          <li><b>Title</b>：核心词放最前，60 个字符以内。<span class="st tl">推出来的</span></li>
+          <li><b>Description</b>：一两句话说清是什么，带上核心词，160 个字符以内。<span class="st tl">推出来的</span></li>
+          <li><b>H1</b>：一页只有一个，放核心词。Title、Description、H1 就是哥飞说的 <button type="button" class="term" data-t="tdh">TDH</button>。<span class="st hf">哥飞原话</span></li>
+          <li><b>H2</b>：放变体、长尾词，比如图生视频、怎么用。<span class="st tl">推出来的</span></li>
+          <li><b>FAQ</b>：页尾一定要留，回答用户真关心的问题。<span class="st hf">哥飞原话</span></li>
+          <li><button type="button" class="term" data-t="kwtag">keywords 标签</button>不用写，谷歌早就不看了。<span class="st hf">哥飞原话</span></li>
+          <li>不编假数据，不蹭别人的品牌词。<span class="st sq">社群经验</span></li>
+        </ol>
+      </details>
+    </div>
+
+    <div class="s5-wrap">
+      <div class="s5-board" id="s5-board">
+        <div class="s5-left">
+          <div class="viz">
+            <div class="viz-head"><span class="viz-label">动手玩 · 往线框里拖卡片</span><p class="viz-title">framepop.com 首页（线框）</p></div>
+            <div class="s5-browser">
+              <div class="s5-chrome"><i></i><i></i><i></i><span class="s5-addr">framepop.com</span></div>
+              <div class="s5-part head">
+                <span class="s5-sec">&lt;head&gt; 页面上看不到，谷歌会读</span>
+                <div class="dd-zone s5-slot" data-slot="title"><span class="dd-zone-head"><b class="s5-tag">Title</b>网页标题 · 最多 4 张词卡，按放进来的顺序拼</span><span class="s5-ph">拖词卡到这里</span></div>
+                <div class="dd-zone s5-slot" data-slot="desc"><span class="dd-zone-head"><b class="s5-tag">Description</b>描述 · 1～2 张句子卡</span><span class="s5-ph">拖句子卡到这里</span></div>
+                <div class="s5-kwrow">
+                  <label class="s5-kw"><input type="checkbox" id="s5-kw"><span>写 keywords 标签</span></label>
+                  <code class="s5-kwcode" id="s5-kwcode" hidden>&lt;meta name="keywords" content="lumibo video generator, lumibo 2, ai video generator, sora, free video"&gt;</code>
+                </div>
+              </div>
+              <div class="s5-part">
+                <span class="s5-sec">&lt;body&gt; 用户看到的页面</span>
+                <div class="dd-zone s5-slot" data-slot="h1"><span class="dd-zone-head"><b class="s5-tag">H1</b>页面最大的标题 · 只能放 1 张</span><span class="s5-ph">拖词卡到这里</span></div>
+                <div class="s5-tool" aria-hidden="true">
+                  <div class="s5-input">Describe your video…（描述你想要的视频）</div>
+                  <div class="s5-tbtns"><span class="s5-fbtn ghost">上传图片</span><span class="s5-fbtn">Generate 生成</span><span>工具区：首屏就能用</span></div>
+                </div>
+                <div class="s5-h2box"><div class="dd-zone s5-slot" data-slot="h2a"><span class="dd-zone-head"><b class="s5-tag">H2</b>小标题 ①</span><span class="s5-ph">拖词卡到这里</span></div><div class="s5-lines" aria-hidden="true"><i></i><i></i></div></div>
+                <div class="s5-h2box"><div class="dd-zone s5-slot" data-slot="h2b"><span class="dd-zone-head"><b class="s5-tag">H2</b>小标题 ②</span><span class="s5-ph">拖词卡到这里</span></div><div class="s5-lines" aria-hidden="true"><i></i><i></i></div></div>
+                <div class="s5-h2box"><div class="dd-zone s5-slot" data-slot="h2c"><span class="dd-zone-head"><b class="s5-tag">H2</b>小标题 ③</span><span class="s5-ph">拖词卡到这里</span></div><div class="s5-lines" aria-hidden="true"><i></i><i></i></div></div>
+                <div class="dd-zone s5-slot" data-slot="faq"><span class="dd-zone-head"><b class="s5-tag">FAQ</b>页尾的常见问题 · 最多 4 张问题卡</span><span class="s5-ph">拖问题卡到这里</span></div>
+              </div>
+            </div>
+          </div>
+          <p class="viz-say" id="s5-say">从 H1 开始：页面最大的那个标题，该放哪张卡？</p>
+          <div class="viz">
+            <div class="viz-head"><span class="viz-label">卡片堆</span><p class="viz-title">拖出去会自动补一张，可以重复用</p></div>
+            <p class="dd-hint">电脑上直接拖；手机上先点一下卡片，再点槽位（或者点底下弹出来的按钮）。想拿掉，就把卡拖回这里。灰色小字是中文意思。</p>
+            <div class="dd-zone s5-pool" id="s5-pool" data-slot="pool">
+              <span class="dd-zone-head">卡片堆</span>
+              <div class="s5-group" data-g="head"><span class="s5-gh">词卡 · 放 Title、H1、H2</span></div>
+              <div class="s5-group" data-g="sent"><span class="s5-gh">句子卡 · 放 Description</span></div>
+              <div class="s5-group" data-g="faq"><span class="s5-gh">问题卡 · 放 FAQ</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="s5-right">
+          <div class="viz">
+            <div class="viz-head"><span class="viz-label">实时预览 · 谷歌搜索结果</span><p class="viz-title">有人搜 lumibo video generator 时看到的</p></div>
+            <div class="s5-g">
+              <div class="s5-gq">lumibo video generator</div>
+              <div class="s5-gr">
+                <div class="s5-gsite"><i>F</i><div><b>FramePop</b><span>https://framepop.com</span></div></div>
+                <p class="s5-gt" id="s5-gt"></p>
+                <p class="s5-gd" id="s5-gd"></p>
+              </div>
+            </div>
+            <p class="s5-len" id="s5-len"></p>
+          </div>
+          <div class="viz">
+            <div class="viz-head"><span class="viz-label">实时体检</span><p class="viz-title s5-pass">通过 <b id="s5-pass">0</b> / 9 项</p></div>
+            <ul class="s5-checks" id="s5-checks"></ul>
+            <div class="s5-btns">
+              <button type="button" class="btn primary big" id="s5-go">上线</button>
+              <button type="button" class="btn" data-s5-replay>重玩这一关</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="viz s5-launch" id="s5-launch" hidden>
+        <div class="viz-head"><span class="viz-label">上线 · 快进两周</span><p class="viz-title">两周后，打开谷歌后台（<button type="button" class="term" data-t="gsc">GSC</button>）看出了什么词</p></div>
+        <div class="s5-ai" id="s5-ai" hidden>
+          <span class="lab">上线前，帮你写代码的 AI 助手发来一条消息</span>
+          <p>「我检查了一下首页：H1『Lumibo Video Generator』有点干巴巴的。我帮你换成更有感染力的『Unleash Your Creativity』（释放你的创造力），要吗？」</p>
+          <div class="s5-btns" id="s5-ai-btns"><button type="button" class="btn" id="s5-ai-yes">好，换上</button><button type="button" class="btn" id="s5-ai-no">不换，H1 就放核心词</button></div>
+        </div>
+        <ol class="s5-steps" id="s5-steps"><li>提交给谷歌</li><li>谷歌收录</li><li>两周后看 GSC</li></ol>
+        <div class="s5-gsc" id="s5-gsc" hidden>
+          <div class="s5-gsc-h"><span>出的词</span><span>第几天</span><span>曝光</span><span>排名</span></div>
+          <div class="s5-gsc" id="s5-gsc-rows"></div>
+          <p class="viz-note">“曝光”是被人在搜索结果里看到几次，“排名”是平均排第几。数字都是 <span class="st sy">示意</span></p>
+        </div>
+        <div class="box" id="s5-verdict" hidden></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="kp wrap" id="s5-after" hidden>
+    <div class="kp-head"><span class="kp-no">结果</span><h2>首页上线两周的成绩</h2></div>
+    <div class="sim-result" id="s5-result"></div>
+    <div class="quiz" data-answer="C">
+      <span class="q-tag">复盘题</span>
+      <p class="q-title">FramePop 首页的 H1，应该放什么？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">一句好记的口号，比如 Unleash Your Creativity</button>
+        <button class="q-opt" data-l="B">网站名 FramePop，让用户记住品牌</button>
+        <button class="q-opt" data-l="C">核心词 lumibo video generator，而且一页只放一个 H1</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>哥飞说页面三要素是 Title、Description、H1（TDH），H1 一页只有一个，放核心词 <span class="st hf">哥飞原话</span>。孟健的 H1 被 AI 换成一个非主词的词组，结果整站先出排名的反而是它，主词被分散了 <span class="st sq">社群经验</span>。网站名可以放在标题末尾，不用占 H1。</p></div>
+    </div>
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://mp.weixin.qq.com/s/41O1gg8bfU5MdmKkann8Aw">《从 TDK 到 TDH》</a><span class="meta">哥飞公众号 · 2024-04-06</span></li>
+      <li><a href="https://new.web.cafe/topic/bh3di61bwx">《复盘：第一个 AI 出海站，我做错了哪些事？》</a><span class="meta">孟健 · 2025-10-03</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/7hlogby3sa">《FAQPage 下线后我们怎么应对？顺便聊聊 Keywords 往事》</a><span class="meta">哥飞 · 2026-05-09</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/b65kyom8b2">《两大 SEO 原则》</a><span class="meta">哥飞 · 2025-01-14</span></li>
+    </ul></div>
+    <div class="s5-next" id="s5-next" hidden><a class="btn primary big" href="sim-6.html">下一关：连内链 →</a><span class="muted" style="font-size:14px">首页写好了，下一关把各个页面用链接串起来。</span></div>
+  </section>
+</main>
+
+<div class="s5-qbar" id="s5-qbar" hidden>
+  <p class="s5-qbar-t">把 <code id="s5-qbar-w"></code> 放进：</p>
+  <div class="s5-qbar-btns" id="s5-qbar-btns"></div>
+</div>
+
+<nav id="pager"></nav>
+<footer id="foot"></footer>
+<script src="assets/kit.js"></script>
+<script>
+(() => {
+  const { $, $$, el, sleep, tween, countUp, confetti, dnd, flyTo, reduce, store, SIM } = KIT;
+
+  // ---------- 卡片：type 决定能放哪；kind 决定好不好 ----------
+  const CARDS = [
+    { id: 'core', type: 'head', kind: 'core', t: 'Lumibo Video Generator', zh: 'Lumibo 视频生成器' },
+    { id: 'free', type: 'head', kind: 'mod', t: 'Free Online', zh: '免费、在线' },
+    { id: 'nowm', type: 'head', kind: 'mod', t: 'No Watermark', zh: '无水印' },
+    { id: 'i2v', type: 'head', kind: 'variant', t: 'Lumibo Image to Video', zh: 'Lumibo 图片变视频' },
+    { id: 't2v', type: 'head', kind: 'variant', t: 'Lumibo Text to Video', zh: 'Lumibo 文字变视频' },
+    { id: 'howto', type: 'head', kind: 'variant', t: 'How to Use Lumibo 2', zh: '怎么用 Lumibo 2' },
+    { id: 'brand', type: 'head', kind: 'brand', t: 'FramePop', zh: '你的网站名' },
+    { id: 'slogan', type: 'head', kind: 'slogan', t: 'Unleash Your Creativity', zh: '释放你的创造力' },
+    { id: 'sora', type: 'head', kind: 'other', t: 'Sora Video Generator', zh: 'Sora 视频生成器（Sora 是别家的模型）' },
+    { id: 'dcore', type: 'sent', kind: 'core', t: 'Free Lumibo video generator: turn text or images into 1080p videos in seconds.', zh: '免费 Lumibo 视频生成器：几秒把文字或图片变成 1080p 视频。' },
+    { id: 'dcta', type: 'sent', kind: 'cta', t: 'Try 3 videos free. No sign-up, no watermark.', zh: '免费试 3 个视频，不用注册，没有水印。' },
+    { id: 'dslogan', type: 'sent', kind: 'slogan', t: 'Unleash your creativity with the power of AI.', zh: '用 AI 的力量释放你的创造力。' },
+    { id: 'dfake', type: 'sent', kind: 'fake', t: 'Trusted by 1,000,000+ creators worldwide.', zh: '全球 100 万+ 创作者信赖。' },
+    { id: 'qfree', type: 'faq', kind: 'good', t: 'Is the Lumibo video generator free?', zh: 'Lumibo 视频生成器免费吗？' },
+    { id: 'qwm', type: 'faq', kind: 'good', t: 'Does FramePop add a watermark?', zh: 'FramePop 做出来的视频有水印吗？' },
+    { id: 'qwhat', type: 'faq', kind: 'good', t: 'What is Lumibo 2?', zh: 'Lumibo 2 是什么？' },
+    { id: 'qlong', type: 'faq', kind: 'good', t: 'How long can my video be?', zh: '视频最长能做多长？' },
+    { id: 'qsora', type: 'faq', kind: 'other', t: 'How do I get a Sora invite code?', zh: '怎么拿到 Sora 的邀请码？' },
+  ];
+  const C = Object.fromEntries(CARDS.map((c, i) => [c.id, Object.assign(c, { i })]));
+  const SLOTS = {
+    title: { type: 'head', cap: 4, name: 'Title', full: '标题最多拼 4 张词卡，再长谷歌就截掉了。' },
+    desc: { type: 'sent', cap: 2, name: 'Description', full: '描述放 1～2 句就够了。' },
+    h1: { type: 'head', cap: 1, name: 'H1', full: 'H1 一页只有一个。想换，先把里面那张拖回卡片堆。' },
+    h2a: { type: 'head', cap: 1, name: 'H2 ①', full: '一个 H2 只放一张卡。' },
+    h2b: { type: 'head', cap: 1, name: 'H2 ②', full: '一个 H2 只放一张卡。' },
+    h2c: { type: 'head', cap: 1, name: 'H2 ③', full: '一个 H2 只放一张卡。' },
+    faq: { type: 'faq', cap: 4, name: 'FAQ', full: 'FAQ 先放 4 条就够了。' },
+  };
+  const TYPEMSG = {
+    head: { sent: '描述要写成完整的一两句话，去「句子卡」里挑。', faq: 'FAQ 里放问题，去「问题卡」里挑。' },
+    sent: '这是一整句话，放进 Description（描述）。Title、H1、H2 用「词卡」。',
+    faq: '这是一个问题，放进页面底部的 FAQ。',
+  };
+  const REF = { title: ['core', 'free', 'nowm'], desc: ['dcore', 'dcta'], h1: ['core'], h2a: ['i2v'], h2b: ['t2v'], h2c: ['howto'], faq: ['qfree', 'qwm', 'qwhat', 'qlong'] };
+
+  const board = $('#s5-board'), poolZone = $('#s5-pool'), say = $('#s5-say'), pts = $('#s5-pts');
+  const kwBox = $('#s5-kw'), goBtn = $('#s5-go'), qbar = $('#s5-qbar');
+  const launchBox = $('#s5-launch'), after = $('#s5-after'), result = $('#s5-result');
+  const slotEl = s => $(`.dd-zone[data-slot="${s}"]`, board);
+  let locked = false;
+
+  function talk(html, tone) {
+    say.className = 'viz-say' + (tone ? ' ' + tone : '');
+    say.innerHTML = html;
+  }
+  const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  // ---------- 存档：前几关 ----------
+  (() => {
+    const s3 = SIM.load('sim-3'), s4 = SIM.load('sim-4');
+    const parts = [];
+    const homeWord = s3 && s3.placed ? Object.keys(s3.placed).find(w => s3.placed[w] === 'home') : null;
+    if (!s3) parts.push('首页主打词：lumibo video generator（第 3 关的默认答案）。');
+    else if (homeWord === SIM.core) parts.push('第 3 关你定的首页主打是 lumibo video generator，这关就围绕它写。');
+    else parts.push(`第 3 关你把「${homeWord || '（空）'}」放进了首页主打；搜得最多、意思最直接的还是 lumibo video generator，这关按它来写。`);
+    if (s4 && s4.day1) parts.push(`第 4 关你定了第一天上线 ${s4.day1.length} 页，首页是其中最重要的一页${s4.tool === 'same' ? '' : '（这关按“工具和介绍合在首页”来写）'}。`);
+    $('#s5-from').textContent = parts.join('');
+    const last = SIM.load('sim-5');
+    if (last) { $('#s5-last').hidden = false; $('#s5-last').textContent = `上次 ${last.score} 分`; }
+  })();
+
+  // ---------- 卡片 ----------
+  function makeCard(id) {
+    const c = C[id];
+    return el('button', { type: 'button', class: 'dd-item s5-card', 'data-c': id }, `<span class="s5-en">${esc(c.t)}</span><span class="s5-zh">${c.zh}</span>`);
+  }
+  function putBack(node) {
+    const c = C[node.dataset.c];
+    const group = $(`.s5-group[data-g="${c.type}"]`, poolZone);
+    const nextCard = $$('.s5-card', group).find(n => C[n.dataset.c].i > c.i);
+    group.insertBefore(node, nextCard || null);
+  }
+  function deal() {
+    $$('.s5-card', board).forEach(n => n.remove());
+    CARDS.forEach(c => putBack(makeCard(c.id)));
+  }
+
+  // ---------- 拖一拖：从卡片堆拖出去的是“复印件”，堆里马上补一张 ----------
+  const dd = dnd(board, {
+    items: '.s5-card',
+    zones: '.dd-zone',
+    accept(item, zone) {
+      const s = zone.dataset.slot;
+      if (s === 'pool') return true;
+      const c = C[item.dataset.c], slot = SLOTS[s];
+      let msg = null;
+      if (c.type !== slot.type) msg = c.type === 'head' ? TYPEMSG.head[slot.type] : TYPEMSG[c.type];
+      else {
+        const others = $$('.s5-card', zone).filter(x => x !== item);
+        if (others.some(x => x.dataset.c === c.id)) msg = `「${c.t}」已经在 ${slot.name} 里了。`;
+        else if (others.length >= slot.cap) msg = slot.full;
+      }
+      if (msg) {
+        talk(msg, 'bad');
+        setTimeout(() => item.classList.remove('wrong'), 500);
+        return false;
+      }
+      return true;
+    },
+    onMove(item, zone, from) {
+      const fromPool = poolZone.contains(from);
+      const s = zone.dataset.slot, c = C[item.dataset.c];
+      if (s === 'pool') {
+        if (fromPool) putBack(item); else item.remove();
+        talk(fromPool ? '这张本来就在卡片堆里。' : `「${esc(c.t)}」拿掉了。`);
+      } else {
+        if (fromPool) {
+          const fresh = makeCard(c.id);
+          fresh.classList.add('s5-pop');
+          putBack(fresh);
+        }
+        talk(moveMsg(c, s));
+      }
+      render();
+    },
+  });
+  function moveMsg(c, s) {
+    const S = state();
+    if (s === 'h1') return `H1 放了「${esc(c.t)}」。看右边体检，H1 那一条亮什么灯？`;
+    if (s === 'title') return `标题现在是：<b>${esc(S.titleText)}</b>（${S.titleText.length} 个字符）。顺序就是你放进来的顺序。`;
+    if (s === 'desc') return `描述放了一句。看右边预览，和搜索词一样的词会加粗。`;
+    if (s === 'faq') return `FAQ 现在 ${S.faq.length} 条。`;
+    return `${SLOTS[s].name} 放了「${esc(c.t)}」。`;
+  }
+
+  // 上线以后锁住
+  board.addEventListener('pointerdown', e => {
+    if (locked && e.target.closest('.s5-card')) e.stopImmediatePropagation();
+  }, true);
+  board.addEventListener('keydown', e => {
+    if (locked && e.target.closest('.s5-card')) e.stopImmediatePropagation();
+  }, true);
+
+  // ---------- 手机快捷条：按卡片种类给出能放的槽位 ----------
+  function syncBar() {
+    const item = $('.s5-card.picked', board);
+    if (!item || locked) { qbar.hidden = true; return; }
+    const c = C[item.dataset.c];
+    const here = item.parentElement.dataset.slot;
+    // 只高亮这张卡能放的槽位
+    $$('.s5-slot', board).forEach(z => { if (SLOTS[z.dataset.slot].type !== c.type) z.classList.remove('can-drop'); });
+    const btns = Object.keys(SLOTS).filter(s => SLOTS[s].type === c.type && s !== here).map(s => [s, SLOTS[s].name]);
+    if (!poolZone.contains(item)) btns.push(['pool', '拿掉']);
+    btns.push(['', '取消']);
+    $('#s5-qbar-w').textContent = c.t;
+    const box = $('#s5-qbar-btns');
+    box.innerHTML = btns.map(([s, n]) => `<button type="button" class="btn${s === 'pool' ? ' soft' : ''}" data-to="${s}">${n}</button>`).join('');
+    qbar.hidden = false;
+  }
+  const later = () => setTimeout(syncBar, 0);
+  board.addEventListener('click', later);
+  board.addEventListener('keydown', later);
+  addEventListener('pointerup', later);
+  $('#s5-qbar-btns').addEventListener('click', e => {
+    const b = e.target.closest('[data-to]');
+    const item = $('.s5-card.picked', board);
+    if (!b || !item) { syncBar(); return; }
+    if (b.dataset.to) dd.moveTo(item, b.dataset.to === 'pool' ? poolZone : slotEl(b.dataset.to)); else dd.unpick();
+    syncBar();
+  });
+
+  kwBox.addEventListener('change', () => {
+    $('#s5-kwcode').hidden = !kwBox.checked;
+    talk(kwBox.checked ? '写上了 keywords 标签。看右边体检最后一条。' : '撤掉了 keywords 标签。');
+    render();
+  });
+
+  // ---------- 读当前页面 ----------
+  function state() {
+    const inSlot = s => $$('.s5-card', slotEl(s)).map(n => C[n.dataset.c]);
+    const title = inSlot('title'), desc = inSlot('desc');
+    return {
+      title, desc, h1: inSlot('h1')[0] || null, h2: ['h2a', 'h2b', 'h2c'].map(s => inSlot(s)[0] || null), faq: inSlot('faq'),
+      kw: kwBox.checked, titleText: title.map(c => c.t).join(' | '), descText: desc.map(c => c.t).join(' '),
+    };
+  }
+
+  // ---------- 体检：9 条，满分 100 ----------
+  function evaluate(S) {
+    const rows = [];
+    const add = (id, label, max, got, st, detail, src) => rows.push({ id, label, max, got, st, detail, src });
+    const T = '核心词在标题最前';
+    if (!S.title.length) add('t1', T, 18, 0, 'pend', '标题还空着。', 'tl');
+    else if (S.title[0].kind === 'core') add('t1', T, 18, 18, 'ok', '标题第一个词就是 Lumibo Video Generator。', 'tl');
+    else if (S.title.some(c => c.kind === 'core')) add('t1', T, 18, 9, 'half', '核心词在标题里，但不在最前。把它挪到第一个。', 'tl');
+    else add('t1', T, 18, 0, 'bad', '标题里没有核心词 Lumibo Video Generator。', 'tl');
+
+    const tl = S.titleText.length, T2 = '标题 60 字符以内、不塞口号';
+    if (!S.title.length) add('t2', T2, 4, 0, 'pend', '', 'tl');
+    else if (tl > 60) add('t2', T2, 4, 0, 'bad', `标题 ${tl} 个字符，超过 60，后面会被谷歌截掉。`, 'tl');
+    else if (S.title.some(c => c.kind === 'slogan')) add('t2', T2, 4, 0, 'bad', '口号占了标题的位置，可没人搜它。', 'tl');
+    else add('t2', T2, 4, 4, 'ok', `标题 ${tl} 个字符。`, 'tl');
+
+    if (!S.desc.length) add('d1', '描述里有核心词', 14, 0, 'pend', '描述还空着。', 'tl');
+    else if (S.desc.some(c => c.kind === 'core')) add('d1', '描述里有核心词', 14, 14, 'ok', '有 lumibo video generator，搜索结果里还会加粗。', 'tl');
+    else add('d1', '描述里有核心词', 14, 0, 'bad', '描述里没出现 lumibo video generator。', 'tl');
+
+    if (!S.desc.length) add('d2', '描述里不编假数据', 6, 0, 'pend', '', 'sq');
+    else if (S.desc.some(c => c.kind === 'fake')) add('d2', '描述里不编假数据', 6, 0, 'bad', '「100 万+ 创作者」是编的。孟健的站就因为 AI 编了不存在的用户数据，收款审核被拒。', 'sq');
+    else add('d2', '描述里不编假数据', 6, 6, 'ok', '说的都是真的。', 'sq');
+
+    const H = 'H1 就是核心词，只有一个';
+    const H1BAD = {
+      slogan: '口号当 H1：谷歌会以为这页讲的是这句话。',
+      brand: 'H1 放网站名，谷歌看不出这页是干什么的。网站名放标题末尾就行。',
+      other: '别人的产品名当 H1，来的人想找的是别人。',
+      mod: '只有修饰词，没说这是个什么东西。',
+    };
+    if (!S.h1) add('h1', H, 22, 0, 'pend', 'H1 还空着。', 'hf');
+    else if (S.h1.kind === 'core') add('h1', H, 22, 22, 'ok', 'H1 是 Lumibo Video Generator，一页一个。', 'hf');
+    else add('h1', H, 22, 0, 'bad', H1BAD[S.h1.kind] || `「${S.h1.t}」是内页的词，首页的 H1 打核心词。`, 'hf');
+
+    const h2got = S.h2.reduce((s, c) => s + (!c ? 0 : c.kind === 'variant' ? 4 : (c.kind === 'mod' || c.kind === 'core') ? 2 : 0), 0);
+    const filled = S.h2.filter(Boolean).length;
+    const H2NOTE = {
+      mod: c => `「${c.t}」是修饰词，放标题或功能介绍里更合适`,
+      core: () => '核心词已经在 H1 了，H2 换个变体，多接住一种说法',
+      slogan: () => '口号当小标题，没人搜',
+      brand: () => '网站名不用占小标题',
+      other: () => 'Sora 是别人的产品',
+    };
+    const notes = S.h2.filter(c => c && c.kind !== 'variant').map(c => H2NOTE[c.kind](c));
+    if (filled < 3) notes.push(`还有 ${3 - filled} 个空着`);
+    add('h2', '3 个 H2 各放一个变体、长尾词', 12, h2got, !filled ? 'pend' : h2got === 12 ? 'ok' : h2got ? 'half' : 'bad',
+      h2got === 12 ? '三个小标题各接住一个变体：图片变视频、文字变视频、怎么用。' : notes.join('；') + '。', 'tl');
+
+    const good = S.faq.filter(c => c.kind === 'good').length;
+    add('faq', 'FAQ 至少 3 条真问题', 12, Math.min(3, good) * 4, !S.faq.length ? 'pend' : good >= 3 ? 'ok' : good ? 'half' : 'bad',
+      `用户真关心的问题 ${good} 条${good < 3 ? '，至少要 3 条' : ''}。`, 'hf');
+
+    const others = [...S.title, S.h1, ...S.h2, ...S.faq].filter(c => c && c.kind === 'other');
+    const any = S.title.length || S.h1 || S.h2.some(Boolean) || S.faq.length || S.desc.length;
+    if (others.length) add('brand', '不蹭别人的品牌词', 6, 0, 'bad', 'Sora 是别家的模型。搜它的人想找 Sora，不是你的用户。', 'tl');
+    else if (!any) add('brand', '不蹭别人的品牌词', 6, 6, 'pend', '', 'tl');
+    else add('brand', '不蹭别人的品牌词', 6, 6, 'ok', '没有蹭别人的品牌词。', 'tl');
+
+    if (S.kw) add('kw', '不写 keywords 标签', 6, 0, 'bad', '谷歌 2009 年就说不读 keywords 标签了，白写。', 'hf');
+    else add('kw', '不写 keywords 标签', 6, 6, 'ok', '没写，对：谷歌早就不看了。', 'hf');
+
+    return rows;
+  }
+
+  // ---------- 画：预览 + 体检 ----------
+  const boldQ = s => esc(s).replace(/\b(lumibo|video|generator)\b/gi, '<b>$1</b>');
+  const prevSt = {};
+  function render() {
+    $$('.s5-slot', board).forEach(z => z.classList.toggle('filled', !!$('.s5-card', z)));
+    const S = state();
+    const gt = $('#s5-gt'), gd = $('#s5-gd');
+    if (!S.title.length) { gt.className = 's5-gt empty'; gt.textContent = '（还没有 Title：谷歌只好自己从页面里抓一句当标题）'; }
+    else {
+      gt.className = 's5-gt';
+      gt.innerHTML = S.titleText.length > 60 ? `${esc(S.titleText.slice(0, 57))}<span class="s5-cut">...</span>` : esc(S.titleText);
+    }
+    if (!S.desc.length) { gd.className = 's5-gd empty'; gd.textContent = '（还没有描述：谷歌会随便从正文里摘一段）'; }
+    else { gd.className = 's5-gd'; gd.innerHTML = S.descText.length > 160 ? boldQ(S.descText.slice(0, 157)) + '...' : boldQ(S.descText); }
+    const tl = S.titleText.length, dl = S.descText.length;
+    $('#s5-len').innerHTML = `标题 <b class="${tl > 60 ? 'over' : ''}">${tl}</b> / 60 字符 · 描述 <b class="${dl > 160 ? 'over' : ''}">${dl}</b> / 160 字符 <span class="st tl">推出来的</span>`;
+
+    const rows = evaluate(S);
+    const list = $('#s5-checks');
+    if (!list.children.length) rows.forEach(r => list.appendChild(el('li', { 'data-id': r.id })));
+    rows.forEach(r => {
+      const li = $(`li[data-id="${r.id}"]`, list);
+      li.innerHTML = `<i></i><div>${r.label}${r.detail && r.st !== 'pend' ? `<span>${r.detail}</span>` : ''}</div>`;
+      li.dataset.st = r.st;
+      if (prevSt[r.id] && prevSt[r.id] !== r.st) {
+        li.classList.remove('s5-flash');
+        void li.offsetWidth;
+        li.classList.add('s5-flash');
+      }
+      prevSt[r.id] = r.st;
+    });
+    $('#s5-pass').textContent = rows.filter(r => r.st === 'ok').length;
+    return { S, rows };
+  }
+
+  // ---------- 上线 ----------
+  const VAR = { i2v: [240, 22, 4], t2v: [150, 26, 5], howto: [90, 19, 6] };
+  function gscRows(S) {
+    const h1 = S.h1, h1core = h1 && h1.kind === 'core';
+    const t1 = S.title.length && S.title[0].kind === 'core' ? 1 : S.title.some(c => c.kind === 'core') ? 0.6 : 0.3;
+    const d1 = S.desc.some(c => c.kind === 'core') ? 1 : 0.8;
+    const m = (h1core ? 1 : 0.12) * t1 * d1;
+    const rows = [];
+    if (h1 && !h1core) {
+      const FIRST = { slogan: ['unleash your creativity', 30, 6], brand: ['framepop', 20, 2], other: ['sora video generator', 25, 64], mod: [h1.t.toLowerCase(), 15, 40] };
+      const f = FIRST[h1.kind] || [h1.t.toLowerCase(), 160, 15];
+      rows.push({ q: f[0], day: 2, imp: f[1], pos: f[2], bad: true, first: true });
+    }
+    rows.push({ q: 'lumibo video generator', day: h1core ? 2 : 9, imp: Math.round(1200 * m), pos: h1core ? Math.round(14 + (1 - t1 * d1) * 25) : 71, core: true });
+    const hasFree = S.title.some(c => c.id === 'free') || S.desc.some(c => c.id === 'dcore' || c.id === 'dcta');
+    rows.push({ q: 'free lumibo video generator', day: 3, imp: Math.round((hasFree ? 380 : 60) * (h1core ? 1 : 0.3)), pos: hasFree ? 17 : 46 });
+    S.h2.forEach(c => { if (c && VAR[c.id]) rows.push({ q: c.t.toLowerCase(), day: VAR[c.id][2], imp: VAR[c.id][0], pos: VAR[c.id][1] }); });
+    if (S.faq.some(c => c.id === 'qwm') || S.title.some(c => c.id === 'nowm')) rows.push({ q: 'lumibo video generator no watermark', day: 5, imp: 120, pos: 12 });
+    if ([...S.title, ...S.h2, ...S.faq].some(c => c && c.kind === 'other')) rows.push({ q: 'sora invite code', day: 6, imp: 25, pos: 58, bad: true });
+    const seen = new Set();
+    const order = (a, b) => (b.first ? 1 : 0) - (a.first ? 1 : 0) || a.day - b.day || b.imp - a.imp;
+    const uniq = rows.filter(r => !seen.has(r.q) && seen.add(r.q));
+    // 最多 6 行，核心词那一行一定留着
+    return uniq.filter(r => !r.core).sort(order).slice(0, 5).concat(uniq.filter(r => r.core)).sort(order);
+  }
+
+  function chooseAI() {
+    const box = $('#s5-ai');
+    box.hidden = false;
+    $('#s5-ai-btns').hidden = false;
+    return new Promise(res => {
+      $('#s5-ai-yes').onclick = () => res(true);
+      $('#s5-ai-no').onclick = () => res(false);
+    });
+  }
+
+  async function launch() {
+    if (locked) return;
+    let S = state();
+    if (!S.title.length || !S.h1) {
+      talk('至少把 <b>Title</b> 和 <b>H1</b> 填上再上线。', 'bad');
+      say.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
+      return;
+    }
+    locked = true;
+    dd.unpick();
+    syncBar();
+    board.classList.add('s5-locked');
+    goBtn.disabled = true;
+    goBtn.textContent = '已上线';
+    kwBox.disabled = true;
+    launchBox.hidden = false;
+    $$('#s5-steps li').forEach(li => li.classList.remove('on'));
+    launchBox.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+
+    if (S.h1.kind === 'core') {
+      const yes = await chooseAI();
+      $('#s5-ai-btns').hidden = true;
+      const box = $('#s5-ai');
+      if (yes) {
+        const h1 = slotEl('h1');
+        $$('.s5-card', h1).forEach(n => n.remove());
+        const swap = makeCard('slogan');
+        swap.classList.add('s5-pop');
+        h1.appendChild(swap);
+        render();
+        box.insertAdjacentHTML('beforeend', '<p><b>你：</b>好，换上。（H1 现在是 Unleash Your Creativity。）</p>');
+      } else {
+        box.insertAdjacentHTML('beforeend', '<p><b>你：</b>不换。H1 只放核心词。</p>');
+      }
+      await sleep(500);
+      S = state();
+    }
+
+    const steps = $$('#s5-steps li');
+    for (const li of steps) { li.classList.add('on'); await sleep(550); }
+    const rows = gscRows(S);
+    const gsc = $('#s5-gsc'), box = $('#s5-gsc-rows');
+    box.innerHTML = '';
+    gsc.hidden = false;
+    const maxImp = Math.max(...rows.map(r => r.imp), 1);
+    for (const r of rows) {
+      const row = el('div', { class: 's5-gsc-r' + (r.core ? ' core' : '') + (r.bad ? ' bad' : '') },
+        `<span class="s5-gsc-q"><code>${esc(r.q)}</code>${r.first ? '<em>最先出的词</em>' : ''}<span class="s5-bar-i"><i></i></span></span><span>${r.day}</span><span data-n>0</span><span data-p>100</span>`);
+      box.appendChild(row);
+      countUp($('[data-n]', row), r.imp, 800);
+      const p = $('[data-p]', row);
+      tween(800, k => { p.textContent = Math.round(100 + (r.pos - 100) * k); });
+      const bar = $('.s5-bar-i i', row);
+      tween(800, k => { bar.style.width = (r.imp / maxImp * 100 * k) + '%'; });
+      await sleep(420);
+    }
+
+    const v = $('#s5-verdict');
+    const h1 = S.h1;
+    if (h1.kind === 'slogan') {
+      slotEl('h1').classList.add('s5-boom');
+      v.className = 'box warn';
+      v.innerHTML = `<span class="lab">翻车了：整站最先出的词，是那句口号</span><p>谷歌看 H1，认定这页讲的是「unleash your creativity」。可这句话几乎没人搜；每月 22,000 人搜的 lumibo video generator <span class="st sy">示意</span>，反而排在 70 名开外。</p><p>孟健的第一个站就是这样：H1 被 AI 换成一个非主词的词组，整站先出排名的反而是它，「直接稀释了主词权重」。<span class="st sq">社群经验</span></p>`;
+    } else if (h1.kind === 'core') {
+      v.className = 'box good';
+      v.innerHTML = `<span class="lab">出的词都是你想要的</span><p>上线两周，首页有排名、有曝光，出的词就是你瞄准的那批。哥飞说，这样的页面就是过了谷歌质量关的“精品页”。<span class="st hf">哥飞原话</span></p>`;
+    } else {
+      v.className = 'box warn';
+      v.innerHTML = `<span class="lab">首页的词跑偏了</span><p>H1 打的不是核心词，谷歌拿不准这页主打什么，最先出的是「${esc(rows[0].q)}」，核心词排得很靠后。</p>`;
+    }
+    v.hidden = false;
+    await sleep(400);
+    finish(S);
+  }
+  goBtn.addEventListener('click', launch);
+
+  function finish(S) {
+    const rows = evaluate(S);
+    const score = Math.round(rows.reduce((s, r) => s + r.got, 0));
+    const misses = rows.filter(r => r.got < r.max);
+    SIM.save('sim-5', score, 100, { h1: S.h1 ? S.h1.id : null, misses: misses.map(r => r.label) });
+    countUp(pts, score, 900);
+    const verdict = score === 100 ? ['满分！', 'TDH 全写对，FAQ 也留了，AI 的“润色”也没上当。']
+      : score >= 80 ? ['很稳', '主干都对了，看看下面扣分的地方。']
+      : score >= 60 ? ['能用，但浪费了位置', '几个地方没写在点子上，改一改排名会更好。']
+      : ['重写一遍吧', '打开站长小抄，对着体检清单再来。'];
+    const SRC = { hf: '<span class="st hf">哥飞原话</span>', sq: '<span class="st sq">社群经验</span>', tl: '<span class="st tl">推出来的</span>' };
+    result.className = 'sim-result' + (score < 60 ? ' meh' : '');
+    result.innerHTML = `
+      <div class="s5-res-top">
+        <div class="s5-res-num"><span class="big-num" id="s5-big">0</span><span>/ 100</span></div>
+        <div><h3>${verdict[0]}</h3><p>${verdict[1]}</p></div>
+      </div>
+      ${misses.length ? `<h3>扣分的地方</h3><ul class="s5-res-list">${misses.map(r => `<li><b>${r.label}</b>（${r.got} / ${r.max}）${SRC[r.src]}<span>${r.detail || '这一项没填。'}</span></li>`).join('')}</ul>` : '<p>9 项体检全部通过。</p>'}
+      <p style="font-size:15px">回去复习：<a href="s5-page.html#k3">关键词放哪</a> · <a href="s5-page.html#k4">标题试衣间</a> · <a href="s5-page.html#k5">H1 被 AI 改了</a> · <a href="s5-page.html#k1">首页从上到下</a></p>
+      <div class="s5-btns"><button type="button" class="btn soft" id="s5-ref">看参考答案</button><button type="button" class="btn" data-s5-replay>重玩这一关</button></div>`;
+    after.hidden = false;
+    countUp($('#s5-big'), score, 900);
+    $('[data-s5-replay]', result).addEventListener('click', replayLevel);
+    $('#s5-ref').addEventListener('click', showRef);
+    const last = SIM.load('sim-5');
+    $('#s5-last').hidden = false;
+    $('#s5-last').textContent = `上次 ${last.score} 分`;
+    setTimeout(() => {
+      result.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
+      if (score === 100) confetti(result);
+    }, 300);
+    paintNext();
+  }
+
+  // 参考答案：卡片一张张飞进槽位
+  async function showRef(e) {
+    e.currentTarget.disabled = true;
+    $$('.s5-slot .s5-card', board).forEach(n => n.remove());
+    slotEl('h1').classList.remove('s5-boom');
+    kwBox.checked = false;
+    $('#s5-kwcode').hidden = true;
+    render();
+    board.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    await sleep(400);
+    for (const s of Object.keys(REF)) {
+      for (const id of REF[s]) {
+        const from = $(`.s5-group .s5-card[data-c="${id}"]`, poolZone), to = slotEl(s);
+        await flyTo(from, to, { html: from.innerHTML, cls: 'dd-item s5-card', ms: 420 });
+        to.appendChild(makeCard(id));
+        render();
+      }
+    }
+    talk('参考答案：标题核心词打头再接卖点（51 个字符），描述带核心词，H1 就是核心词，三个 H2 各接一个变体，FAQ 四条真问题，keywords 标签不写。', 'good');
+  }
+
+  // ---------- 复盘题答完，亮出下一关 ----------
+  function paintNext() {
+    $('#s5-next').hidden = !store.get('quiz.sim-5', {})[0] || after.hidden;
+  }
+  $$('#s5-after .q-opt').forEach(o => o.addEventListener('click', () => setTimeout(paintNext, 0)));
+
+  // ---------- 重玩 ----------
+  function replayLevel() {
+    locked = false;
+    board.classList.remove('s5-locked');
+    deal();
+    slotEl('h1').classList.remove('s5-boom');
+    kwBox.checked = false;
+    kwBox.disabled = false;
+    $('#s5-kwcode').hidden = true;
+    goBtn.disabled = false;
+    goBtn.textContent = '上线';
+    pts.dataset.val = 0;
+    pts.textContent = '0';
+    launchBox.hidden = true;
+    $('#s5-ai').hidden = true;
+    $$('#s5-ai > p').slice(1).forEach(p => p.remove());
+    $('#s5-gsc').hidden = true;
+    $('#s5-verdict').hidden = true;
+    after.hidden = true;
+    result.innerHTML = '';
+    render();
+    talk('重新开始。从 H1 开始：页面最大的那个标题，该放哪张卡？');
+    board.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+  }
+  $('[data-s5-replay]', board).addEventListener('click', replayLevel);
+
+  deal();
+  render();
+})();
+</script>
+</body>
+</html>

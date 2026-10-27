@@ -1,0 +1,1061 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>第 4 步 定结构、定页面 · AI 新词站白话课</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<style>
+/* ---------- 第 4 步专用（类名都带 s4-） ---------- */
+.s4-topscore { margin-top: 28px; }
+.s4-svg { font-family: var(--font-body); }
+.s4-noanim, .s4-noanim * { transition: none !important; animation: none !important; }
+
+/* 知识点 1：网站树 */
+.s4-tree-stage { background: var(--bg); border-radius: 14px; padding: 4px; overflow-x: auto; scrollbar-width: thin; }
+@media (max-width: 720px) { .s4-tree-stage svg { min-width: 700px; } }
+.s4-swipe { display: none; font-size: 13px; color: var(--muted); }
+@media (max-width: 720px) { .s4-swipe { display: block; } }
+.s4-lay-t { fill: var(--ink); font-size: 12px; font-weight: 700; }
+.s4-lay-s { fill: var(--muted); font-size: 11px; }
+.s4-lay-note { fill: var(--muted); font-size: 11.5px; }
+.s4-foot-bar { fill: var(--surface); stroke: var(--line); stroke-width: 1; stroke-dasharray: 4 4; }
+.s4-foot-t { fill: var(--muted); font-size: 11px; }
+.s4-edge-ghost { fill: none; stroke: var(--line); stroke-width: 1.5; stroke-dasharray: 3 4; }
+.s4-edge { fill: none; stroke: var(--indigo); stroke-width: 2; opacity: .75; stroke-dasharray: var(--len); stroke-dashoffset: var(--len); transition: stroke-dashoffset .7s ease; }
+.s4-edge.on { stroke-dashoffset: 0; }
+.s4-edge.warn { stroke: var(--amber); }
+.s4-node { transition: opacity .4s; }
+.s4-node rect { fill: var(--surface); stroke: var(--indigo); stroke-width: 1.5; transition: fill .3s, stroke .3s; }
+.s4-node .nm { fill: var(--ink); font-size: 12px; font-weight: 650; }
+.s4-node .pt { fill: var(--indigo); font-size: 10px; font-family: var(--font-mono); }
+.s4-node.root rect { fill: var(--indigo); }
+.s4-node.root .nm, .s4-node.root .pt { fill: var(--on-indigo); }
+.s4-node.dir rect { fill: var(--indigo-soft); stroke-dasharray: 6 3; }
+.s4-node.legal rect { stroke: var(--muted); }
+.s4-node.legal .pt { fill: var(--muted); }
+.s4-node.warn rect { fill: var(--amber-soft); stroke: var(--amber); }
+.s4-node.warn .pt { fill: var(--amber); }
+.s4-node.ghost { opacity: .32; }
+.s4-node.ghost rect { fill: transparent; stroke: var(--muted); stroke-dasharray: 3 3; }
+.s4-node.ghost .nm, .s4-node.ghost .pt { fill: var(--muted); }
+.s4-pop { transform-box: fill-box; transform-origin: center; }
+.s4-node.new .s4-pop { animation: s4-pop .55s both; animation-delay: var(--d, 0s); }
+@keyframes s4-pop { 0% { transform: scale(.3); opacity: 0; } 70% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+.s4-time { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: flex-end; }
+.s4-time .range-wrap { flex: 1 1 300px; }
+.s4-ticks { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+.s4-below { display: grid; grid-template-columns: 1.35fr 1fr; gap: 12px; align-items: start; }
+@media (max-width: 640px) { .s4-below { grid-template-columns: 1fr; } }
+.s4-home { border: 1px solid var(--line); border-radius: 12px; background: var(--bg); overflow: hidden; }
+.s4-home-bar { display: flex; gap: 8px; align-items: center; padding: 6px 12px; border-bottom: 1px solid var(--line); background: var(--surface); font-size: 12.5px; color: var(--muted); }
+.s4-home-bar code { font-size: 12px; }
+.s4-outline { list-style: none; margin: 0; padding: 10px 12px 12px; display: grid; gap: 3px; font-size: 14px; }
+.s4-outline li { display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; line-height: 1.55; }
+.s4-outline li > i { font-style: normal; font-family: var(--font-mono); font-size: 10.5px; color: var(--indigo); background: var(--indigo-soft); border-radius: 4px; padding: 0 5px; flex: none; }
+.s4-outline .h1 { font-weight: 700; font-size: 15px; }
+.s4-outline .h1 em { font-style: normal; font-weight: 600; font-size: 12px; color: var(--green); background: var(--green-soft); border-radius: 999px; padding: 0 8px; }
+.s4-outline .h2 { margin-top: 4px; font-weight: 650; }
+.s4-outline .h3 { padding-left: 20px; }
+.s4-outline .h3 u { color: var(--indigo); text-underline-offset: 3px; font-family: var(--font-mono); font-size: 13px; }
+.s4-outline .h3 small { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+.s4-outline .ft { margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--line); color: var(--muted); font-size: 12.5px; }
+.s4-outline li.later { display: none; }
+.s4-rule { display: grid; gap: 8px; padding: 12px 14px; border-radius: 12px; background: var(--indigo-soft); }
+.s4-rule-t { font-size: 13px; font-weight: 700; color: var(--indigo); }
+.s4-rule ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.s4-rule li { display: grid; gap: 0; font-size: 14.5px; line-height: 1.5; }
+.s4-rule li b { color: var(--indigo); }
+.s4-rule li code { justify-self: start; background: var(--surface); }
+
+/* 知识点 2：上线箱 */
+.s4-dd { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 640px) { .s4-dd { grid-template-columns: 1fr; } .s4-crate { min-height: 130px; } }
+.s4-crate { border-style: solid; border-color: var(--indigo); background: var(--surface); min-height: 190px; }
+.s4-crate .dd-zone-head { color: var(--indigo); }
+.s4-card { display: inline-grid; gap: 0; font-family: var(--font-body); padding: 6px 12px; line-height: 1.35; }
+.s4-card b { font-size: 14px; font-weight: 650; }
+.s4-card code { background: none; padding: 0; font-size: 11.5px; color: var(--muted); }
+.s4-card.s4-miss { border-color: var(--amber); animation: pulse 1.1s 2; }
+.s4-count { font-size: 14px; color: var(--muted); }
+.s4-lights { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.s4-light { display: grid; grid-template-columns: 14px 10.5em 1fr; gap: 4px 10px; align-items: baseline; font-size: 14.5px; line-height: 1.6; padding: 8px 12px; border-radius: 10px; background: var(--bg); }
+.s4-light > i { width: 12px; height: 12px; border-radius: 50%; background: var(--line); align-self: center; }
+.s4-light > span { color: var(--muted); }
+.s4-light[data-state="ok"] { background: var(--green-soft); }
+.s4-light[data-state="ok"] > i { background: var(--green); box-shadow: 0 0 0 4px color-mix(in srgb, var(--green) 22%, transparent); }
+.s4-light[data-state="bad"] { background: var(--amber-soft); }
+.s4-light[data-state="bad"] > i { background: var(--amber); box-shadow: 0 0 0 4px color-mix(in srgb, var(--amber) 25%, transparent); }
+.s4-light[data-state="warn"] > i { background: transparent; border: 3px solid var(--amber); }
+.s4-light[data-state="info"] > i { background: var(--indigo); }
+.s4-light[data-state="ok"] > span, .s4-light[data-state="bad"] > span, .s4-light[data-state="warn"] > span, .s4-light[data-state="info"] > span { color: var(--ink); }
+.s4-light.s4-flash { animation: rise .3s both; }
+@media (max-width: 560px) { .s4-light { grid-template-columns: 14px 1fr; } .s4-light > span { grid-column: 2; } }
+
+/* 知识点 3：工具放哪 */
+.s4-sites-svg { max-width: 540px; margin: 0 auto; }
+.s4-site { fill: var(--indigo-soft); fill-opacity: .7; stroke: var(--indigo); stroke-width: 2; }
+.s4-eye { fill: var(--ink); font-size: 16px; font-weight: 700; }
+.s4-eye .n2 { fill: var(--amber); }
+.s4-eye .n1 { fill: var(--green); }
+.s4-site-name { fill: var(--indigo); font-family: var(--font-mono); font-size: 12px; font-weight: 600; }
+.s4-site-sub { fill: var(--ink); font-size: 12.5px; font-weight: 600; }
+.s4-site-cap { fill: var(--amber); font-size: 13px; font-weight: 650; }
+.s4-site-cap.good { fill: var(--green); }
+.s4-jump { fill: none; stroke: var(--amber); stroke-width: 1.8; stroke-dasharray: 5 4; }
+.s4-jump-t { fill: var(--amber); font-size: 11.5px; font-weight: 650; }
+.s4-tline { fill: var(--muted); opacity: .6; }
+.s4-udot { fill: var(--green); }
+.s4-blog circle { fill: var(--surface); stroke: var(--indigo); stroke-width: 1.5; }
+.s4-blog text { fill: var(--indigo); font-size: 10.5px; font-family: var(--font-mono); }
+
+/* 知识点 4：页面数滑块 */
+.s4-many-body { display: grid; grid-template-columns: 210px 1fr; gap: 16px; align-items: start; }
+@media (max-width: 600px) { .s4-many-body { grid-template-columns: 1fr; } }
+.s4-stats { display: grid; gap: 8px; }
+.s4-stat { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; border-bottom: 1px dashed var(--line); padding-bottom: 6px; font-size: 14px; color: var(--muted); }
+.s4-stat b { font-family: var(--font-mono); font-size: 22px; font-weight: 600; color: var(--ink); }
+.s4-stat.lit b { color: var(--green); }
+.s4-scale { display: grid; gap: 4px; margin-top: 6px; }
+.s4-scale-bar { position: relative; height: 12px; border-radius: 6px; background: linear-gradient(to right, var(--amber-soft) 0 33.33%, var(--green-soft) 33.33% 100%); border: 1px solid var(--line); }
+.s4-scale-bar::after { content: ""; position: absolute; left: 33.33%; top: -5px; bottom: -5px; width: 2px; background: var(--ink); }
+.s4-scale-dot { position: absolute; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; background: var(--green); border: 2px solid var(--surface); box-shadow: 0 1px 4px rgba(0, 0, 0, .3); transition: left .8s cubic-bezier(.3, .7, .3, 1), background .3s; z-index: 1; }
+.s4-scale-dot.low { background: var(--amber); }
+.s4-scale-ticks { position: relative; height: 18px; font-size: 11px; color: var(--muted); }
+.s4-scale-ticks span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
+.s4-scale-ticks span:first-child { transform: none; }
+.s4-scale-ticks span:last-child { transform: translateX(-100%); }
+.s4-scale-ticks b { color: var(--ink); }
+.s4-verdict { font-weight: 700; font-size: 15px; }
+.s4-verdict.ok { color: var(--green); }
+.s4-verdict.bad { color: var(--amber); }
+.s4-canvas-box { min-width: 0; background: var(--bg); border-radius: 12px; padding: 10px; }
+#s4-grid { display: block; width: 100%; height: 230px; }
+.s4-sw-off { background: var(--line); border: 1px solid var(--muted); }
+.s4-crit { display: grid; gap: 8px; }
+.s4-crit-t { font-size: 15px; font-weight: 650; }
+.s4-crit ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.s4-crit li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; padding: 8px 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); font-size: 15px; line-height: 1.6; }
+.s4-crit li em { font-style: normal; font-size: 13px; font-weight: 650; color: var(--indigo); white-space: nowrap; }
+.s4-flow { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+@media (max-width: 640px) { .s4-flow { grid-template-columns: 1fr 1fr; } }
+.s4-flow li { display: grid; gap: 2px; align-content: start; padding: 10px 12px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); font-size: 13.5px; line-height: 1.55; }
+.s4-flow li b { font-size: 15px; }
+.s4-flow li.good { border-color: var(--green); background: var(--green-soft); }
+.s4-flow li.bad { border-color: var(--amber); background: var(--amber-soft); }
+
+/* 知识点 5：起网址 */
+.s4-addr { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); font-family: var(--font-mono); font-size: 14px; min-height: 42px; }
+.s4-addr::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--green); flex: none; }
+.s4-addr-t { overflow-wrap: anywhere; min-width: 0; }
+.s4-caret { width: 2px; height: 18px; background: var(--indigo); animation: blink 1s steps(1) infinite; flex: none; }
+.s4-urlq { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.s4-urlq > li { display: grid; gap: 8px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line); background: var(--bg); }
+.s4-urlq-t { font-size: 15px; font-weight: 650; }
+.s4-uopts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+@media (max-width: 560px) { .s4-uopts { grid-template-columns: 1fr; } }
+.s4-uopt { font: inherit; font-family: var(--font-mono); font-size: 13.5px; text-align: left; padding: 10px 12px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; overflow-wrap: anywhere; line-height: 1.5; touch-action: manipulation; }
+.s4-uopt:hover:not(:disabled) { border-color: var(--indigo); }
+.s4-uopt:disabled { cursor: default; }
+.s4-uopt small { display: block; font-family: var(--font-body); font-size: 12px; color: var(--muted); }
+.s4-uopt.right { border-color: var(--green); background: var(--green-soft); }
+.s4-uopt.wrong { border-color: var(--amber); background: var(--amber-soft); animation: shake .45s; }
+.s4-uwhy { font-size: 14.5px; line-height: 1.7; }
+.s4-uwhy > b.ok { color: var(--green); }
+.s4-uwhy > b.miss { color: var(--amber); }
+
+/* 知识点 6：多语言 */
+.s4-lang-stage { display: grid; grid-template-columns: 1.1fr 1fr; gap: 14px; align-items: start; }
+@media (max-width: 640px) { .s4-lang-stage { grid-template-columns: 1fr; } }
+.s4-lrows { display: grid; gap: 8px; align-content: start; }
+.s4-lrow { display: grid; grid-template-columns: 4.6em 1fr auto; gap: 10px; align-items: center; font-size: 14px; }
+.s4-lrow .sq { display: flex; flex-wrap: wrap; gap: 4px; }
+.s4-lrow .sq i { width: 16px; height: 16px; border-radius: 4px; background: var(--indigo); animation: s4-pop .45s both; animation-delay: var(--d, 0s); }
+.s4-lrow.extra .sq i { background: var(--amber); }
+.s4-lrow .n { font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); white-space: nowrap; }
+.s4-lang-total { font-size: 15px; }
+.s4-lang-total b { font-family: var(--font-mono); font-size: 20px; color: var(--indigo); }
+.s4-side-t { font-size: 13.5px; font-weight: 700; color: var(--muted); margin-bottom: 6px; }
+.s4-risks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.s4-risks li { padding: 8px 12px; border-radius: 10px; background: var(--amber-soft); font-size: 14px; line-height: 1.6; animation: rise .4s both; animation-delay: var(--d, 0s); }
+.s4-bars { display: grid; gap: 6px; }
+.s4-bar { display: grid; grid-template-columns: 4em 1fr 3em; gap: 8px; align-items: center; font-size: 13.5px; }
+.s4-bar .tr { height: 12px; border-radius: 6px; background: var(--bg); border: 1px solid var(--line); overflow: hidden; }
+.s4-bar .tr i { display: block; height: 100%; width: 0; background: var(--muted); opacity: .55; transition: width .8s cubic-bezier(.3, .7, .3, 1); }
+.s4-bar.es .tr i { background: var(--indigo); opacity: 1; }
+.s4-bar.es { font-weight: 650; color: var(--indigo); }
+.s4-bar .pc { font-family: var(--font-mono); font-size: 12.5px; text-align: right; }
+.s4-pick { margin-top: 8px; padding: 8px 12px; border-radius: 10px; background: var(--green-soft); font-size: 14px; line-height: 1.6; animation: rise .4s both; animation-delay: var(--d, 0s); }
+</style>
+</head>
+<body data-page="s4">
+<header id="topbar"></header>
+
+<div class="ph"><div class="wrap">
+  <span class="eyebrow">第 4 步 / 共 8 步</span>
+  <h1>定结构、定页面：一个站不止一页，其他页面从哪来</h1>
+  <p class="lead">核心词找好了，可网站不可能只有首页一页。其他页面从哪来、第一天先做哪几页、工具放哪、网址怎么起、要不要做多语言？这一页拿虚构的站 FramePop（主打 lumibo video generator）从第 1 天搭到第 3 个月。</p>
+  <ul class="asks">
+    <li><a href="#k1">网站的页面是怎么排的？核心词放哪一层？</a></li>
+    <li><a href="#k2">上线第一天要做哪几页？</a></li>
+    <li><a href="#k3">工具放 app 子域名，还是和介绍放一起？</a></li>
+    <li><a href="#k4">能不能一口气铺几百上千个页面？</a></li>
+    <li><a href="#k5">网址怎么起？上线以后能改吗？</a></li>
+    <li><a href="#k6">多语言什么时候做？</a></li>
+  </ul>
+  <div class="gist"><span class="lab">一句话答案</span><p>网站是一棵树：首页打核心词，功能页和目录打二级词，目录里的内页打三级词。第一天只种必须的 7 页，工具和介绍放同一个网址；之后看 <button type="button" class="term" data-t="gsc">GSC</button> 数据一批批加页，网址定了别改，多语言最后再说。</p></div>
+</div></div>
+
+<main class="wrap">
+  <div class="scorebar s4-topscore" data-scorebar></div>
+
+  <!-- ===================== 知识点 1 ===================== -->
+  <section class="kp" id="k1">
+    <div class="kp-head"><span class="kp-no">知识点 1</span><h2>网站是一棵树：核心词放首页，越往下越细</h2></div>
+    <p class="kp-say">网站不是一堆散页，是一棵<b>树</b>。首页是树干，主打核心词；往下一层是功能页和<button type="button" class="term" data-t="s4-folder">目录</button>，接二级词；目录里的内页，接三级词。<span class="st hf">哥飞原话</span></p>
+    <p class="kp-say">首页要把下面这些页<b>分门别类罗列</b>出来，一层层链下去，人和谷歌的<button type="button" class="term" data-t="crawler">爬虫</button>都顺着走。<span class="st hf">哥飞原话</span></p>
+    <blockquote class="said"><p>「主关键词用域名首页来做，二级关键词用子目录来做，三级关键词用子目录的子目录来做，最后是内页。」</p><span class="who">哥飞 · 2024-08-12</span></blockquote>
+    <p class="kp-say">这棵树也不是一天长成的。哪一页什么时候做，下面的排期是哥飞 SEO Agent 按哥飞的方法排的建议。<span class="st tl">推出来的</span></p>
+
+    <div class="viz" id="s4-tree">
+      <div class="viz-head"><span class="viz-label">动手玩 · 拖时间条</span><p class="viz-title">FramePop 这棵树，从第 1 天长到第 3 个月</p></div>
+      <div class="s4-time">
+        <label class="range-wrap"><span>现在是：<b id="s4-time-lab">第 1 天</b></span>
+          <input type="range" id="s4-time" min="0" max="3" step="1" value="0" aria-label="拖动时间，看网站长出新页面">
+          <span class="s4-ticks"><span>第 1 天</span><span>第 2～4 周</span><span>第 2 个月</span><span>第 3 个月</span></span>
+        </label>
+        <button type="button" class="btn primary" id="s4-play">从第 1 天播一遍</button>
+      </div>
+      <div class="s4-tree-stage">
+        <svg class="s4-svg" viewBox="0 0 760 372" role="img" aria-label="FramePop 的网站树：首页在最上层，下面是功能页和目录，再下面是目录里的内页，页脚是定价、关于、隐私政策、服务条款；还没做的页面是淡淡的虚线框">
+          <text class="s4-lay-t" x="6" y="42">第 1 层</text><text class="s4-lay-s" x="6" y="58">首页 · 主词</text>
+          <text class="s4-lay-t" x="6" y="146">第 2 层</text><text class="s4-lay-s" x="6" y="162">功能页、目录</text>
+          <text class="s4-lay-t" x="6" y="252">第 3 层</text><text class="s4-lay-s" x="6" y="268">内页 · 三级词</text>
+          <text class="s4-lay-t" x="6" y="342">页脚</text><text class="s4-lay-s" x="6" y="358">必备页</text>
+          <text class="s4-lay-note" x="120" y="252">同一类的内页，</text>
+          <text class="s4-lay-note" x="120" y="270">放进同一个目录 →</text>
+          <rect class="s4-foot-bar" x="168" y="322" width="584" height="46" rx="10"/>
+          <text class="s4-foot-t" x="744" y="349" text-anchor="end">每一页底部都链到这几页</text>
+          <g id="s4-t-ghost"></g><g id="s4-t-edge"></g><g id="s4-t-node"></g>
+        </svg>
+      </div>
+      <p class="s4-swipe">树比屏幕宽，左右滑动能看全；拖时间条时会自动滑到新长出来的地方。</p>
+      <p class="viz-say" id="s4-tree-say" aria-live="polite"></p>
+      <div class="s4-below">
+        <div class="s4-home">
+          <div class="s4-home-bar"><span>首页长这样：</span><code>framepop.com/</code></div>
+          <ol class="s4-outline" id="s4-outline"></ol>
+        </div>
+        <div class="s4-rule">
+          <p class="s4-rule-t">三层口诀</p>
+          <ul>
+            <li><b>主词 → 首页</b><code>framepop.com/</code></li>
+            <li><b>二级词 → 功能页、目录</b><code>/image-to-video　/for/</code></li>
+            <li><b>三级词 → 目录里的内页</b><code>/for/tiktok</code></li>
+          </ul>
+          <p class="viz-note">首页用 H1 写主词，H2 写分类，H3 列出每个内页并链过去。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="box case"><span class="lab">真实案例</span><p>哥飞拿 Ahrefs 的免费写作工具页当样板：H1 写总词，H2 分 4 大类，每类下面用 H3 列出具体工具，一共约 40 个，每个工具各有自己的一页。这一页拿到了第三名，单个工具页 outline generator 拿到了第一名。<span class="st hf">哥飞原话</span></p></div>
+    <div class="box analogy"><span class="lab">打个比方</span><p>像商场的指示牌：一楼大厅（首页）写着每层卖什么，每层（目录）再列出这层的店（内页）。顾客和谷歌的爬虫都顺着指示牌一层层走。</p></div>
+
+    <div class="quiz" data-answer="A">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">FramePop 的核心词 lumibo video generator，应该放在网站的哪一层？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">首页，标题和 H1 都写它</button>
+        <button class="q-opt" data-l="B">第 3 层的教程页，文章写得长，更容易排上去</button>
+        <button class="q-opt" data-l="C">每一页的标题都写它，哪页排上去算哪页</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>主词用首页做，二级词用目录，三级词放目录里的内页。每页只主打一个词；每页都写主词，等于一堆页面抢同一个词，力气反而散了。<span class="st hf">哥飞原话</span></p></div>
+    </div>
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://new.web.cafe/tutorial/detail/b65kyom8b2">《两大 SEO 原则：“分门别类罗列”和“一个关键词一个页面”》</a><span class="meta">哥飞 · 2025-01-14</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/o3RNNMKZAMtBADNFswicqE">《【5800字长文】从网站站内优化到部署上线再到推广运营一篇文章让你学明白》</a><span class="meta">哥飞 · 2024-08-12</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/lqxrxz4wux">《再聊内链和内页，以及如何做好一个内容型工具站》</a><span class="meta">哥飞 · 2025-01-15</span></li>
+      <li><span>页面排期：哥飞 SEO Agent 2026-10-26 的回答，按哥飞的方法排的建议，不是哥飞原话</span></li>
+    </ul></div>
+  </section>
+
+  <!-- ===================== 知识点 2 ===================== -->
+  <section class="kp" id="k2">
+    <div class="kp-head"><span class="kp-no">知识点 2</span><h2>第一天要上哪几页？只种必须的</h2></div>
+    <p class="kp-say">第一天不用做全。清单是：<b>首页</b>（放工具）、<b>至少 1 个功能页</b>、<b>定价</b>、<b>关于</b>、<b>隐私政策</b>、<b>服务条款</b>。用途页、模板页、对比页、博客，上线后按用户需求慢慢加，多语言最后。<span class="st tl">推出来的</span></p>
+    <p class="kp-say">页面有哪几类，来自哥飞转载的一篇活动分享（竞品对比、功能介绍、小工具、模板）；哪一天做哪页，是按哥飞的方法推出来的。<span class="st tl">推出来的</span></p>
+    <p class="kp-say">定价、<button type="button" class="term" data-t="s4-legal">隐私政策、服务条款</button>不会带来搜索流量，但<button type="button" class="term" data-t="s4-review">收款审核</button>要看网站：Creem 的审核员会亲自打开你的网站试用。<span class="st sq">社群经验</span></p>
+
+    <div class="viz" id="s4-box">
+      <div class="viz-head"><span class="viz-label">动手玩 · 拖卡片进箱子</span><p class="viz-title">上线箱：FramePop 第 1 天要带哪几页？</p></div>
+      <p class="dd-hint">把卡片拖进上线箱（电脑上在右边，手机上在下面）；也可以先点一下卡片，再点箱子。放好了点「检查」。</p>
+      <div class="s4-dd">
+        <div class="dd-zone" id="s4-pool"><span class="dd-zone-head">页面卡（和模拟器第 4 关同一份清单）</span></div>
+        <div class="dd-zone s4-crate" id="s4-crate"><span class="dd-zone-head">上线箱 · 第 1 天</span></div>
+      </div>
+      <div class="viz-controls">
+        <button type="button" class="btn primary" id="s4-check">检查</button>
+        <button type="button" class="btn" id="s4-answer">放好参考答案</button>
+        <button type="button" class="btn" id="s4-empty">全部拿出来</button>
+        <span class="s4-count" id="s4-count">箱子里 0 页</span>
+      </div>
+      <ul class="s4-lights" id="s4-lights"></ul>
+      <p class="viz-say" id="s4-box-say" aria-live="polite">箱子还是空的。把你觉得第 1 天必须有的页拖进去，再点「检查」，看哪盏灯亮。</p>
+    </div>
+
+    <div class="box case"><span class="lab">真实案例</span><p><b>Ben</b> 抢 genie3 这个新词，买完域名大约 2 小时就上线，第一版只有：落地页、博客、关于、隐私协议、用户协议。<b>Lafe</b>（新词比赛第一）说，SEO 的最小版本可以是「单落地页跳转一个功能页」。<span class="st sq">社群经验</span></p><p><b>孟健</b>的收款审核被拒过两次：一次是 AI 编了不存在的用户数据，一次是一个小图标点不了。审核员真的会一页页点。<span class="st sq">社群经验</span></p></div>
+
+    <div class="quiz" data-answer="C">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">FramePop 第一天时间很紧，下面哪一页可以先不做？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">隐私政策 /privacy</button>
+        <button class="q-opt" data-l="B">定价页 /pricing</button>
+        <button class="q-opt" data-l="C">对比页 /vs/sora</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>对比页接的是「lumibo 2 vs sora」这类词，等上线后有数据、第 2 个月再做也来得及。隐私政策和定价页不带流量，但收款审核会看，第一天就要有。<span class="st tl">推出来的</span></p></div>
+    </div>
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://mp.weixin.qq.com/s/hTokwwXY_EMJp45N06e7Og">《活动回顾｜AI SaaS 出海 SEO 与 AI 原生 CMS 实践》</a><span class="meta">哥飞公众号转载 · 2024-07-19 · 页面类型出自这里，不是哥飞原话</span></li>
+      <li><a href="https://new.web.cafe/topic/qroffybyzo">《我单方面宣布在 genie3 抢新词大战中获胜，复盘一下》</a><span class="meta">Ben · 2025-08-10</span></li>
+      <li><a href="https://mp.weixin.qq.com/s/184_gs6uTbSu6Zl5hZZhqg">《5天170万访问量，2025年3月新词新站大赛第一名 Lafe 的经验分享》</a><span class="meta">Lafe（哥飞公众号转载） · 2025-05-17</span></li>
+      <li><a href="https://new.web.cafe/topic/3xvtpo244a">《手把手 Creem 从注册到收款》</a><span class="meta">帆 · 2025-07-21</span></li>
+      <li><a href="https://new.web.cafe/topic/bh3di61bwx">《复盘：第一个 AI 出海站，我做错了哪些事？》</a><span class="meta">孟健 · 2025-10-03</span></li>
+      <li><span>第一天的页面清单和排期：哥飞 SEO Agent 2026-10-26 的建议</span></li>
+    </ul></div>
+  </section>
+
+  <!-- ===================== 知识点 3 ===================== -->
+  <section class="kp" id="k3">
+    <div class="kp-head"><span class="kp-no">知识点 3</span><h2>工具放哪：和介绍文字放在同一个网址</h2></div>
+    <p class="kp-say">很多海外 AI 站这样分：官网 framepop.com 放介绍和博客，工具放在 app.framepop.com 这种<button type="button" class="term" data-t="subdomain">子域名</button>里，登录了才能用。哥飞说这样不好。<span class="st hf">哥飞原话</span></p>
+    <blockquote class="said"><p>「这样在谷歌眼里，就相当于是两个网站，不利于SEO。」</p><span class="who">哥飞 · 2025-01-16</span></blockquote>
+    <p class="kp-say">更好的做法：工具、介绍文字、生成结果<b>合在同一个页面</b>，全站一个域名；博客放在<button type="button" class="term" data-t="subdir">子目录</button> <code>/blog</code>。登录前后最好也是同一个网址。<span class="st hf">哥飞原话</span></p>
+
+    <div class="viz" id="s4-sites">
+      <div class="viz-head"><span class="viz-label">切换对比 · 点两个按钮</span><p class="viz-title">同一个工具放两种地方，谷歌看到的不一样</p></div>
+      <div class="seg" id="s4-site-seg"><button type="button" data-v="split" aria-pressed="true">工具放 app.framepop.com</button><button type="button" data-v="merge" aria-pressed="false">都放 framepop.com</button></div>
+      <svg class="s4-svg s4-sites-svg" viewBox="0 0 400 302" role="img" aria-label="对比图：工具放子域名时是两个分开的圆，合在一个网址时变成一个大圆">
+        <text class="s4-eye" x="200" y="24" text-anchor="middle">谷歌眼里：<tspan id="s4-eye-n" class="n2">2 个网站</tspan></text>
+        <circle id="s4-cA" class="s4-site" cx="105" cy="145" r="78"/>
+        <circle id="s4-cB" class="s4-site" cx="295" cy="145" r="78"/>
+        <g id="s4-split-lab">
+          <path class="s4-jump" d="M160 82 Q200 54 240 82"/>
+          <text class="s4-jump-t" x="200" y="50" text-anchor="middle">点「开始」跳过去</text>
+          <text class="s4-site-name" x="105" y="103" text-anchor="middle">framepop.com</text>
+          <text class="s4-site-sub" x="105" y="119" text-anchor="middle">介绍文字、博客</text>
+          <text class="s4-site-name" x="295" y="103" text-anchor="middle">app.framepop.com</text>
+          <text class="s4-site-sub" x="295" y="119" text-anchor="middle">工具（登录后才能用）</text>
+          <text class="s4-site-cap" x="105" y="248" text-anchor="middle">有文字，没人停留</text>
+          <text class="s4-site-cap" x="295" y="248" text-anchor="middle">有人用，没文字</text>
+        </g>
+        <g id="s4-merge-lab" opacity="0">
+          <text class="s4-site-name" x="200" y="80" text-anchor="middle">framepop.com</text>
+          <text class="s4-site-sub" x="200" y="97" text-anchor="middle">工具 + 介绍文字 + 生成结果</text>
+          <text class="s4-site-cap good" x="200" y="292" text-anchor="middle">文字和用户数据，记在同一个网址</text>
+        </g>
+        <g id="s4-tlines"></g>
+        <g id="s4-udots"></g>
+        <g id="s4-blog" class="s4-blog"><circle r="18" cx="0" cy="0"/><text x="0" y="4" text-anchor="middle">/blog</text></g>
+      </svg>
+      <div class="legend-row"><span><i class="sw good"></i>用户行为（停留、点击）</span><span><i class="sw mut"></i>介绍文字</span></div>
+      <p class="viz-say" id="s4-site-say" aria-live="polite"></p>
+    </div>
+
+    <div class="box analogy"><span class="lab">打个比方</span><p>像一家店：招牌和介绍贴在 A 楼，收银台和试用区却在马路对面的 B 楼。顾客的好评都记在 B 楼，可 B 楼没招牌，路过的人不知道它是干什么的。</p></div>
+    <div class="box warn"><span class="lab">补充提醒：你可能看到相反的说法</span><p>哥飞 2023 年分析一个国学网站时提过「子域名比目录权重高」。那个站把字典、词典、成语做成三个独立的子站，每个子站本身就是一整个站。这里说的是把<b>同一个工具</b>拆成「介绍」和「使用」两半，情况不一样。<span class="st tl">推出来的</span></p></div>
+
+    <div class="quiz" data-answer="B">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">为什么不把 FramePop 的工具放在 app.framepop.com？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">子域名要另外花钱注册，一个站买两个域名不划算</button>
+        <button class="q-opt" data-l="B">谷歌会把它当成另一个网站，用户数据和介绍文字被拆成两半</button>
+        <button class="q-opt" data-l="C">app 开头的网址会被谷歌当成后台，一律不收录</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>子域名不用另买，也会被收录。问题是谷歌把它看成另一个网站：用户的停留、点击都记在 app 那边，可那边没有能拿流量的文字；官网全是文字，用户数据却很差。<span class="st hf">哥飞原话</span></p></div>
+    </div>
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://new.web.cafe/tutorial/detail/d2bbhguqe8">《精品工具页面的思路》</a><span class="meta">哥飞 · 2025-01-16</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/5yyr7zjxk7">《详解落地页的V1.0到V1.5版本，再到V2.0版本》</a><span class="meta">哥飞 · 2025-04-08 · 评论区有 /blog 那句</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/za408lc1q9">《再聊基于精品工具页面思路，如何做精品工具站》</a><span class="meta">哥飞 · 2025-03-07 · 登录前后同一个网址</span></li>
+      <li><a href="https://mp.weixin.qq.com/s/TACx5m8ZvU98sUzLEzfDqg">《分享一个谷歌和百度都优化得不错的网站》</a><span class="meta">哥飞 · 公众号文章，2023 年 · 「子域名比目录权重高」，用千篇国学网举例</span></li>
+    </ul></div>
+  </section>
+
+  <!-- ===================== 知识点 4 ===================== -->
+  <section class="kp" id="k4">
+    <div class="kp-head"><span class="kp-no">知识点 4</span><h2>新站别一口气铺几百上千页</h2></div>
+    <p class="kp-say">用程序套模板<button type="button" class="term" data-t="s4-batch">批量上页面</button>，对新站是死路。新站要<b>一页一页手工做精品页</b>，先上 10 个左右，看谷歌后台数据再慢慢加。<span class="st hf">哥飞原话</span></p>
+    <blockquote class="said"><p>「海量页面模式，不适合新域名。新站搞海量页面必死。」</p><span class="who">哥飞 · 2025-03-07</span></blockquote>
+    <p class="kp-say">哥飞还给了一条<button type="button" class="term" data-t="wscore">及格线</button>：GSC 里<b>有曝光有点击的页面数 ÷ 谷歌发现的页面数</b>，至少要到 1%（他写成 100‱，说是先拍脑袋定的）。低于它，就该停下来先处理老页面。<span class="st hf">哥飞原话</span></p>
+
+    <div class="viz" id="s4-many">
+      <div class="viz-head"><span class="viz-label">动手玩 · 拖页面数</span><p class="viz-title">新站发得越多，亮起来的比例越低</p></div>
+      <label class="range-wrap"><span>FramePop 第一批发多少页：<b id="s4-n-lab">10 页</b></span>
+        <input type="range" id="s4-n" min="0" max="3" step="1" value="0" aria-label="拖动选择第一批发多少页">
+        <span class="s4-ticks"><span>10</span><span>50</span><span>500</span><span>5000</span></span>
+      </label>
+      <div class="s4-many-body">
+        <div class="s4-stats">
+          <div class="s4-stat"><span>发出去</span><b id="s4-st-all">10</b></div>
+          <div class="s4-stat lit"><span>有曝光有点击</span><b id="s4-st-lit">8</b></div>
+          <div class="s4-stat"><span>比例</span><b id="s4-st-pct">80%</b></div>
+          <div class="s4-scale" aria-hidden="true">
+            <div class="s4-scale-bar"><span class="s4-scale-dot" id="s4-dot"></span></div>
+            <div class="s4-scale-ticks"><span style="left:0">0.1%</span><span style="left:33.33%"><b>1% 及格线</b></span><span style="left:66.67%">10%</span><span style="left:100%">100%</span></div>
+          </div>
+          <p class="s4-verdict ok" id="s4-verdict">高于及格线</p>
+        </div>
+        <div class="s4-canvas-box"><canvas id="s4-grid" role="img" aria-label="页面方块图"></canvas></div>
+      </div>
+      <div class="legend-row"><span><i class="sw good"></i>一格 = 一页，亮绿：有曝光有点击</span><span><i class="sw s4-sw-off"></i>灰格：发了，但没收录或没曝光（掉到及格线下变黄）</span><span><span class="st sy">示意</span>数字是编的</span></div>
+      <p class="viz-say" id="s4-many-say" aria-live="polite"></p>
+    </div>
+
+    <div class="s4-crit">
+      <p class="s4-crit-t">什么算「新站」？哥飞给了四条，符合得越多越算：</p>
+      <ul>
+        <li><span>域名注册不到 6 个月（不到 12 个月也算）</span><em>FramePop：3 天</em></li>
+        <li><span>网站上线不到 6 个月（不到 12 个月也算）</span><em>FramePop：3 天</em></li>
+        <li><span>链到你的网站不到 100 个，<button type="button" class="term" data-t="dr">DR</button> 不到 40</span><em>FramePop：0 个</em></li>
+        <li><span>被收录、进了谷歌前 20 名的页面不到 100 个</span><em>FramePop：0 页</em></li>
+      </ul>
+      <p class="viz-note">四条标准是哥飞原话；FramePop 的情况是示意。</p>
+    </div>
+    <p class="kp-say">那页面怎么加？哥飞的放量办法：<span class="st hf">哥飞原话</span></p>
+    <ol class="s4-flow">
+      <li><b>1 先上 10 页</b><span>首页给入口，也加进 <button type="button" class="term" data-t="sitemap">sitemap</button></span></li>
+      <li><b>2 去 GSC 看</b><span>收录了没有？有排名、有曝光、有点击吗？</span></li>
+      <li class="good"><b>都好</b><span>说明做对了，再加 20 页，接着看</span></li>
+      <li class="bad"><b>不好</b><span>查原因：词太难？内容不行？改好再上 10 页</span></li>
+    </ol>
+
+    <div class="box warn"><span class="lab">资料里前后说法不一样</span><p>2024 年 4 月，哥飞说自己最新的站「不到一个月收录十几万」。2025 年 3 月他专门写文章说清楚：结论是「新站批量上页面必死」，而不是「网站批量上页面必死」。两边都是哥飞原话，后一篇把「新站」这个前提补上了。<span class="st hf">哥飞原话</span></p></div>
+    <div class="box case"><span class="lab">真实案例</span><p><b>Woy.ai</b> 给每个网站做替代品列表页、标签页、每个板块单独一页，再乘以多语言，加上一大批新注册的域名给它做全站外链，最后谷歌里只剩首页 1 个页面。哥飞自己的图片站把每条提示词都做成一页，也被谷歌降了排名。<span class="st hf">哥飞原话</span></p></div>
+
+    <div class="quiz" data-answer="A">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">FramePop 刚上线 3 天，想多拿流量，第一批该上多少页？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">先上 10 个左右，看 GSC 数据再慢慢加</button>
+        <button class="q-opt" data-l="B">用程序按模板一口气生成 5000 页，撒大网总能捞到几条鱼</button>
+        <button class="q-opt" data-l="C">只做首页一页，以后也不加，免得被谷歌惩罚</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>新站批量铺页面必死，但也不是不加页。先上 10 个，都收录、都有点击，再加 20 个。只靠首页拿到的排名基础不牢，别人多做些内页就可能超过你。<span class="st hf">哥飞原话</span></p></div>
+    </div>
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://new.web.cafe/tutorial/detail/za408lc1q9">《再聊基于精品工具页面思路，如何做精品工具站》</a><span class="meta">哥飞 · 2025-03-07 · 「新站搞海量页面必死」</span></li>
+      <li><a href="https://mp.weixin.qq.com/s/X4lIBRE_tjjLNMhU1jfQdA">《新站批量化上页面，必死》</a><span class="meta">哥飞公众号 · 2025-03-20 · 四条标准、先上 10 页</span></li>
+      <li><a href="https://mp.weixin.qq.com/s/F4Z3HmA25GJvUPeqUW3zXw">《新站不批量上页面，那要怎么做页面呢？从对SEO祛魅开始！》</a><span class="meta">哥飞公众号 · 2025-03-21</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/lqxrxz4wux">《再聊内链和内页，以及如何做好一个内容型工具站》</a><span class="meta">哥飞 · 2025-01-15 · 及格线 100‱</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/xlft7pezkb">《【2025.9.8案例拆解】Wplace、Canva、jpg6.su》</a><span class="meta">哥飞 · 2025-10-13 · Woy.ai</span></li>
+      <li><a href="https://mp.weixin.qq.com/s/Dgf_3fJmNrBWj6u76essUw">《如何制作出SEO友好的网页？先从学习谷歌是如何理解我们网页开始》</a><span class="meta">哥飞公众号 · 2024-04-19 · 「一个月收录十几万」</span></li>
+    </ul></div>
+  </section>
+
+  <!-- ===================== 知识点 5 ===================== -->
+  <section class="kp" id="k5">
+    <div class="kp-head"><span class="kp-no">知识点 5</span><h2>网址怎么起：用词，不用编号；发出去就别改</h2></div>
+    <p class="kp-say">网址也按树来分层：首页 <code>framepop.com/</code>，目录 <code>/for/</code>，目录里的内页 <code>/for/tiktok</code>。<span class="st hf">哥飞原话</span></p>
+    <p class="kp-say"><button type="button" class="term" data-t="s4-slug">网址尾巴</button>用这一页要打的词来写，目录名用英文。<span class="st tl">推出来的</span>最要紧的是<b>上线前就想好</b>：发出去的网址别再改，以后有新规则，只用在新页面上。<span class="st hf">哥飞原话</span></p>
+
+    <div class="viz" id="s4-url">
+      <div class="viz-head"><span class="viz-label">动手玩 · 选网址</span><p class="viz-title">四个页面，各选一个更好的网址</p></div>
+      <div class="s4-addr" aria-live="polite"><span class="s4-addr-t" id="s4-addr">framepop.com/</span><span class="s4-caret"></span></div>
+      <ol class="s4-urlq" id="s4-urlq"></ol>
+      <div class="viz-controls"><button type="button" class="btn" id="s4-url-reset">重新选</button></div>
+      <p class="viz-say" id="s4-url-say" aria-live="polite">点你觉得更好的那个网址，它会打进上面的地址栏。</p>
+    </div>
+
+    <div class="quiz" data-answer="C">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">/image-to-video 上线 3 周，已经有排名了。你现在想把功能页都统一放进 /tools/ 目录，怎么办？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">直接改成 /tools/image-to-video，谷歌自己会找到</button>
+        <button class="q-opt" data-l="B">把老页面全部改成新格式，再一个个设跳转</button>
+        <button class="q-opt" data-l="C">老网址不动，以后新做的功能页再用 /tools/ 开头</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>群友问过一模一样的问题，哥飞答：「代码里做好判断，历史内容 URL 不改，新内容改成这个模式就行。」所以网址规则最好上线前就想好。<span class="st hf">哥飞原话</span></p></div>
+    </div>
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://new.web.cafe/tutorial/detail/lqxrxz4wux">《再聊内链和内页，以及如何做好一个内容型工具站》</a><span class="meta">哥飞 · 2025-01-15 · 文末答疑：历史网址不改</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/o3RNNMKZAMtBADNFswicqE">《【5800字长文】从网站站内优化到部署上线再到推广运营一篇文章让你学明白》</a><span class="meta">哥飞 · 2024-08-12 · 网址分层</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/0muzz8169o">《初学者的入门》</a><span class="meta">哥飞 · 2025-01-13 · 目录怎么建</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/5yyr7zjxk7">《详解落地页的V1.0到V1.5版本，再到V2.0版本》</a><span class="meta">哥飞 · 2025-04-08 · 博客放 /blog</span></li>
+      <li><span>「网址尾巴用词、不用编号，目录名用英文」：哥飞 SEO Agent 的建议</span></li>
+    </ul></div>
+  </section>
+
+  <!-- ===================== 知识点 6 ===================== -->
+  <section class="kp" id="k6">
+    <div class="kp-head"><span class="kp-no">知识点 6</span><h2>多语言什么时候做：放到最后</h2></div>
+    <p class="kp-say"><button type="button" class="term" data-t="multilang">多语言</button>放到最后，第一个站可以只做英语。<span class="st hf">哥飞原话</span></p>
+    <blockquote class="said"><p>「第一次做网站，可以先不考虑多语言，只做英文就可以。」</p><span class="who">哥飞 · 2025-01-13</span></blockquote>
+    <p class="kp-say">哥飞也说过，成功新站的做法是「工具+内容+多语言」。多语言是站稳以后加分的事，不是第一天的事：等上线后看 GSC 里哪些国家的人多，再挑一两种语言，先翻几个核心页。<span class="st tl">推出来的</span></p>
+
+    <div class="viz" id="s4-lang">
+      <div class="viz-head"><span class="viz-label">切换对比 · 点两个按钮</span><p class="viz-title">第 1 天就做多语言，和看数据再做，差在哪</p></div>
+      <div class="seg" id="s4-lang-seg"><button type="button" data-v="early" aria-pressed="true">第 1 天就做 4 种语言</button><button type="button" data-v="later" aria-pressed="false">先只做英语，看数据再说</button></div>
+      <div class="s4-lang-stage" id="s4-lang-stage">
+        <div>
+          <div class="s4-lrows" id="s4-lrows"></div>
+          <p class="s4-lang-total" style="margin-top:10px">要维护的页面：<b id="s4-lang-n">0</b> 页</p>
+        </div>
+        <div id="s4-lside"></div>
+      </div>
+      <p class="viz-say" id="s4-lang-say" aria-live="polite"></p>
+    </div>
+
+    <div class="box good"><span class="lab">真要做的时候，记住三条</span><p>每种语言一个自己的网址：子目录 <code>/es/</code> 或子域名，别用同一个网址靠脚本切换。别按访客 IP 自动跳转，在页面上提示用户切换就行。每种语言自己写标题和 H1。<span class="st hf">哥飞原话</span>（群聊，经哥飞 SEO Agent 转述）</p><p>孟健补充：各语言版本要用 <button type="button" class="term" data-t="s4-hreflang">hreflang</button> 互相标出来，漏了会被当成重复页面。<span class="st sq">社群经验</span></p></div>
+    <div class="box case"><span class="lab">真实案例</span><p><b>孟健</b>选词只看了趋势线，上线后才发现流量几乎全来自巴西，被迫一上来就做多语言，「资源、外链的复杂度直接翻倍」；按 IP 自动切换语言，还让首页没被收录。<span class="st sq">社群经验</span></p><p><b>6 月新词比赛第 7 名</b>看到日本、巴西访问多，只把几个流量价值高的核心页翻成日语、葡语，没做全站多语言。<span class="st sq">社群经验</span></p></div>
+
+    <div class="quiz" data-answer="B">
+      <span class="q-tag">马上答一题</span>
+      <p class="q-title">FramePop 什么时候做多语言比较稳？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">第一天就做齐四五种语言，覆盖的国家越多，流量自然越多</button>
+        <button class="q-opt" data-l="B">先只做英语，看后台哪国人多，再挑几个核心页翻译</button>
+        <button class="q-opt" data-l="C">用同一个网址，按访客 IP 自动切成对应语言，省得多做页面</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>哥飞说第一个站可以只做英文。孟健一上来做多语言，复杂度翻倍；按 IP 自动跳转还让首页没被收录。<span class="st hf">哥飞原话</span> <span class="st sq">社群经验</span></p></div>
+    </div>
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://new.web.cafe/tutorial/detail/0muzz8169o">《初学者的入门》</a><span class="meta">哥飞 · 2025-01-13</span></li>
+      <li><a href="https://new.web.cafe/topic/bh3di61bwx">《复盘：第一个 AI 出海站，我做错了哪些事？》</a><span class="meta">孟健 · 2025-10-03</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/xlft7pezkb">《【2025.9.8案例拆解】Wplace、Canva、jpg6.su》</a><span class="meta">哥飞 · 2025-10-13 · Woy.ai 乘以多语言</span></li>
+      <li><a href="https://new.web.cafe/topic/qda33vd67g">《6月份新词第7名复盘》</a><span class="meta">特昂唐 · 2026-07-22</span></li>
+      <li><span>多语言用子目录或子域名、别自动跳转：哥飞 2024-12-30 群聊，经哥飞 SEO Agent 转述，无单独文章</span></li>
+    </ul></div>
+  </section>
+
+  <!-- ===================== 小结 ===================== -->
+  <section class="kp" id="recap">
+    <div class="kp-head"><span class="kp-no">小结</span><h2>这一步记住 6 件事</h2></div>
+    <div class="recap"><ol>
+      <li>网站是一棵树：首页打主词，功能页和目录打二级词，目录里的内页打三级词；首页把下面的页分门别类列出来。</li>
+      <li>第一天只种必须的：首页、1～2 个功能页、定价、关于、隐私政策、服务条款。用途、模板、对比、博客往后加。</li>
+      <li>工具和介绍文字放同一个网址，博客放 <code>/blog</code>，别把工具单独放到 app 子域名。</li>
+      <li>新站别批量铺页面：先上 10 个左右，看 GSC 有没有收录、曝光、点击，再一批批加。</li>
+      <li>网址用这一页要打的词来写，上线前想好；发出去的网址别再改。</li>
+      <li>多语言最后做：先只做英语，看后台哪国人多，再挑一两种、先翻核心页。</li>
+    </ol></div>
+    <div class="scorebar" data-scorebar></div>
+    <h3>这一步该读的原文（按顺序）</h3>
+    <ol class="readlist">
+      <li><a href="https://new.web.cafe/tutorial/detail/o3RNNMKZAMtBADNFswicqE">《【5800字长文】从网站站内优化到部署上线再到推广运营一篇文章让你学明白》</a><label><input type="checkbox">读过了</label><span class="why">首页怎么分门别类罗列、网址怎么按主词 / 二级 / 三级分层、内链怎么连，一篇讲全。</span><span class="meta">哥飞 · 2024-08-12 · 约 25 分钟</span></li>
+      <li><a href="https://mp.weixin.qq.com/s/X4lIBRE_tjjLNMhU1jfQdA">《新站批量化上页面，必死》</a><label><input type="checkbox">读过了</label><span class="why">什么算新站（四条标准），以及「先上 10 页、看 GSC 再放量」的做法。</span><span class="meta">哥飞公众号 · 2025-03-20 · 约 5 分钟</span></li>
+      <li><a href="https://mp.weixin.qq.com/s/F4Z3HmA25GJvUPeqUW3zXw">《新站不批量上页面，那要怎么做页面呢？从对SEO祛魅开始！》</a><label><input type="checkbox">读过了</label><span class="why">新站就一页一页手工做精品页；你只要和这个词搜索结果的前几十名比。</span><span class="meta">哥飞公众号 · 2025-03-21 · 约 8 分钟</span></li>
+    </ol>
+  </section>
+</main>
+
+<nav id="pager"></nav>
+<footer id="foot"></footer>
+<script src="assets/kit.js"></script>
+<script>
+(() => {
+  const { $, $$, svgEl, el, bindSeg, tween, sleep, fmt, replay, countUp, flip, dnd, reduce, SIM, addTerms, confetti, rng, afterPaint } = KIT;
+
+  addTerms({
+    's4-folder': ['目录', '网址里的一层“文件夹”，比如 framepop.com/blog/、framepop.com/for/。同一类的页面放进同一个目录。'],
+    's4-slug': ['网址尾巴', '网址最后那一段，比如 /image-to-video。用这一页要打的词来写，人和谷歌一看就懂；写成 /p?id=123 谁也看不懂。'],
+    's4-legal': ['隐私政策、服务条款', '告诉用户“你的数据怎么用”“用这个网站要守什么规矩”的两页说明。不指望它们带来搜索流量，但收款和广告审核要看。'],
+    's4-review': ['收款审核', '在 Creem、Stripe 这类收款平台开通收钱之前，平台要先看你的网站：是不是真的在卖东西、卖什么、多少钱。'],
+    's4-batch': ['批量上页面', '用程序套一个模板，一次生成几百、几千个页面发上网。'],
+    's4-hreflang': ['hreflang', '写在网页代码里的一行说明：这一页还有哪些语言版本、网址分别是什么。漏了，谷歌可能把几个语言版本当成重复页面。'],
+  });
+
+  // 页面清单用 KIT.SIM.pages（和模拟器第 4 关同一份）
+  const PG = Object.fromEntries(SIM.pages.map(p => [p.id, p]));
+  // 每一页第几个时间段长出来：0 第 1 天 / 1 第 2～4 周 / 2 第 2 个月 / 3 第 3 个月（按哥飞 SEO Agent 的排期，推出来的）
+  const WHEN = { home: 0, i2v: 0, t2v: 0, pricing: 0, about: 0, privacy: 0, terms: 0, tiktok: 1, prompts: 1, vs: 2, howto: 2, es: 3 };
+  SIM.pages.forEach(p => {
+    if (!(p.id in WHEN)) throw new Error(`第 4 步的时间表里缺这一页：${p.id}`);
+    if ((WHEN[p.id] === 0) !== !!p.day1) throw new Error(`时间表和页面清单的 day1 对不上：${p.id}`);
+  });
+
+  /* ===================== 知识点 1：网站树按时间长出来 ===================== */
+  const TW = 760;
+  const STAGES = ['第 1 天', '第 2～4 周', '第 2 个月', '第 3 个月'];
+  const NODES = [
+    { id: 'home', x: 430, y: 46, w: 236, h: 46, root: true, nm: '首页：' + SIM.core, pt: SIM.domain + '/' },
+    { id: 'es', x: 668, y: 46, w: 160, h: 46, parent: 'home', warn: true, nm: PG.es.name + ' · 看数据再定' },
+    { id: 'i2v', x: 160, y: 150, parent: 'home' },
+    { id: 't2v', x: 268, y: 150, parent: 'home' },
+    { id: 'prompts', x: 376, y: 150, parent: 'home' },
+    { id: 'dir-for', x: 484, y: 150, parent: 'home', dir: true, nm: '用途目录', pt: '/for/', when: WHEN.tiktok },
+    { id: 'dir-vs', x: 592, y: 150, parent: 'home', dir: true, nm: '对比目录', pt: '/vs/', when: WHEN.vs },
+    { id: 'dir-blog', x: 700, y: 150, parent: 'home', dir: true, nm: '博客目录', pt: '/blog/', when: WHEN.howto },
+    { id: 'tiktok', x: 470, y: 256, parent: 'dir-for' },
+    { id: 'vs', x: 580, y: 256, parent: 'dir-vs' },
+    { id: 'howto', x: 694, y: 256, w: 120, parent: 'dir-blog', pt: '/blog/how-to-use-…' },
+    { id: 'pricing', x: 224, y: 345, w: 96, h: 36, legal: true },
+    { id: 'about', x: 330, y: 345, w: 96, h: 36, legal: true },
+    { id: 'privacy', x: 436, y: 345, w: 96, h: 36, legal: true },
+    { id: 'terms', x: 542, y: 345, w: 96, h: 36, legal: true },
+  ];
+  const nodeById = Object.fromEntries(NODES.map(n => [n.id, n]));
+  SIM.pages.forEach(p => { if (!nodeById[p.id]) throw new Error(`网站树里少了页面清单里的：${p.id}`); });
+  NODES.forEach(n => {
+    const p = PG[n.id];
+    if (!p && !n.dir) throw new Error(`网站树里有页面清单里没有的页：${n.id}`);
+    if (!n.dir) n.when = WHEN[n.id];
+    n.w = n.w || 100;
+    n.h = n.h || 40;
+    n.nm = n.nm || p.name;
+    n.pt = n.pt || p.path;
+    n.full = p ? p.path : n.pt;
+  });
+  const tree = $('#s4-tree');
+  const tSvg = $('svg', tree);
+  const treeStage = $('.s4-tree-stage', tree);
+  function edgePath(n) {
+    if (n.id === 'es') { const h = nodeById.home; return `M${h.x + h.w / 2} ${h.y} L${n.x - n.w / 2} ${n.y}`; }
+    const p = nodeById[n.parent];
+    const y1 = p.y + p.h / 2, y2 = n.y - n.h / 2, ym = (y1 + y2) / 2;
+    return `M${p.x} ${y1} C${p.x} ${ym} ${n.x} ${ym} ${n.x} ${y2}`;
+  }
+  NODES.filter(n => n.parent).forEach(n => {
+    const d = edgePath(n);
+    svgEl('path', { d, class: 's4-edge-ghost' }, $('#s4-t-ghost'));
+    const e = svgEl('path', { d, class: 's4-edge' + (n.warn ? ' warn' : '') }, $('#s4-t-edge'));
+    e.style.setProperty('--len', Math.ceil(e.getTotalLength()));
+    n.edge = e;
+  });
+  NODES.forEach(n => {
+    const cls = ['s4-node', n.root && 'root', n.dir && 'dir', n.legal && 'legal', n.warn && 'warn'].filter(Boolean).join(' ');
+    const g = svgEl('g', { class: cls, transform: `translate(${n.x} ${n.y})` }, $('#s4-t-node'));
+    const pop = svgEl('g', { class: 's4-pop' }, g);
+    svgEl('rect', { x: -n.w / 2, y: -n.h / 2, width: n.w, height: n.h, rx: 8 }, pop);
+    const t1 = svgEl('text', { class: 'nm', x: 0, y: n.h > 40 ? -4 : -3, 'text-anchor': 'middle' }, pop);
+    t1.textContent = n.nm;
+    const t2 = svgEl('text', { class: 'pt', x: 0, y: n.h > 40 ? 14 : 12, 'text-anchor': 'middle' }, pop);
+    t2.textContent = n.pt;
+    svgEl('title', {}, g).textContent = `${n.nm}  ${n.full}`;
+    n.g = g;
+  });
+
+  // 首页“分门别类罗列”的样子：H1 主词，H2 分类，H3 列出每个内页
+  const OUTLINE = [
+    ['h1', 0, `<i>H1</i><span>${SIM.core}</span><em>首屏就是工具</em>`],
+    ['h2', 0, '<i>H2</i>功能'],
+    ['h3', 0, `<i>H3</i><u>${PG.i2v.kw}</u><small>${PG.i2v.path}</small>`],
+    ['h3', 0, `<i>H3</i><u>${PG.t2v.kw}</u><small>${PG.t2v.path}</small>`],
+    ['h3', WHEN.prompts, `<i>H3</i><u>${PG.prompts.kw}</u><small>${PG.prompts.path}</small>`],
+    ['h2', WHEN.tiktok, '<i>H2</i>用途'],
+    ['h3', WHEN.tiktok, `<i>H3</i><u>${PG.tiktok.kw}</u><small>${PG.tiktok.path}</small>`],
+    ['h2', WHEN.vs, '<i>H2</i>对比'],
+    ['h3', WHEN.vs, `<i>H3</i><u>${PG.vs.kw}</u><small>${PG.vs.path}</small>`],
+    ['h2', WHEN.howto, '<i>H2</i>教程'],
+    ['h3', WHEN.howto, `<i>H3</i><u>${PG.howto.kw}</u><small>/blog/…</small>`],
+    ['ft', 0, `页脚：${['pricing', 'about', 'privacy', 'terms'].map(id => PG[id].name).join(' · ')}`],
+    ['ft', WHEN.es, '语言切换：English · Español'],
+  ];
+  const outlineBox = $('#s4-outline');
+  const outlineItems = OUTLINE.map(([cls, when, html]) => {
+    const li = el('li', { class: cls, 'data-when': when }, html);
+    outlineBox.appendChild(li);
+    return li;
+  });
+
+  const TREE_SAY = [
+    '<b>第 1 天</b>：首页主打核心词，配 2 个功能页（图生视频、文生视频）；页脚放定价、关于、隐私政策、服务条款。先只种必须的。',
+    '<b>第 2～4 周</b>：后台开始有数据，按用户想干什么加页：想要场景的给<b>用途页</b>（for TikTok），想要素材的给<b>提示词模板页</b>。首页的分类列表跟着多出入口。',
+    '<b>第 2 个月</b>：加<b>对比页</b>（vs Sora）接住比来比去的人，开<b>博客</b>写教程接问句。每个新页都放进对应的目录。',
+    '<b>第 3 个月</b>：看 GSC 里哪些国家的人多，再考虑<b>多语言</b>。西班牙语版等于把整棵树再抄一遍，所以放到最后，也可以一直不做。',
+  ];
+  const treeSay = $('#s4-tree-say');
+  const timeLab = $('#s4-time-lab');
+  function paintTree(s, animate) {
+    const fresh = NODES.filter(n => n.when <= s && !n.g.classList.contains('on'));
+    if (!animate) tSvg.classList.add('s4-noanim');
+    NODES.forEach(n => {
+      const on = n.when <= s;
+      n.g.classList.toggle('on', on);
+      n.g.classList.toggle('ghost', !on);
+      if (!on || !animate) n.g.classList.remove('new');
+      if (n.edge) { n.edge.style.transitionDelay = '0s'; n.edge.classList.toggle('on', on); }
+    });
+    if (animate) {
+      fresh.sort((a, b) => a.y - b.y || a.x - b.x).forEach((n, i) => {
+        const d = reduce ? 0 : i * 0.16;
+        if (n.edge) n.edge.style.transitionDelay = d + 's';
+        n.g.style.setProperty('--d', (d + (n.edge && !reduce ? 0.35 : 0)) + 's');
+        n.g.getBoundingClientRect();
+        n.g.classList.add('new');
+      });
+    } else {
+      tSvg.getBoundingClientRect();
+      requestAnimationFrame(() => tSvg.classList.remove('s4-noanim'));
+    }
+    outlineItems.forEach(li => {
+      const on = Number(li.dataset.when) <= s;
+      const was = !li.classList.contains('later');
+      li.classList.toggle('later', !on);
+      if (on && !was && animate) replay(li);
+    });
+    if (s >= 0) {
+      timeLab.textContent = STAGES[s];
+      treeSay.innerHTML = TREE_SAY[s] + ' <span class="st tl">推出来的</span>';
+      if (animate) replay(treeSay);
+      // 手机上画面比屏幕宽：滑到新长出来的那一块
+      // 第 1 天停在首页（树干）；之后停在新长出来的页面
+      const focus = (fresh.length ? fresh : NODES.filter(n => n.when === s)).filter(n => !n.legal);
+      const ax = s === 0 ? 385 : focus.reduce((a, n) => a + n.x, 0) / focus.length;
+      const room = treeStage.scrollWidth - treeStage.clientWidth;
+      if (room > 0) {
+        const left = Math.max(0, Math.min(room, ax / TW * tSvg.clientWidth - treeStage.clientWidth / 2));
+        treeStage.scrollTo({ left, behavior: animate && !reduce ? 'smooth' : 'auto' });
+      }
+    }
+  }
+  const tRange = $('#s4-time');
+  let playTok = 0;
+  tRange.addEventListener('input', () => { playTok++; paintTree(Number(tRange.value), true); });
+  $('#s4-play').addEventListener('click', async () => {
+    const tok = ++playTok;
+    paintTree(-1, false);
+    for (let s = 0; s < STAGES.length; s++) {
+      await sleep(s === 0 ? 350 : 2000);
+      if (tok !== playTok) return;
+      tRange.value = s;
+      paintTree(s, true);
+    }
+  });
+  paintTree(0, false);
+
+  /* ===================== 知识点 2：上线箱 ===================== */
+  const CARD_ORDER = ['vs', 'home', 'privacy', 'tiktok', 'i2v', 'es', 'pricing', 'howto', 't2v', 'about', 'prompts', 'terms'];
+  if (CARD_ORDER.length !== SIM.pages.length || SIM.pages.some(p => !CARD_ORDER.includes(p.id))) throw new Error('上线箱的卡片和页面清单对不上');
+  const boxRoot = $('#s4-box'), pool = $('#s4-pool'), crate = $('#s4-crate');
+  CARD_ORDER.forEach(id => {
+    pool.appendChild(el('button', { type: 'button', class: 'dd-item s4-card', 'data-id': id }, `<b>${PG[id].name}</b><code>${PG[id].path}</code>`));
+  });
+  const LIGHTS = [['home', '首页'], ['func', '功能页'], ['pay', '定价、隐私、条款'], ['about', '关于'], ['lang', '多语言'], ['extra', '工作量']];
+  const lightBox = $('#s4-lights');
+  const lights = LIGHTS.map(([k, name]) => {
+    const li = el('li', { class: 's4-light', 'data-k': k, 'data-state': 'idle' }, `<i></i><b>${name}</b><span>还没检查</span>`);
+    lightBox.appendChild(li);
+    return li;
+  });
+  const boxSay = $('#s4-box-say');
+  const sayBox = (html, tone) => { boxSay.innerHTML = html; boxSay.className = 'viz-say' + (tone ? ' ' + tone : ''); replay(boxSay); };
+  const cardsIn = zone => $$('.dd-item', zone);
+  let checkTok = 0;
+  function afterChange() {
+    checkTok++;
+    const n = cardsIn(crate).length;
+    $('#s4-count').textContent = `箱子里 ${n} 页`;
+    lights.forEach(li => { li.dataset.state = 'idle'; $('span', li).textContent = '改过了，再点「检查」'; });
+    $$('.dd-item', boxRoot).forEach(b => b.classList.remove('right', 'wrong', 's4-miss'));
+    if (cardsIn(crate).some(b => b.dataset.id === 'es')) sayBox('箱子里有<b>西班牙语版</b>……先别急，点「检查」看看会怎样。');
+    else sayBox(n ? `箱子里 ${n} 页。觉得够了就点「检查」。` : '箱子空了。把你觉得第 1 天必须有的页拖进去。');
+  }
+  dnd(boxRoot, { items: '.dd-item', zones: '.dd-zone', onMove: afterChange });
+  function judge(set) {
+    const names = ids => ids.map(id => PG[id].name).join('、');
+    const payMiss = ['pricing', 'privacy', 'terms'].filter(id => !set.has(id));
+    const funcIn = ['i2v', 't2v'].filter(id => set.has(id));
+    const extra = ['prompts', 'tiktok', 'vs', 'howto'].filter(id => set.has(id));
+    return {
+      home: set.has('home') ? ['ok', `在。核心词 ${SIM.core} 有地方放了。`] : ['bad', '没有首页！核心词没地方放，首页是主战场。'],
+      func: funcIn.length ? ['ok', `放了 ${funcIn.length} 个，接住「${names(funcIn)}」这类二级词。`] : ['bad', '一个功能页都没有。至少放 1 个，接住「图生视频」这类二级词。'],
+      pay: payMiss.length ? ['bad', `少了${names(payMiss)}。收款审核会看这几页，少了可能过不了审。`] : ['ok', '三页都在，收款审核这一关有底了。'],
+      about: set.has('about') ? ['ok', '在。告诉用户和审核员：是谁在做这个站。'] : ['warn', '没放关于页。它告诉用户和审核员是谁在做这个站，第一天顺手做掉。'],
+      lang: set.has('es') ? ['bad', '放进了西班牙语版。多语言先别做：要管的页面和要查的错都会翻倍，等后台有数据再说。'] : ['ok', '没放多语言，对。'],
+      extra: extra.length ? ['info', `还放了${names(extra)}。不算错，但这些可以第 2 周以后再加，别为它们拖慢上线。`] : ['ok', '只放了第一天必须的，上线快。'],
+    };
+  }
+  $('#s4-check').addEventListener('click', async () => {
+    const tok = ++checkTok;
+    const inBox = cardsIn(crate);
+    const set = new Set(inBox.map(b => b.dataset.id));
+    if (!set.size) { sayBox('箱子还是空的。先把卡片拖进右边的箱子（或者先点卡片、再点箱子）。', 'bad'); return; }
+    const res = judge(set);
+    lights.forEach(li => { li.dataset.state = 'idle'; $('span', li).textContent = '检查中…'; });
+    sayBox('一盏一盏检查……');
+    for (const li of lights) {
+      await sleep(240);
+      if (tok !== checkTok) return;
+      const [state, text] = res[li.dataset.k];
+      li.dataset.state = state;
+      $('span', li).textContent = text;
+      replay(li, 's4-flash');
+    }
+    inBox.forEach(b => {
+      b.classList.toggle('right', !!PG[b.dataset.id].day1);
+      b.classList.toggle('wrong', b.dataset.id === 'es');
+    });
+    cardsIn(pool).filter(b => PG[b.dataset.id].need).forEach(b => b.classList.add('s4-miss'));
+    const failed = ['home', 'func', 'pay', 'about', 'lang'].filter(k => res[k][0] !== 'ok');
+    if (!failed.length) {
+      sayBox(`全是绿灯！FramePop 第 1 天就带这几页：首页、功能页、定价、关于、隐私政策、服务条款。其他的，上线后看数据再一页页加。${res.extra[0] === 'info' ? '（多放的几页不算错，只是可以晚点做。）' : ''}`, 'good');
+      confetti(boxRoot);
+    } else {
+      sayBox(`还有 <b>${failed.length}</b> 盏灯不是绿的。看上面的提示，把卡片挪一挪再点「检查」。没拿进箱子的必备页，卡片边框在闪。`, 'bad');
+    }
+  });
+  function moveAll(target) {
+    const all = $$('.dd-item', boxRoot);
+    flip(all, () => {
+      CARD_ORDER.forEach(id => {
+        const b = all.find(x => x.dataset.id === id);
+        (target(id) ? crate : pool).appendChild(b);
+      });
+    }, 450);
+    afterChange();
+  }
+  $('#s4-answer').addEventListener('click', () => { moveAll(id => !!PG[id].day1); $('#s4-check').click(); });
+  $('#s4-empty').addEventListener('click', () => moveAll(() => false));
+
+  /* ===================== 知识点 3：工具放哪 ===================== */
+  const cA = $('#s4-cA'), cB = $('#s4-cB');
+  const splitLab = $('#s4-split-lab'), mergeLab = $('#s4-merge-lab'), eyeN = $('#s4-eye-n'), blog = $('#s4-blog');
+  const LINE_W = [62, 48, 56, 40, 52];
+  const tlines = LINE_W.map(w => svgEl('rect', { class: 's4-tline', height: 4, rx: 2, width: w }, $('#s4-tlines')));
+  const udots = Array.from({ length: 12 }, () => svgEl('circle', { class: 's4-udot', r: 5 }, $('#s4-udots')));
+  const lerp = (a, b, k) => a + (b - a) * k;
+  let kSite = 0, siteTok = 0;
+  function paintSites(k) {
+    cA.setAttribute('cx', lerp(105, 200, k)); cA.setAttribute('cy', lerp(145, 160, k)); cA.setAttribute('r', lerp(78, 108, k));
+    cB.setAttribute('cx', lerp(295, 200, k)); cB.setAttribute('cy', lerp(145, 160, k)); cB.setAttribute('r', lerp(78, 108, k));
+    tlines.forEach((r, i) => {
+      r.setAttribute('x', lerp(75, 150, k));
+      r.setAttribute('y', lerp(126 + i * 10, 160 + i * 11, k));
+      r.setAttribute('width', LINE_W[i] * lerp(1, 1.6, k));
+    });
+    udots.forEach((c, i) => {
+      const col = i % 4, row = Math.floor(i / 4);
+      c.setAttribute('cx', lerp(268 + col * 18, 158 + col * 28, k));
+      c.setAttribute('cy', lerp(132 + row * 18, 112 + row * 16, k));
+    });
+    blog.setAttribute('transform', `translate(${lerp(130, 262, k)} ${lerp(192, 222, k)})`);
+    splitLab.setAttribute('opacity', Math.max(0, 1 - k * 1.6));
+    mergeLab.setAttribute('opacity', Math.max(0, k * 1.6 - .6));
+    eyeN.textContent = k < .5 ? '2 个网站' : '1 个网站';
+    eyeN.setAttribute('class', k < .5 ? 'n2' : 'n1');
+  }
+  const SITE_SAY = {
+    split: ['工具放在 <code>app.framepop.com</code>：<b>谷歌把它看成另一个网站</b>。用户的停留、点击都记在 app 那边，可那边没有能拿排名的文字；官网有文字，用户却点一下就跳走了。两边都不够强。', 'bad'],
+    merge: ['工具、介绍文字、生成结果放进<b>同一个网址</b>：用户在这一页用工具、看结果，谷歌也在这一页读到文字，力气合成一股。博客也留在同一个域名下的 <code>/blog</code>。', 'good'],
+  };
+  const siteSay = $('#s4-site-say');
+  function showSite(v, animate) {
+    const [html, tone] = SITE_SAY[v];
+    siteSay.innerHTML = html;
+    siteSay.className = 'viz-say ' + tone;
+    const to = v === 'merge' ? 1 : 0, from = kSite, tok = ++siteTok;
+    if (!animate) { kSite = to; paintSites(to); return; }
+    replay(siteSay);
+    tween(1000, e => { if (tok !== siteTok) return; kSite = lerp(from, to, e); paintSites(kSite); });
+  }
+  bindSeg($('#s4-site-seg'), v => showSite(v, true));
+  showSite('split', false);
+
+  /* ===================== 知识点 4：页面数滑块 ===================== */
+  const COUNTS = [10, 50, 500, 5000];
+  const LIT = [8, 18, 15, 12];
+  const litSets = COUNTS.map((n, i) => {
+    const r = rng(n * 7 + 3), s = new Set();
+    while (s.size < LIT[i]) s.add(Math.floor(r() * n));
+    return s;
+  });
+  const MANY_SAY = [
+    ['先上 <b>10 页</b>：两周后 8 页有曝光有点击，比例 80%。说明页面做对了，可以再加 20 页，接着看。', 'good'],
+    ['<b>50 页</b>：18 页亮了，比例 36%。还在及格线上面，但新站再快，也得一页页做精品。', ''],
+    ['<b>500 页</b>：用程序批量铺出来，大多数谷歌没收录、没给曝光，只亮了 15 页，比例 3%，离及格线不远了。', 'bad'],
+    ['<b>5000 页</b>：比例掉到 0.24%，<b>低于 1% 及格线</b>。爬虫的力气全花在没用的页面上，谷歌可能连原来的好页面也不给曝光，就像 Woy.ai 被砍到只剩首页。', 'bad'],
+  ];
+  const cv = $('#s4-grid'), ctx = cv.getContext('2d');
+  let gStage = 0, gTok = 0, pctNow = 80;
+  function gridLayout(n) {
+    const W = cv.clientWidth, H = 230;
+    let cell = Math.min(34, Math.floor(Math.sqrt(W * H / n)));
+    while (cell > 2 && Math.ceil(n / Math.floor(W / cell)) * cell > H) cell--;
+    return { W, H, cell, cols: Math.max(1, Math.floor(W / cell)) };
+  }
+  function drawGrid(i, k) {
+    const n = COUNTS[i], lit = litSets[i], low = LIT[i] / n < 0.01;
+    const { W, H, cell, cols } = gridLayout(n);
+    if (!W) return;
+    const dpr = window.devicePixelRatio || 1;
+    cv.width = Math.round(W * dpr);
+    cv.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    const cs = getComputedStyle(document.documentElement);
+    const green = cs.getPropertyValue('--green').trim(), off = cs.getPropertyValue('--line').trim(), amber = cs.getPropertyValue('--amber').trim();
+    const gap = cell >= 8 ? 2 : cell >= 4 ? 1 : 0;
+    const rows = Math.ceil(n / cols);
+    const ox = (W - cols * cell) / 2, oy = Math.max(0, (H - rows * cell) / 2);
+    const drawn = Math.round(n * k);
+    const litDrawn = [];
+    for (let j = 0; j < drawn; j++) {
+      const x = ox + (j % cols) * cell, y = oy + Math.floor(j / cols) * cell;
+      if (lit.has(j)) { litDrawn.push([x, y]); continue; }
+      ctx.globalAlpha = low ? .4 : 1;
+      ctx.fillStyle = low ? amber : off;
+      ctx.fillRect(x, y, cell - gap, cell - gap);
+    }
+    // 亮绿的格最后画；格子太小时放大一圈，免得在一大片里找不到
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = green;
+    const grow = cell < 8 ? 2 : 0;
+    litDrawn.forEach(([x, y]) => ctx.fillRect(x - grow, y - grow, cell - gap + grow * 2, cell - gap + grow * 2));
+  }
+  const pctText = p => (p >= 10 ? Math.round(p) : p >= 1 ? +p.toFixed(1) : +p.toFixed(2)) + '%';
+  const scalePos = p => Math.max(0, Math.min(1, (Math.log10(p) + 1) / 3)) * 100;
+  function paintMany(i, animate) {
+    const tok = ++gTok;
+    gStage = i;
+    const n = COUNTS[i], l = LIT[i], pct = l / n * 100, low = pct < 1;
+    $('#s4-n-lab').textContent = fmt(n) + ' 页';
+    const all = $('#s4-st-all'), litEl = $('#s4-st-lit'), pctEl = $('#s4-st-pct');
+    if (animate) {
+      tween(Math.min(1500, 500 + n / 5), k => { if (tok === gTok) drawGrid(i, k); });
+      countUp(all, n);
+      countUp(litEl, l);
+      const from = pctNow;
+      tween(900, k => { if (tok === gTok) pctEl.textContent = pctText(from + (pct - from) * k); });
+    } else {
+      drawGrid(i, 1);
+      all.textContent = fmt(n); all.dataset.val = n;
+      litEl.textContent = fmt(l); litEl.dataset.val = l;
+      pctEl.textContent = pctText(pct);
+    }
+    pctNow = pct;
+    const dot = $('#s4-dot');
+    dot.style.left = scalePos(pct) + '%';
+    dot.classList.toggle('low', low);
+    const verdict = $('#s4-verdict');
+    verdict.textContent = low ? '低于 1% 及格线：该停下来了' : '高于 1% 及格线';
+    verdict.className = 's4-verdict ' + (low ? 'bad' : 'ok');
+    cv.setAttribute('aria-label', `${fmt(n)} 个方块，其中 ${l} 个亮绿`);
+    const [html, tone] = MANY_SAY[i];
+    const say = $('#s4-many-say');
+    say.innerHTML = html + ' <span class="st sy">示意</span>';
+    say.className = 'viz-say' + (tone ? ' ' + tone : '');
+    if (animate) replay(say);
+  }
+  $('#s4-n').addEventListener('input', e => paintMany(Number(e.target.value), true));
+  paintMany(0, false);
+  new ResizeObserver(() => { if (cv.clientWidth) drawGrid(gStage, 1); }).observe(cv);
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => drawGrid(gStage, 1));
+
+  /* ===================== 知识点 5：选网址 ===================== */
+  const URLQ = [
+    { t: `用途页，接 ${PG.tiktok.kw}`, opts: [{ url: SIM.domain + PG.tiktok.path, good: true }, { url: SIM.domain + '/p?id=123' }],
+      why: '网址尾巴写这一页要打的词，人和谷歌一看就知道这页讲什么；用途页都放进 <code>/for/</code> 这个目录。<span class="st tl">推出来的</span>' },
+    { t: `图生视频功能页，接 ${PG.i2v.kw}`, opts: [{ url: SIM.domain + '/tool2' }, { url: SIM.domain + PG.i2v.path, good: true }],
+      why: '<code>/tool2</code> 谁也看不懂，以后有 tool3、tool4 更乱。用词写网址，别人给你做链接时一看就懂。<span class="st tl">推出来的</span>' },
+    { t: '一篇教程：How to use Lumibo 2', opts: [{ url: 'blog.framepop.com/post-7' }, { url: SIM.domain + PG.howto.path, good: true }],
+      why: '博客要放在同一个网站的 <code>/blog</code> 目录下，别另开 blog 子域名。哥飞：「博客也需要在一个域名下，用子目录形式 /blog 来放博客。」<span class="st hf">哥飞原话</span>' },
+    { t: '以后要做西班牙语版首页', opts: [{ url: SIM.domain + PG.es.path, good: true }, { url: SIM.domain, type: SIM.domain, note: '同一个网址，按访客 IP 自动变成西语' }],
+      why: '每种语言要有自己的网址（子目录 <code>/es/</code> 或子域名），别用同一个网址靠脚本切换，也别按 IP 自动跳转。<span class="st hf">哥飞原话</span>（群聊，经哥飞 SEO Agent 转述）' },
+  ];
+  const urlList = $('#s4-urlq'), addr = $('#s4-addr'), urlSay = $('#s4-url-say');
+  let urlRight = 0, urlDone = 0, typeTok = 0;
+  function typeAddr(text) {
+    const tok = ++typeTok;
+    tween(Math.min(900, 250 + text.length * 22), k => { if (tok === typeTok) addr.textContent = text.slice(0, Math.max(1, Math.ceil(text.length * k))); });
+  }
+  function buildUrlQ() {
+    urlList.innerHTML = '';
+    urlRight = 0; urlDone = 0;
+    addr.textContent = SIM.domain + '/';
+    URLQ.forEach((q, qi) => {
+      const li = el('li', {}, `<p class="s4-urlq-t">${qi + 1}. ${q.t}</p>`);
+      const row = el('div', { class: 's4-uopts' });
+      const why = el('p', { class: 's4-uwhy' });
+      why.hidden = true;
+      q.opts.forEach(o => {
+        const b = el('button', { type: 'button', class: 's4-uopt' }, o.url + (o.note ? `<small>${o.note}</small>` : ''));
+        b.addEventListener('click', () => {
+          $$('button', row).forEach(x => { x.disabled = true; });
+          const goodBtn = $$('button', row)[q.opts.findIndex(x => x.good)];
+          goodBtn.classList.add('right');
+          if (!o.good) b.classList.add('wrong');
+          typeAddr(o.type || o.url);
+          why.innerHTML = (o.good ? '<b class="ok">选对了。</b>' : '<b class="miss">另一个更好。</b>') + q.why;
+          why.hidden = false;
+          replay(why);
+          urlDone++;
+          if (o.good) urlRight++;
+          if (urlDone === URLQ.length) {
+            const all = urlRight === URLQ.length;
+            urlSay.innerHTML = all ? `4 个全选对！记住两条：<b>网址用词写</b>；<b>同一类页面放一个目录</b>。` : `选对 ${urlRight} / ${URLQ.length}。记住两条：<b>网址用词写</b>；<b>同一类页面放一个目录</b>。`;
+            urlSay.className = 'viz-say ' + (all ? 'good' : 'bad');
+            if (all) confetti($('#s4-url'));
+          } else {
+            urlSay.innerHTML = `已经选了 ${urlDone} / ${URLQ.length}，选对 ${urlRight} 个。`;
+            urlSay.className = 'viz-say';
+          }
+          replay(urlSay);
+        });
+        row.appendChild(b);
+      });
+      li.append(row, why);
+      urlList.appendChild(li);
+    });
+    urlSay.innerHTML = '点你觉得更好的那个网址，它会打进上面的地址栏。';
+    urlSay.className = 'viz-say';
+  }
+  $('#s4-url-reset').addEventListener('click', buildUrlQ);
+  buildUrlQ();
+
+  /* ===================== 知识点 6：多语言 ===================== */
+  const DAY1 = SIM.pages.filter(p => p.day1).length;
+  const LANG = {
+    early: {
+      rows: [['英语', DAY1, ''], ['西班牙语', DAY1, 'extra'], ['日语', DAY1, 'extra'], ['葡萄牙语', DAY1, 'extra']],
+      say: [`第 1 天就做 4 种语言：要管的页面从 ${DAY1} 页变成 ${DAY1 * 4} 页，每一种都要自己写标题、H1，还要把 hreflang 写对。孟健就是一上来做多语言，资源、外链的复杂度直接翻倍。`, 'bad'],
+    },
+    later: {
+      rows: [['英语', DAY1, ''], ['西班牙语', 2, '']],
+      say: ['先只做英语。第 6 周看 GSC 国家分布（示意）：说西语的人不少，就只把<b>首页和图生视频页</b>翻成西语，网址是 <code>/es/</code> 和 <code>/es/image-to-video</code>。', 'good'],
+    },
+  };
+  const RISKS = [
+    '每种语言都要自己写标题和 H1，不能直接机翻英文版',
+    '各语言版本要用 hreflang 互相标出来，漏了会被当成重复页（孟健踩过）',
+    '按 IP 自动跳转语言，首页可能不被收录（孟健踩过）',
+    '外链、推广要按国家再做一遍，复杂度翻倍（孟健）',
+    '低质量页面再乘以语言数，Woy.ai 就是这样被砍到只剩首页',
+  ];
+  const COUNTRIES = [['美国', 41, ''], ['墨西哥', 12, 'es'], ['印度', 9, ''], ['英国', 8, ''], ['西班牙', 7, 'es'], ['其他', 23, '']];
+  const lrows = $('#s4-lrows'), lside = $('#s4-lside'), langSay = $('#s4-lang-say'), langN = $('#s4-lang-n');
+  function paintLang(mode, animate) {
+    const cfg = LANG[mode];
+    const delayStyle = d => `style="--d:${d.toFixed(2)}s${animate ? '' : ';animation:none'}"`;
+    const rowDelay = mode === 'later' ? [0, 1.3] : [0, .25, .5, .75];
+    lrows.innerHTML = cfg.rows.map(([name, n, cls], r) => `<div class="s4-lrow ${cls}"><span>${name}</span><span class="sq">${
+      Array.from({ length: n }, (_, j) => `<i ${delayStyle(rowDelay[r] + j * .04)}></i>`).join('')
+    }</span><span class="n">${n} 页</span></div>`).join('');
+    if (mode === 'early') {
+      lside.innerHTML = `<p class="s4-side-t">同时冒出来的麻烦</p><ul class="s4-risks">${
+        RISKS.map((t, i) => `<li ${delayStyle(.3 + i * .25)}>${t}</li>`).join('')
+      }</ul>`;
+    } else {
+      lside.innerHTML = `<p class="s4-side-t">第 6 周 · GSC 国家分布（示意）</p><div class="s4-bars">${
+        COUNTRIES.map(([c, p, cls]) => `<div class="s4-bar ${cls}"><span>${c}</span><span class="tr"><i data-w="${p / 45 * 100}"${animate ? '' : ' style="transition:none"'}></i></span><span class="pc">${p}%</span></div>`).join('')
+      }</div><p class="s4-pick" ${delayStyle(1.2)}>说西语的（墨西哥 + 西班牙）加起来 19%：先翻 2 个核心页试试。</p>`;
+      const bars = $$('.tr i', lside);
+      const grow = () => bars.forEach(b => { b.style.width = b.dataset.w + '%'; });
+      if (animate) afterPaint(grow); else grow();
+    }
+    const total = cfg.rows.reduce((a, r) => a + r[1], 0);
+    if (animate) countUp(langN, total, 1000); else { langN.textContent = total; langN.dataset.val = total; }
+    langSay.innerHTML = cfg.say[0] + (mode === 'later' ? ' <span class="st sy">示意</span>' : ' <span class="st sq">社群经验</span>');
+    langSay.className = 'viz-say ' + cfg.say[1];
+    if (animate) replay(langSay);
+  }
+  bindSeg($('#s4-lang-seg'), v => paintLang(v, true));
+  paintLang('early', false);
+})();
+</script>
+</body>
+</html>

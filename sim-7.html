@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>第 7 关 定价收款 · 站长模拟器 · AI 新词站白话课</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<style>
+/* 第 7 关：定价收款。类名一律 s7- 开头 */
+.s7-stick { position: sticky; top: 53px; z-index: 30; box-shadow: 0 6px 18px rgba(17, 24, 39, .07); margin-top: 18px; }
+main > .kp { scroll-margin-top: 118px; }
+.s7-stages { display: flex; flex-wrap: wrap; gap: 6px; }
+.s7-stages span { font-size: 13px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); background: var(--bg); }
+.s7-stages span.done { color: var(--green); border-color: var(--green); background: var(--green-soft); }
+.s7-stages span.done::after { content: " ✓"; font-weight: 700; }
+.s7-stages span.cur { color: var(--indigo); border-color: var(--indigo); background: var(--indigo-soft); }
+.s7-lock { font-size: 14px; color: var(--muted); }
+
+/* 第一段：平台卡 */
+.s7-plats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.s7-plat {
+  font: inherit; text-align: left; cursor: pointer; display: grid; gap: 6px; align-content: start;
+  padding: 14px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink);
+  transition: border-color .2s, box-shadow .2s, transform .2s;
+}
+.s7-plat:hover:not(:disabled) { border-color: var(--indigo); transform: translateY(-2px); }
+.s7-plat[aria-pressed="true"] { border-color: var(--indigo); box-shadow: 0 0 0 3px color-mix(in srgb, var(--indigo) 22%, transparent); }
+.s7-plat:disabled { cursor: default; }
+.s7-plat.closed { background: var(--bg); color: var(--muted); border-style: dashed; }
+.s7-plat b { font-size: 16px; }
+.s7-plat .price { font-family: var(--font-mono); font-size: 22px; font-weight: 600; color: var(--indigo); line-height: 1.2; }
+.s7-plat .price small { font-size: 12px; color: var(--muted); font-weight: 500; }
+.s7-plat ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-size: 13.5px; line-height: 1.55; }
+.s7-plat li.bad { color: var(--amber); font-weight: 650; }
+.s7-plat li.good { color: var(--green); }
+.s7-plat .tag { justify-self: start; font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--indigo-soft); color: var(--indigo); }
+.s7-plat.closed .tag { background: var(--line); color: var(--muted); }
+.s7-test { display: grid; gap: 10px; padding: 14px; border-radius: 14px; background: var(--bg); }
+.s7-runs { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; }
+.s7-runs i {
+  font-style: normal; aspect-ratio: 1; border-radius: 8px; border: 1.5px dashed var(--line); background: var(--surface);
+  display: grid; place-items: center; font-family: var(--font-mono); font-size: 12px; color: var(--muted); position: relative;
+}
+.s7-runs i.ok { border-style: solid; border-color: var(--green); background: var(--green-soft); color: var(--green); animation: pop .35s; }
+.s7-runs i.fail { border-style: solid; border-color: var(--amber); background: var(--amber-soft); color: var(--amber); animation: shake .4s; }
+.s7-runs i.wait::after { content: "等 4 分钟"; position: absolute; top: calc(100% + 2px); left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 10.5px; color: var(--amber); font-family: var(--font-body); font-weight: 700; }
+.s7-tally { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.s7-tally div { background: var(--surface); border-radius: 10px; padding: 8px 10px; display: grid; }
+.s7-tally span { font-size: 12.5px; color: var(--muted); }
+.s7-tally b { font-family: var(--font-mono); font-size: 19px; }
+.s7-tally .bad b { color: var(--amber); }
+.s7-btns { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+/* 第二段：算账 */
+.s7-sliders { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px 18px; }
+.s7-sliders .range-wrap b { font-family: var(--font-mono); color: var(--indigo); }
+.s7-anti { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 12px; background: var(--bg); }
+.s7-anti button[aria-pressed="true"] { background: var(--green); border-color: var(--green); color: var(--surface); }
+.s7-anti span { font-size: 14px; color: var(--muted); flex: 1 1 220px; }
+.s7-bars { display: grid; gap: 10px; }
+.s7-row { display: grid; grid-template-columns: 44px 1fr 96px; gap: 10px; align-items: center; }
+.s7-row > span { font-size: 14px; font-weight: 650; }
+.s7-row > b { font-family: var(--font-mono); font-size: 15px; text-align: right; white-space: nowrap; }
+.s7-track { height: 26px; border-radius: 7px; background: var(--bg); overflow: hidden; display: flex; }
+.s7-track i { display: block; height: 100%; width: 0; transition: width .5s cubic-bezier(.3, .7, .3, 1); }
+.s7-track .inc { background: var(--green); }
+.s7-track .free, .s7-legend .free { background: var(--amber); }
+.s7-track .paid, .s7-legend .paid { background: color-mix(in srgb, var(--amber) 62%, var(--surface)); }
+.s7-track .fee, .s7-legend .fee { background: color-mix(in srgb, var(--amber) 36%, var(--surface)); }
+.s7-track .fix, .s7-legend .fix { background: var(--muted); }
+.s7-track .fail, .s7-legend .fail { background: repeating-linear-gradient(45deg, var(--amber) 0 4px, var(--amber-soft) 4px 7px); }
+.s7-track .pl.pos { background: var(--green); }
+.s7-track .pl.neg { background: var(--amber); }
+.s7-row.pl-row > b.pos { color: var(--green); }
+.s7-row.pl-row > b.neg { color: var(--amber); }
+.s7-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--muted); }
+.s7-legend span { display: inline-flex; gap: 6px; align-items: center; }
+.s7-legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.s7-legend b { font-family: var(--font-mono); font-weight: 600; color: var(--ink); }
+.s7-facts { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; }
+.s7-facts b { font-family: var(--font-mono); }
+.s7-facts .bad { color: var(--amber); }
+.s7-facts .good { color: var(--green); }
+.s7-checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.s7-checks li { display: grid; grid-template-columns: 22px 1fr auto; gap: 8px; align-items: start; font-size: 14.5px; line-height: 1.6; padding: 7px 10px; border-radius: 10px; background: var(--bg); }
+.s7-checks li i { font-style: normal; font-weight: 700; }
+.s7-checks li.ok i { color: var(--green); }
+.s7-checks li.miss i { color: var(--amber); }
+.s7-checks li em { font-style: normal; font-family: var(--font-mono); font-size: 13px; color: var(--muted); white-space: nowrap; }
+.s7-checks li.ok em { color: var(--green); }
+details.s7-how { font-size: 14.5px; background: var(--bg); border-radius: 12px; padding: 10px 14px; }
+details.s7-how summary { cursor: pointer; font-weight: 650; }
+details.s7-how ul { margin: 8px 0 0; padding-left: 1.2em; display: grid; gap: 4px; }
+
+/* 第三段：收款 */
+.s7-me { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 14px; background: var(--indigo-soft); }
+.s7-me .ava { width: 44px; height: 44px; border-radius: 50%; background: var(--indigo); color: var(--on-indigo); display: grid; place-items: center; font-weight: 700; }
+.s7-me ul { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14.5px; }
+.s7-me li.no { color: var(--amber); }
+.s7-me li.yes { color: var(--green); }
+.s7-pays { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.s7-pay { font: inherit; text-align: left; cursor: pointer; display: grid; gap: 4px; padding: 12px 14px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); transition: border-color .2s, box-shadow .2s; }
+.s7-pay:hover:not(:disabled) { border-color: var(--indigo); }
+.s7-pay[aria-pressed="true"] { border-color: var(--indigo); box-shadow: 0 0 0 3px color-mix(in srgb, var(--indigo) 22%, transparent); }
+.s7-pay:disabled { cursor: default; }
+.s7-pay b { font-size: 15.5px; }
+.s7-pay span { font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+.s7-todo { display: grid; gap: 8px; }
+.s7-todo button {
+  font: inherit; text-align: left; cursor: pointer; display: grid; grid-template-columns: 24px 1fr; gap: 10px; align-items: start;
+  padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); font-size: 15px; line-height: 1.6;
+}
+.s7-todo button::before { content: ""; width: 20px; height: 20px; border-radius: 6px; border: 2px solid var(--line); margin-top: 3px; }
+.s7-todo button[aria-pressed="true"] { border-color: var(--indigo); background: var(--indigo-soft); }
+.s7-todo button[aria-pressed="true"]::before { content: "✓"; display: grid; place-items: center; background: var(--indigo); border-color: var(--indigo); color: var(--on-indigo); font-size: 13px; font-weight: 700; }
+.s7-todo button:disabled { cursor: default; }
+.s7-review { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.s7-review li { display: grid; grid-template-columns: 24px 1fr; gap: 8px; align-items: start; font-size: 14.5px; line-height: 1.6; padding: 8px 12px; border-radius: 10px; background: var(--bg); animation: rise .35s both; }
+.s7-review li i { font-style: normal; font-weight: 700; }
+.s7-review li.ok i { color: var(--green); }
+.s7-review li.miss { background: var(--amber-soft); }
+.s7-review li.miss i { color: var(--amber); }
+.s7-review li.end { background: var(--green-soft); font-weight: 650; }
+.s7-review li.end.miss { background: var(--amber-soft); }
+
+/* 结果卡 */
+.s7-sum { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.s7-sum li { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; background: var(--surface); border-radius: 12px; padding: 10px 14px; font-size: 14.5px; line-height: 1.65; }
+.s7-sum li b { font-size: 15.5px; }
+.s7-sum li em { font-style: normal; font-family: var(--font-mono); font-weight: 600; grid-row: span 2; align-self: center; }
+.s7-sum li.ok em { color: var(--green); }
+.s7-sum li.miss em { color: var(--amber); }
+.s7-sum a { font-size: 13.5px; }
+.s7-endbtns { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (max-width: 480px) {
+  .s7-stick { font-size: 13px; gap: 4px 12px; padding: 8px 12px; }
+  .s7-stick .s7-site { display: none; }
+  .s7-row { grid-template-columns: 36px 1fr 82px; gap: 8px; }
+  .s7-row > b { font-size: 13.5px; }
+  .s7-runs { gap: 4px; }
+  .s7-runs i { font-size: 10.5px; border-radius: 6px; }
+  .s7-runs i.wait::after { font-size: 9.5px; }
+  .s7-tally b { font-size: 16px; }
+  .s7-sum li { grid-template-columns: 1fr; }
+  .s7-sum li em { grid-row: auto; }
+}
+</style>
+</head>
+<body data-page="sim-7">
+<header id="topbar"></header>
+
+<div class="ph"><div class="wrap">
+  <span class="eyebrow">站长模拟器 · 第 7 关 / 共 8 关</span>
+  <h1>定价收款：先算清每条视频的账，再把钱收进来</h1>
+  <p class="lead">FramePop 要真的生成视频了。你得替它挑一个跑 Lumibo 2 的平台，算一笔每月的账，再想办法把美元收进来。所有平台、价格、人数都是编的 <span class="st sy">示意</span>，但坑都是群里真踩过的。</p>
+  <div class="sim-task"><span class="lab">本关任务</span><p>三段，满分 100：<b>接模型</b>（30 分）挑一个不会让你突然亏钱的平台；<b>算账</b>（40 分）拖滑块，让每月不亏、价格别定太低；<b>收款</b>（30 分）你是没有公司、没有香港卡的大陆个人，选对收款平台、做好审核前的准备。</p></div>
+</div></div>
+
+<main class="wrap">
+  <div class="sim-hud s7-stick"><span class="lv">第 7 关</span><span class="s7-site">站：FramePop（示意）</span><span id="s7-prev" class="muted"></span><span class="pts">得分 <b id="s7-pts">0</b> / 100</span></div>
+
+  <!-- 第一段 -->
+  <section class="kp" id="s7-s1">
+    <div class="kp-head"><span class="kp-no">第一段 · 接模型（30 分）</span><h2>挑一个平台，替你跑 Lumibo 2</h2></div>
+    <p class="kp-say">AI 工具站 = 别人的 <button type="button" class="term" data-t="model">AI 模型</button> + 你的 <button type="button" class="term" data-t="shell">网页外壳</button>。新模型的官方 <button type="button" class="term" data-t="api">接口</button> 常常还没开放，先去聚合平台找：现实里是 Hugging Face、Replicate、fal.ai、Kie、OpenRouter 这些。<span class="st hf">哥飞原话</span> <span class="st sq">社群经验</span> 下面 4 张卡是编的平台。</p>
+    <div class="s7-stages" id="s7-stages"><span data-s="1" class="cur">一 接模型</span><span data-s="2">二 算账</span><span data-s="3">三 收款</span></div>
+    <div class="viz" id="s7-v1">
+      <div class="viz-head"><span class="viz-label">动手玩 · 选平台 → 试跑 10 次 → 定下来</span><p class="viz-title">同一个 Lumibo 2，4 个地方能调用（示意）</p></div>
+      <div class="s7-plats" id="s7-plats">
+        <button type="button" class="s7-plat" data-p="a" aria-pressed="false"><span class="tag">最便宜</span><b>平台 A</b><span class="price">$0.07<small> / 次</small></span><ul><li>随时调用，马上出结果</li><li class="bad">小字：生成失败也照样扣钱</li></ul></button>
+        <button type="button" class="s7-plat" data-p="b" aria-pressed="false"><span class="tag">失败不扣钱</span><b>平台 B</b><span class="price">$0.12<small> / 次</small></span><ul><li>随时调用，马上出结果</li><li class="good">生成失败不扣钱</li></ul></button>
+        <button type="button" class="s7-plat" data-p="c" aria-pressed="false"><span class="tag">便宜一点</span><b>平台 C</b><span class="price">$0.10<small> / 次</small></span><ul><li class="good">生成失败不扣钱</li><li class="bad">冷门模型闲着会「睡着」，第一次叫醒要等 3～5 分钟</li></ul></button>
+        <button type="button" class="s7-plat closed" data-p="o" aria-pressed="false"><span class="tag">还没开放</span><b>Lumibo 官方接口</b><span class="price">—</span><ul><li>模型刚发布，官方接口还没对外开放</li></ul></button>
+      </div>
+      <div class="s7-test" id="s7-test">
+        <p id="s7-test-say" style="font-size:15px">先点一张平台卡。挑好以后点「试跑 10 次」：哥飞群里的办法是自己跑 10 次取平均，就知道一次到底多少钱。</p>
+        <div class="s7-runs" id="s7-runs"></div>
+        <div class="s7-tally">
+          <div><span>花掉</span><b id="s7-t-cost">$0.00</b></div>
+          <div><span>成功 / 失败</span><b id="s7-t-ok">0 / 0</b></div>
+          <div id="s7-t-unit-box"><span>每条成功视频</span><b id="s7-t-unit">—</b></div>
+        </div>
+        <div class="s7-btns">
+          <button type="button" class="btn" id="s7-try" disabled>试跑 10 次</button>
+          <button type="button" class="btn primary" id="s7-pick1" disabled>就用这个平台</button>
+        </div>
+      </div>
+      <p class="viz-say" id="s7-say1" aria-live="polite">提示：卡片上的小字要看清楚。</p>
+    </div>
+  </section>
+
+  <!-- 第二段 -->
+  <section class="kp" id="s7-s2">
+    <div class="kp-head"><span class="kp-no">第二段 · 算账（40 分）</span><h2>拖滑块：每月是赚还是亏？</h2></div>
+    <p class="kp-say">钱从哪漏：免费试用的人在花你的钱，付了钱的人也在花你的钱，收款平台还要抽手续费。目标是<b>每月不亏</b>，而且<b>价格别定太低</b>：王马扎发现照抄同行价格会亏，改成按自己的成本定价，毛利 75% 以上。<span class="st sq">社群经验</span> 下面的人数、次数都是 <span class="st sy">示意</span></p>
+    <div class="viz" id="s7-v2">
+      <div class="viz-head"><span class="viz-label">动手玩 · 拖滑块看柱子</span><p class="viz-title">FramePop 每个月的账（示意）</p></div>
+      <div class="s7-sliders">
+        <label class="range-wrap"><span>每条视频的成本 <b id="s7-o-c"></b></span><input type="range" id="s7-c" min="0.02" max="0.5" step="0.01" value="0.12"><span class="ticks"><span>$0.02</span><span>$0.50</span></span></label>
+        <label class="range-wrap"><span>每个新访客免费试 <b id="s7-o-f"></b></span><input type="range" id="s7-f" min="0" max="10" step="1" value="5"><span class="ticks"><span>0 次</span><span>10 次</span></span></label>
+        <label class="range-wrap"><span>月费 <b id="s7-o-m"></b></span><input type="range" id="s7-m" min="0" max="10" step="1" value="2"><span class="ticks"><span>$2.99</span><span>$49.99</span></span></label>
+        <label class="range-wrap"><span>年付 <b id="s7-o-k"></b></span><input type="range" id="s7-k" min="4" max="12" step="1" value="12"><span class="ticks"><span>4 个月的钱</span><span>12（不打折）</span></span></label>
+        <label class="range-wrap"><span>付费率 <b id="s7-o-r"></b></span><input type="range" id="s7-r" min="0.2" max="5" step="0.1" value="3"><span class="ticks"><span>0.2%</span><span>5%</span></span></label>
+        <label class="range-wrap"><span>每月来访 <b id="s7-o-v"></b></span><input type="range" id="s7-v" min="1000" max="50000" step="1000" value="10000"><span class="ticks"><span>1,000</span><span>50,000</span></span></label>
+      </div>
+      <div class="s7-anti">
+        <button type="button" class="btn" id="s7-anti" aria-pressed="false">防白嫖：关</button>
+        <span>打开后，免费用户只拿到带水印的预览小图，想要高清成片才付钱。刷小号也拿不到能用的东西，白嫖的人就少了。<span class="st hf">哥飞原话</span></span>
+      </div>
+      <div class="s7-bars" aria-live="polite">
+        <div class="s7-row"><span>收入</span><div class="s7-track"><i class="inc" id="s7-b-inc"></i></div><b id="s7-n-inc">$0</b></div>
+        <div class="s7-row"><span>成本</span><div class="s7-track"><i class="free" id="s7-b-free"></i><i class="paid" id="s7-b-paid"></i><i class="fee" id="s7-b-fee"></i><i class="fix" id="s7-b-fix"></i><i class="fail" id="s7-b-fail"></i></div><b id="s7-n-cost">$0</b></div>
+        <div class="s7-row pl-row"><span>盈亏</span><div class="s7-track"><i class="pl" id="s7-b-pl"></i></div><b id="s7-n-pl">$0</b></div>
+      </div>
+      <div class="s7-legend" id="s7-legend"></div>
+      <div class="s7-facts" id="s7-facts"></div>
+      <p class="viz-say" id="s7-say2" aria-live="polite"></p>
+      <ul class="s7-checks" id="s7-checks"></ul>
+      <details class="s7-how">
+        <summary>这笔账是怎么算的（示意）</summary>
+        <ul>
+          <li>来访的人里 25% 会去试用；没开防白嫖时，有人注册小号反复刷，按 3 倍算。</li>
+          <li>付了钱的人每月生成 20 条视频。月付的人平均续 4 个月就走（哥飞文章里的例子）；年付的一次付 N 个月的钱，然后用满 12 个月。</li>
+          <li>有年付时，40% 的付费用户选年付（哥飞文章里的例子）。收入按「这批人一共会付的钱」算进当月。</li>
+          <li>手续费按 Creem 算：每笔 3.9% + 0.4 美元（社群经验）。服务器、域名等每月 20 美元。</li>
+          <li>同行月费大多在 9.99～29.99 美元（示意）。比 29.99 还贵，付费的人会变少；一次都不让试，也有不少人不敢付钱（推出来的）。</li>
+        </ul>
+      </details>
+      <div class="s7-btns">
+        <button type="button" class="btn primary" id="s7-pick2">就按这个价格定了</button>
+        <span class="s7-lock" id="s7-lock2">先完成第一段，才能定价格。滑块可以先拖着玩。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 第三段 -->
+  <section class="kp" id="s7-s3">
+    <div class="kp-head"><span class="kp-no">第三段 · 收款（30 分）</span><h2>你没公司、没香港卡，钱怎么收进来？</h2></div>
+    <p class="kp-say">按哥飞的「选路地图」，先看自己手里有什么：有没有公司、有没有香港银行卡、有没有护照。收款平台审核都要看你的网站是不是真的。<span class="st hf">哥飞原话</span> <span class="st sq">社群经验</span></p>
+    <div class="viz" id="s7-v3">
+      <div class="viz-head"><span class="viz-label">动手玩 · 选收款 → 勾准备 → 提交审核</span><p class="viz-title">你的情况</p></div>
+      <div class="s7-me"><span class="ava">你</span><ul><li class="yes">中国大陆个人</li><li class="no">没有公司</li><li class="no">没有香港银行卡</li><li class="yes">有护照</li></ul></div>
+      <p style="font-size:14px;font-weight:650;color:var(--muted)">1. 第一个收款渠道用哪个？</p>
+      <div class="s7-pays" id="s7-pays">
+        <button type="button" class="s7-pay" data-v="creem" aria-pressed="false"><b>Creem（用护照注册）</b><span>护照 + 身份证注册，审核 1～2 天，钱能提到支付宝或 Wise。手续费约 3.9% + 0.4 美元，商品最低 4.49 美元。</span></button>
+        <button type="button" class="s7-pay" data-v="stripe" aria-pressed="false"><b>香港个人 Stripe</b><span>要先有香港银行卡（众安、中银、汇丰等），最好再办个香港手机号；哥飞跑了两趟香港。</span></button>
+        <button type="button" class="s7-pay" data-v="paypal" aria-pressed="false"><b>个人 PayPal.cn</b><span>个人卖家就能开，能接全球付款；但钱提不了人民币到国内，只能提外币。</span></button>
+        <button type="button" class="s7-pay" data-v="company" aria-pressed="false"><b>先注册一家美国公司</b><span>公司办好了，Stripe、Paddle 都能开。要花钱、花时间，还要每年报税。</span></button>
+        <button type="button" class="s7-pay" data-v="none" aria-pressed="false"><b>先不接支付</b><span>网站先全免费，等以后再说。</span></button>
+      </div>
+      <p style="font-size:14px;font-weight:650;color:var(--muted)">2. 提交审核之前，你要做哪几件事？（可以多选，有坑）</p>
+      <div class="s7-todo" id="s7-todo">
+        <button type="button" data-v="g1" aria-pressed="false">网站功能真的能用：输入一句话，真的生成出视频</button>
+        <button type="button" data-v="t1" aria-pressed="false">首页先放几条用户好评，撑撑场面（反正刚上线也没人写）</button>
+        <button type="button" data-v="g2" aria-pressed="false">定价页写清楚：每档多少次、生成失败扣不扣次数、怎么退款</button>
+        <button type="button" data-v="t2" aria-pressed="false">商品先定 2.99 美元，便宜点好冲量</button>
+        <button type="button" data-v="g3" aria-pressed="false">隐私政策、服务条款两个页面放好</button>
+        <button type="button" data-v="g4" aria-pressed="false">再申请一个收款渠道当备用</button>
+        <button type="button" data-v="g5" aria-pressed="false">让程序记下每个用户的使用记录：谁、什么时候、从哪个 IP、用了几次</button>
+      </div>
+      <div class="s7-btns">
+        <button type="button" class="btn primary" id="s7-pick3">提交审核</button>
+        <span class="s7-lock" id="s7-lock3">先完成前两段，才能提交审核。</span>
+      </div>
+      <ol class="s7-review" id="s7-review" aria-live="polite"></ol>
+    </div>
+  </section>
+
+  <!-- 结果 -->
+  <section class="kp" id="s7-end" hidden>
+    <div class="kp-head"><span class="kp-no">结果卡</span><h2>这一关的账单</h2></div>
+    <div class="sim-result" id="s7-card">
+      <h3>本关得分 <span class="big-num" id="s7-score">0</span> / 100</h3>
+      <p id="s7-verdict"></p>
+      <p id="s7-price" class="mono" style="font-size:14.5px"></p>
+      <ul class="s7-sum" id="s7-sum"></ul>
+      <div class="s7-endbtns">
+        <button type="button" class="btn" id="s7-replay">重玩这一关</button>
+        <a class="btn primary" href="sim-8.html" style="text-decoration:none">下一关：上线快进 3 个月 →</a>
+      </div>
+    </div>
+    <div class="quiz" data-answer="A">
+      <span class="q-tag">复盘题</span>
+      <p class="q-title">你接的视频接口「生成失败也扣钱」。最可能出什么事？</p>
+      <div class="q-opts">
+        <button class="q-opt" data-l="A">某天一个用户连着失败几十次，钱照扣，当天直接亏本</button>
+        <button class="q-opt" data-l="B">网站会打不开</button>
+        <button class="q-opt" data-l="C">谷歌排名会掉</button>
+      </div>
+      <div class="q-ans" hidden><p class="q-verdict"></p><p>哥飞在群里提过：有的视频接口失败照样收费，「今天有个用户大量失败，原本稳赚的生意导致今天亏本好多」。所以接视频模型前，先问清楚失败扣不扣钱。<span class="st hf">哥飞原话</span></p></div>
+    </div>
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://new.web.cafe/topic/gstytr3bmg">《萌新小白入门教程 3：接入大模型 api 都用哪些平台》</a><span class="meta">阿飞 · 2025-09-02</span></li>
+      <li><a href="https://mp.weixin.qq.com/s/whiVv3maJV1nJ_2aX0enGg">《哥飞关于订阅 App 的套餐定价的一点思考》</a><span class="meta">哥飞 · 公众号 2023-12 · 年付收 5 个月的钱</span></li>
+      <li><a href="https://new.web.cafe/topic/xmsohbemzf">《海外 AI 产品新手复盘：4 个月赚到 1 刀，15 天破 1000 刀》</a><span class="meta">王马扎 · 2025-09-26 · 按成本定价、毛利 75% 以上</span></li>
+      <li><a href="https://new.web.cafe/topic/rpg62z89h8">《新词 7 天冲到谷歌前五的完整实战复盘》</a><span class="meta">Niko · 2025-10-08 · 支付率经验</span></li>
+      <li><a href="https://new.web.cafe/experience/vkyy809cag">《出海网站支付收款用哪个平台？》</a><span class="meta">哥飞 · 2025-11-03 · 收款选路地图</span></li>
+      <li><a href="https://new.web.cafe/topic/3xvtpo244a">《手把手 Creem 从注册到收款全流程教程》</a><span class="meta">帆 · 2025-07-21 · 审核员会试用、假好评被拒</span></li>
+      <li><a href="https://new.web.cafe/tutorial/detail/ggy5t10gyj">《聊聊如何开通香港个人 Stripe》</a><span class="meta">哥飞 · 2025-02-27</span></li>
+      <li><a href="https://new.web.cafe/topic/4lal23d9c3">《一次 Stripe 争议成功反击的经验》</a><span class="meta">Cy · 2025-09-05 · 使用记录就是证据</span></li>
+      <li><span>「视频接口失败也扣钱」「免费给预览小图，想下载大图就付钱」：哥飞 4 群 2026-03-10、2025-10-04 群聊，经哥飞 SEO Agent 转述，无单独文章</span></li>
+    </ul></div>
+  </section>
+</main>
+
+<nav id="pager"></nav>
+<footer id="foot"></footer>
+<script src="assets/kit.js"></script>
+<script>
+(() => {
+  const { $, $$, el, sleep, countUp, SIM, store, reduce, confetti, fmt } = KIT;
+  const money = x => (x < 0 ? '-$' : '$') + fmt(Math.abs(x));
+  const scrollToEl = node => node.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+
+  const pts = { s1: null, s2: null, s3: null };
+  const ptsBox = $('#s7-pts');
+  const paintPts = () => countUp(ptsBox, (pts.s1 || 0) + (pts.s2 || 0) + (pts.s3 || 0), 700);
+  function stageDone(n) {
+    $$('#s7-stages span').forEach(s => {
+      const k = Number(s.dataset.s);
+      s.classList.toggle('done', pts['s' + k] != null);
+      s.classList.toggle('cur', k === n + 1);
+    });
+  }
+
+  // ---------- 第一段：接模型 ----------
+  const PLATS = {
+    a: { name: '平台 A', price: 0.07, failPaid: true, cold: false, score: 5 },
+    b: { name: '平台 B', price: 0.12, failPaid: false, cold: false, score: 30 },
+    c: { name: '平台 C', price: 0.10, failPaid: false, cold: true, score: 20 },
+  };
+  const FAILS = [2, 5, 8]; // 示意：10 次里第 3、6、9 次失败
+  let cur = null, plat = null, testing = false;
+  const tested = new Set();
+  const runsBox = $('#s7-runs');
+  const say1 = $('#s7-say1');
+  function blankRuns() {
+    runsBox.textContent = '';
+    for (let i = 0; i < 10; i++) runsBox.appendChild(el('i', {}, String(i + 1)));
+    $('#s7-t-cost').textContent = '$0.00';
+    $('#s7-t-ok').textContent = '0 / 0';
+    $('#s7-t-unit').textContent = '—';
+    $('#s7-t-unit-box').classList.remove('bad');
+  }
+  blankRuns();
+  $$('#s7-plats .s7-plat').forEach(b => b.addEventListener('click', () => {
+    if (testing || plat) return;
+    const id = b.dataset.p;
+    $$('#s7-plats .s7-plat').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    if (id === 'o') {
+      cur = null;
+      $('#s7-try').disabled = true; $('#s7-pick1').disabled = true;
+      blankRuns();
+      say1.innerHTML = '官方接口还没开放，现在用不了。新模型一般先在聚合平台上架，等官方开放了再换过去也行。<span class="st tl">推出来的</span>';
+      say1.className = 'viz-say';
+      return;
+    }
+    cur = id;
+    blankRuns();
+    $('#s7-try').disabled = false;
+    $('#s7-pick1').disabled = !tested.has(id);
+    $('#s7-test-say').textContent = `选了${PLATS[id].name}，标价每次 $${PLATS[id].price.toFixed(2)}。点「试跑 10 次」看看实际花多少。`;
+    say1.textContent = '先试跑，再决定。';
+    say1.className = 'viz-say';
+  }));
+  $('#s7-try').addEventListener('click', async () => {
+    if (!cur || testing) return;
+    testing = true;
+    const p = PLATS[cur];
+    $('#s7-try').disabled = true; $('#s7-pick1').disabled = true;
+    blankRuns();
+    let spent = 0, ok = 0, bad = 0, waste = 0;
+    const cells = $$('i', runsBox);
+    for (let i = 0; i < 10; i++) {
+      if (i === 0 && p.cold) { cells[0].classList.add('wait'); await sleep(900); }
+      await sleep(170);
+      const fail = FAILS.includes(i);
+      cells[i].classList.add(fail ? 'fail' : 'ok');
+      cells[i].textContent = fail ? '败' : '成';
+      if (fail) { bad++; if (p.failPaid) { spent += p.price; waste += p.price; } } else { ok++; spent += p.price; }
+      $('#s7-t-cost').textContent = '$' + spent.toFixed(2);
+      $('#s7-t-ok').textContent = `${ok} / ${bad}`;
+    }
+    const unit = spent / ok;
+    $('#s7-t-unit').textContent = '$' + unit.toFixed(3);
+    $('#s7-t-unit-box').classList.toggle('bad', p.failPaid);
+    tested.add(cur);
+    testing = false;
+    $('#s7-try').disabled = false; $('#s7-pick1').disabled = false;
+    $('#s7-test-say').textContent = `${p.name}：10 次里失败 3 次（示意）。` + (p.failPaid
+      ? `失败的 3 次也扣了钱，白扔 $${waste.toFixed(2)}，摊到每条成功视频 $${unit.toFixed(3)}。`
+      : `失败的不扣钱，每条成功视频 $${unit.toFixed(3)}。`) + (p.cold ? '第一次等了 4 分钟才出结果（冷启动）。' : '');
+    say1.innerHTML = '试完了。可以「就用这个平台」，也可以换一张卡再试试。';
+  });
+  $('#s7-pick1').addEventListener('click', () => {
+    if (!cur || plat || testing) return;
+    plat = cur;
+    const p = PLATS[plat];
+    pts.s1 = p.score;
+    $$('#s7-plats .s7-plat').forEach(x => { x.disabled = true; });
+    $('#s7-try').disabled = true; $('#s7-pick1').disabled = true;
+    const msg = {
+      a: `<b>踩坑了（+5）。</b>平台 A 看着最便宜，可生成失败也扣钱。哥飞群里有人就是这样：「今天有个用户大量失败，原本稳赚的生意导致今天亏本好多」。到了第二段，你的账上会多一笔「失败扣费事故」。<span class="st hf">哥飞原话</span>`,
+      b: `<b>选得稳（+30）。</b>贵一点，但失败不扣钱、随叫随到，不会哪天突然亏一大笔。哥飞的提醒：接视频模型，先确认失败扣不扣钱。<span class="st hf">哥飞原话</span>`,
+      c: `<b>也说得通（+20）。</b>失败不扣钱、还便宜。但群友说过：有的平台冷门模型有冷启动，第一次要等 3～5 分钟，有的用户等不及就关了。第二段会按付费的人少两成算。<span class="st sq">社群经验</span> <span class="st tl">推出来的</span>`,
+    }[plat];
+    say1.innerHTML = msg;
+    say1.className = 'viz-say ' + (plat === 'a' ? 'bad' : 'good');
+    // 第一段的单条成本带进第二段
+    const unit = (p.failPaid ? p.price / .7 : p.price);
+    $('#s7-c').value = unit.toFixed(2);
+    paintCalc();
+    $('#s7-pick2').disabled = false;
+    $('#s7-lock2').textContent = plat === 'a' ? '成本已带入：每条 $0.10，外加每月一笔「失败扣费事故」。' : `成本已带入：每条 $${unit.toFixed(2)}。`;
+    paintPts();
+    stageDone(1);
+    setTimeout(() => scrollToEl($('#s7-s2')), reduce ? 0 : 1600);
+  });
+
+  // ---------- 第二段：算账 ----------
+  const PRICES = [2.99, 4.49, 4.99, 6.99, 9.99, 14.99, 19.99, 24.99, 29.99, 39.99, 49.99];
+  const TRY = .25, FARM = 3, USE = 20, STAY = 4, ANNUAL = .4, FIX = 20, FEE_P = .039, FEE_F = .4, PEER_TOP = 29.99, FAIL_ACC = 250;
+  const read = () => ({
+    c: Number($('#s7-c').value), F: Number($('#s7-f').value), M: PRICES[Number($('#s7-m').value)],
+    K: Number($('#s7-k').value), r: Number($('#s7-r').value), V: Number($('#s7-v').value),
+    anti: $('#s7-anti').getAttribute('aria-pressed') === 'true',
+  });
+  function calc(v) {
+    const p = PLATS[plat || 'b'];
+    let rate = v.r / 100;
+    if (p.cold) rate *= .8;
+    if (v.F === 0) rate *= .7;
+    if (v.M > PEER_TOP) rate *= Math.pow(PEER_TOP / v.M, 2);
+    const N = v.V * rate, s = v.K < 12 ? ANNUAL : 0;
+    const Nm = N * (1 - s), Na = N * s;
+    const income = Nm * STAY * v.M + Na * v.K * v.M;
+    const fee = income * FEE_P + (Nm * STAY + Na) * FEE_F;
+    const paid = (Nm * STAY + Na * 12) * USE * v.c;
+    const free = v.V * TRY * v.F * (v.anti ? 1 : FARM) * v.c;
+    const fail = p.failPaid ? FAIL_ACC : 0;
+    const cost = free + paid + fee + FIX + fail;
+    return { N, Nm, Na, income, fee, paid, free, fail, fix: FIX, cost, profit: income - cost, margin: income ? (income - paid) / income : 0, rate };
+  }
+  function checks(v, m) {
+    return [
+      { t: '不亏：每月收入 ≥ 成本', max: 15, ok: m.profit >= 0 },
+      { t: `价格别定太低：付费用户毛利 ≥ 75%（现在 ${Math.round(m.margin * 100)}%），月费不低于 4.49 美元`, max: 10, ok: m.margin >= .75 && v.M >= 4.49 },
+      { t: '打开防白嫖', max: 5, ok: v.anti },
+      { t: '设年付，大约收 5 个月的钱（4～8 个月都算）', max: 5, ok: v.K >= 4 && v.K <= 8 },
+      { t: '付费率别想太美：不超过 1%', max: 5, ok: v.r <= 1 },
+    ];
+  }
+  function hint(v, m) {
+    const big = Math.max(m.free, m.paid, m.fee);
+    if (m.profit < 0 && big === m.free) return ['bad', `最大的窟窿是<b>免费试用</b>：每月 ${money(m.free)}。${v.anti ? '' : '没开防白嫖，有人注册一堆小号反复刷（按 3 倍算）。'}少给几次、打开防白嫖试试。群里有人「几千个注册 0 付费」，就是试用给太多被白嫖了。<span class="st sq">社群经验</span>`];
+    if (m.margin < .75) return ['bad', `付了钱的人用掉的成本，占了收入的 ${Math.round((1 - m.margin) * 100)}%：<b>月费定低了</b>。王马扎发现照抄同行价格会亏，改成按自己的成本定价，毛利 75% 以上，比同行还贵，照样有人买。<span class="st sq">社群经验</span>`];
+    if (m.fail && m.profit < 0) return ['bad', `平台 A 失败也扣钱，这里按每月一次「大量失败」事故 ${money(m.fail)} 算 <span class="st sy">示意</span>。别的地方得省出这笔钱。`];
+    if (m.profit < 0) return ['bad', `还在亏 ${money(-m.profit)}。看看哪一段成本最长，先砍它。`];
+    if (v.r > 1) return ['bad', `付费率 ${v.r.toFixed(1)}% 太乐观了。Niko 的朋友给的经验：排第一才有 1%～5%，第二名千分之 5～8，第三名千分之 1～3。新站先按 1% 以内算。<span class="st sq">社群经验</span>`];
+    if (v.K === 12) return ['', `还没设年付。哥飞的做法：年付收大约 5 个月的钱，给用 12 个月。月付的人平均只续 4 个月，有人选年付，一个人付的总钱就多了。<span class="st hf">哥飞原话</span>`];
+    if (v.K < 4 || v.K > 8) return ['', `年付收 ${v.K} 个月的钱，${v.K < 4 ? '比月付的人平均付的 4 个月还少，太便宜了' : '折扣太小，没人会选'}。哥飞的例子是 5 个月。<span class="st hf">哥飞原话</span>`];
+    if (!v.anti) return ['', '账是平的，但还没开防白嫖。哥飞的办法：生成好以后给免费用户一张预览小图，「想要下载大图，就要付钱」。<span class="st hf">哥飞原话</span>'];
+    if (v.M > PEER_TOP) return ['', `月费 ${money(v.M)} 比同行（示意 9.99～29.99 美元）贵太多，付钱的人明显变少了。`];
+    return ['good', `这套价格不亏、毛利也够，每月赚 ${money(m.profit)} <span class="st sy">示意</span>。可以定了。`];
+  }
+  const fmtC = v => '$' + v.toFixed(2);
+  function paintCalc() {
+    const v = read(), m = calc(v);
+    $('#s7-o-c').textContent = fmtC(v.c);
+    $('#s7-o-f').textContent = `${v.F} 次`;
+    $('#s7-o-m').textContent = '$' + v.M.toFixed(2);
+    $('#s7-o-k').textContent = v.K === 12 ? '不设（12 个月原价）' : `= ${v.K} 个月的钱（$${(v.K * v.M).toFixed(2)} / 年）`;
+    $('#s7-o-r').textContent = v.r.toFixed(1) + '%';
+    $('#s7-o-v').textContent = fmt(v.V) + ' 人';
+    const scale = Math.max(m.income, m.cost, 1);
+    const w = x => (Math.max(0, x) / scale * 100).toFixed(2) + '%';
+    $('#s7-b-inc').style.width = w(m.income);
+    $('#s7-b-free').style.width = w(m.free);
+    $('#s7-b-paid').style.width = w(m.paid);
+    $('#s7-b-fee').style.width = w(m.fee);
+    $('#s7-b-fix').style.width = w(m.fix);
+    $('#s7-b-fail').style.width = w(m.fail);
+    const pl = $('#s7-b-pl');
+    pl.style.width = w(Math.abs(m.profit));
+    pl.className = 'pl ' + (m.profit >= 0 ? 'pos' : 'neg');
+    $('#s7-n-inc').textContent = money(m.income);
+    $('#s7-n-cost').textContent = money(m.cost);
+    const npl = $('#s7-n-pl');
+    npl.textContent = (m.profit >= 0 ? '赚 ' : '亏 ') + money(Math.abs(m.profit));
+    npl.className = m.profit >= 0 ? 'pos' : 'neg';
+    $('#s7-legend').innerHTML = [
+      ['free', '免费试用', m.free], ['paid', '付费用户用掉的', m.paid], ['fee', '手续费', m.fee], ['fix', '服务器等', m.fix],
+    ].concat(m.fail ? [['fail', '失败扣费事故', m.fail]] : [])
+      .map(([c, t, x]) => `<span><i class="${c}"></i>${t} <b>${money(x)}</b></span>`).join('');
+    $('#s7-facts').innerHTML = `<span>每月新付费 <b>${fmt(m.N)}</b> 人（月付 ${fmt(m.Nm)}、年付 ${fmt(m.Na)}）</span><span class="${m.margin >= .75 ? 'good' : 'bad'}">付费用户毛利 <b>${Math.round(m.margin * 100)}%</b></span><span class="muted">实际付费率 <b>${(m.rate * 100).toFixed(2)}%</b></span>`;
+    const [tone, txt] = hint(v, m);
+    const s2 = $('#s7-say2');
+    s2.className = 'viz-say' + (tone ? ' ' + tone : '');
+    s2.innerHTML = txt;
+    $('#s7-checks').innerHTML = checks(v, m).map(c => `<li class="${c.ok ? 'ok' : 'miss'}"><i>${c.ok ? '✓' : '✕'}</i><span>${c.t}</span><em>${c.ok ? c.max : 0} / ${c.max}</em></li>`).join('');
+  }
+  ['#s7-c', '#s7-f', '#s7-m', '#s7-k', '#s7-r', '#s7-v'].forEach(s => $(s).addEventListener('input', paintCalc));
+  $('#s7-anti').addEventListener('click', () => {
+    const b = $('#s7-anti');
+    const on = b.getAttribute('aria-pressed') !== 'true';
+    b.setAttribute('aria-pressed', String(on));
+    b.textContent = on ? '防白嫖：开' : '防白嫖：关';
+    paintCalc();
+  });
+  let deal = null;
+  $('#s7-pick2').disabled = true;
+  $('#s7-pick2').addEventListener('click', () => {
+    if (!plat || deal) return;
+    const v = read(), m = calc(v), cs = checks(v, m);
+    pts.s2 = cs.reduce((s, c) => s + (c.ok ? c.max : 0), 0);
+    deal = { v, m, cs };
+    $$('#s7-v2 input, #s7-anti').forEach(x => { x.disabled = true; });
+    $('#s7-pick2').disabled = true;
+    $('#s7-lock2').innerHTML = `<b>定了：</b>月费 $${v.M.toFixed(2)}${v.K < 12 ? `，年付 $${(v.K * v.M).toFixed(2)}` : ''}。这一段 +${pts.s2}。`;
+    $('#s7-pick3').disabled = false;
+    $('#s7-lock3').textContent = '勾好准备，就能提交审核。';
+    paintPts();
+    stageDone(2);
+    setTimeout(() => scrollToEl($('#s7-s3')), reduce ? 0 : 900);
+  });
+
+  // ---------- 第三段：收款 ----------
+  let pay = null;
+  $$('#s7-pays .s7-pay').forEach(b => b.addEventListener('click', () => {
+    if (pts.s3 != null) return;
+    pay = b.dataset.v;
+    $$('#s7-pays .s7-pay').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  }));
+  $$('#s7-todo button').forEach(b => b.addEventListener('click', () => {
+    if (pts.s3 != null) return;
+    b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true'));
+  }));
+  $('#s7-pick3').disabled = true;
+  const PAY = {
+    creem: { pts: 15, ok: true, t: '选了 Creem：没公司、没香港卡的新手，用护照注册 Creem 最省事。哥飞说群里很多人在用，钱可以提到支付宝；做过的人说支付宝要申报、容易失败，推荐用 Wise。<span class="st hf">哥飞原话</span> <span class="st sq">社群经验</span>' },
+    stripe: { pts: 6, ok: false, t: '选了香港个人 Stripe：你还没有香港银行卡，得先跑香港开卡、办手机号。哥飞还提醒，开户用的网站最好已经上线一段时间、有点流量。可以以后当备用，现在先用 Creem。<span class="st hf">哥飞原话</span>' },
+    paypal: { pts: 6, ok: false, t: '选了个人 PayPal.cn：能开，也能收全球的钱，但提不了人民币到国内，只能提外币。<span class="st hf">哥飞原话</span> 对你来说，钱能提到支付宝或 Wise 的 Creem 更顺。<span class="st tl">推出来的</span>' },
+    company: { pts: 3, ok: false, t: '先注册公司：花钱、花时间，还要每年报税。新手第一个站，没必要为了收款先开公司，有了收入再说。<span class="st tl">推出来的</span>' },
+    none: { pts: 5, ok: false, t: '先不接支付：第一版这么做没错，哥飞就说「登录注册支付统统后置」。可这一关你的站已经要开始收钱了，再不接，有人想付钱都付不了。<span class="st hf">哥飞原话</span>' },
+  };
+  const TODO = {
+    g1: '网站功能真的能用', g2: '定价页写清楚', g3: '隐私政策、服务条款', g4: '备用收款渠道', g5: '使用记录',
+  };
+  $('#s7-pick3').addEventListener('click', async () => {
+    if (!deal || pts.s3 != null) return;
+    if (!pay) { const r = $('#s7-review'); r.textContent = ''; r.appendChild(el('li', { class: 'miss' }, '<i>!</i><span>先在上面选一个收款渠道（「先不接支付」也算一个选择）。</span>')); return; }
+    const on = new Set($$('#s7-todo button').filter(b => b.getAttribute('aria-pressed') === 'true').map(b => b.dataset.v));
+    $$('#s7-pays .s7-pay, #s7-todo button').forEach(x => { x.disabled = true; });
+    $('#s7-pick3').disabled = true;
+    const P = PAY[pay];
+    const s3b = ['g1', 'g2', 'g3', 'g4', 'g5'].filter(k => on.has(k)).length * 2 + (on.has('t1') ? 0 : 3) + (on.has('t2') ? 0 : 2);
+    const passed = on.has('g1') && !on.has('t1') && !on.has('t2');
+    const rejected = !passed && (pay === 'creem' || pay === 'paypal');
+    pts.s3 = (rejected ? Math.min(P.pts, 5) : P.pts) + s3b;
+    const review = $('#s7-review');
+    review.textContent = '';
+    const who = pay === 'creem' ? 'Creem 审核员' : '收款平台审核员';
+    const lines = [
+      [on.has('g1'), `${who}打开 framepop.com，真的输入了一句话：` + (on.has('g1') ? '视频生成出来了。' : '功能跑不通。Creem 要「功能齐全的网站」，审核员会亲自体验。')],
+      [on.has('g2') && !on.has('t2'), '看定价页：' + (on.has('t2') ? '2.99 美元低于 Creem 的最低价 4.49 美元，商品都建不了。' : on.has('g2') ? '每档几次、失败扣不扣、怎么退款，写得清清楚楚。' : '没写清楚失败扣不扣次数，用户容易觉得被坑。')],
+      [on.has('g3'), '看隐私政策和服务条款：' + (on.has('g3') ? '都在。' : '找不到。收款平台和广告平台都要看这两页。')],
+      [!on.has('t1'), '看首页好评：' + (on.has('t1') ? '这些好评是编的。帆的教程里写过：「随便写一些虚假的Testimonials很容易被拒绝掉！！」而且是最终决定，不接受申诉。' : '没有编的好评，真实。')],
+      [on.has('g4') && on.has('g5'), '你自己留的后手：' + [on.has('g4') ? '有备用收款渠道（哥飞的 Stripe 被封过，群里说 Creem 也有过大面积封号）' : '没有备用渠道，一个号被封，收入就断了', on.has('g5') ? '有使用记录（以后有人拒付，这就是证据）' : '没有使用记录，以后有人拒付拿不出证据'].join('；') + '。'],
+    ];
+    for (const [ok, t] of lines) {
+      review.appendChild(el('li', { class: ok ? 'ok' : 'miss' }, `<i>${ok ? '✓' : '✕'}</i><span>${t}</span>`));
+      await sleep(550);
+    }
+    let end;
+    if (pay === 'none') end = '你没接支付，这次没有审核。准备工作先记着，等接支付时用得上。';
+    else if (pay === 'stripe') end = '香港个人 Stripe：你还没有香港银行卡，其实走不到审核这一步。';
+    else end = passed ? `${pay === 'creem' ? 'Creem' : '收款平台'}审核通过（大约 1～2 天）。可以开始收钱了。` : '审核没通过：渠道选对了也收不到钱（这一项只给 5 分）。看上面打叉的几条。';
+    review.appendChild(el('li', { class: 'end' + (passed && pay === 'creem' ? '' : ' miss') }, `<i>${passed && pay === 'creem' ? '✓' : '!'}</i><span>${end}</span>`));
+    paintPts();
+    stageDone(3);
+    await sleep(500);
+    finish(P, on, rejected);
+  });
+
+  // ---------- 结果卡 ----------
+  function finish(P, on, rejected) {
+    const total = pts.s1 + pts.s2 + pts.s3;
+    const v = deal.v;
+    SIM.save('sim-7', total, 100, { price: v.M, annualMonths: v.K, platform: plat, payRate: v.r, pay });
+    const card = $('#s7-card');
+    card.classList.toggle('meh', total < 80);
+    $('#s7-verdict').textContent = total === 100 ? '满分！平台稳、账算得清、收款也准备好了。'
+      : total >= 80 ? '大方向都对，还有一两处可以更稳。'
+        : total >= 50 ? '能跑，但有几个坑会让你某天突然亏钱或收不到钱。'
+          : '这样上线，钱多半是漏出去的。照下面看看问题在哪。';
+    $('#s7-price').textContent = `你定的价：月付 $${v.M.toFixed(2)}${v.K < 12 ? ` · 年付 $${(v.K * v.M).toFixed(2)}（${v.K} 个月的钱）` : ' · 没设年付'} · 每月${deal.m.profit >= 0 ? '赚' : '亏'} ${money(Math.abs(deal.m.profit))}（示意）。下一关会用这个价格。`;
+    const miss2 = deal.cs.filter(c => !c.ok).map(c => c.t.replace(/（现在.*?）/, ''));
+    const trapsHit = [on.has('t1') ? '编了好评' : '', on.has('t2') ? '定价 2.99 美元' : ''].filter(Boolean);
+    const lacks = ['g1', 'g2', 'g3', 'g4', 'g5'].filter(k => !on.has(k)).map(k => TODO[k]);
+    const rows = [
+      { t: `第一段 · 接模型：${PLATS[plat].name}`, p: pts.s1, max: 30, txt: { a: '失败也扣钱，哪天有人大量失败就亏本。先问清失败扣不扣钱。', b: '失败不扣钱、不用等，最稳。', c: '便宜，但冷启动要等 3～5 分钟，会流失一些用户。' }[plat], link: ['s7-tool.html#k2', '模型从哪来'] },
+      { t: '第二段 · 算账', p: pts.s2, max: 40, txt: miss2.length ? '没做到：' + miss2.join('；') + '。' : '不亏、毛利够、防白嫖、年付、付费率都合理。', link: ['s7-tool.html#k3', '成本和定价'] },
+      { t: `第三段 · 收款：${{ creem: 'Creem', stripe: '香港个人 Stripe', paypal: '个人 PayPal.cn', company: '先注册公司', none: '先不接支付' }[pay]}`, p: pts.s3, max: 30, txt: P.t.replace(/<span.*$/, '') + (rejected ? ' 可惜审核被拒，钱还是收不进来。' : '') + (trapsHit.length ? ` 踩的坑：${trapsHit.join('、')}。` : '') + (lacks.length ? ` 少做的准备：${lacks.join('、')}。` : ' 审核前的准备都做到了。'), link: ['s7-tool.html#k5', '收款怎么选'] },
+    ];
+    $('#s7-sum').innerHTML = rows.map(r => `<li class="${r.p === r.max ? 'ok' : 'miss'}"><b>${r.t}</b><em>${r.p} / ${r.max}</em><span>${r.txt} <a href="${r.link[0]}">回看讲解：${r.link[1]}</a></span></li>`).join('');
+    const end = $('#s7-end');
+    end.hidden = false;
+    setTimeout(() => {
+      scrollToEl(end);
+      countUp($('#s7-score'), total, 1100);
+      if (total === 100) setTimeout(() => confetti(card), reduce ? 0 : 400);
+    }, reduce ? 0 : 400);
+  }
+  $('#s7-replay').addEventListener('click', () => {
+    store.del('quiz.sim-7');
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    scrollTo(0, 0);
+    location.reload();
+  });
+
+  // ---------- 开局 ----------
+  paintCalc();
+  const prev = SIM.load('sim-7');
+  if (prev) $('#s7-prev').textContent = `上次 ${prev.score} 分`;
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>新手阅读路线 · AI 新词站白话课</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<style>
+/* 阅读路线页专用，类名前缀 r- */
+.r-prog { display: grid; gap: 10px; padding: 16px 18px; border-radius: 16px; background: var(--surface); border: 1.5px solid var(--green); position: relative; overflow: hidden; }
+.r-prog-top { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; justify-content: space-between; }
+.r-prog-top .r-count { font-size: 17px; font-weight: 650; }
+.r-prog-top .r-count b { font-family: var(--font-mono); font-size: 26px; color: var(--green); }
+.r-prog-top .r-left { font-size: 14px; color: var(--muted); }
+.r-prog .meter { height: 12px; border-radius: 6px; }
+.r-prog .meter > i { border-radius: 6px; }
+.r-next { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: 15px; line-height: 1.6; }
+.r-next .lab { font-size: 12.5px; font-weight: 700; color: var(--green); letter-spacing: .04em; }
+.r-next a { font-weight: 650; overflow-wrap: anywhere; }
+.r-how ul { margin: 0; padding-left: 1.2em; display: grid; gap: 2px; font-size: 15px; line-height: 1.75; }
+
+.r-mini { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; font-size: 14.5px; }
+.r-mini b { font-family: var(--font-mono); }
+.r-sum { font-size: 14.5px; color: var(--muted); }
+
+/* 列表：自己的编号（隐藏读过的也不乱）、标签可以换行 */
+.readlist li[data-n]::before { content: attr(data-n); }
+.readlist li.read[data-n]::before { content: "✓"; }
+.readlist .meta { grid-column: 2 / 4; white-space: normal; }
+@media (max-width: 520px) { .readlist .meta { grid-column: 2; } }
+.readlist .meta .r-tag { display: inline-block; margin-left: 6px; font-size: 11.5px; font-weight: 650; line-height: 1; padding: 3px 7px; border-radius: 999px; vertical-align: 1px; }
+.r-tag.mp { background: var(--green-soft); color: var(--green); }
+.r-tag.wc { background: var(--indigo-soft); color: var(--indigo); }
+.r-tag.vip { background: var(--amber-soft); color: var(--amber); }
+.readlist li.r-flash { animation: flashGood 1.4s 2; border-color: var(--green); }
+.r-in { animation: rise .4s both; }
+
+/* 哥飞自己的路线 */
+.r-path { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.r-stone { display: grid; grid-template-columns: 36px 1fr; gap: 0 14px; position: relative; padding-bottom: 16px; }
+.r-stone::before { content: ""; position: absolute; left: 17px; top: 34px; bottom: 0; width: 2px; background: var(--line); }
+.r-stone:last-child::before { content: none; }
+.r-no { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-mono); font-size: 14px; font-weight: 600; background: var(--indigo); color: var(--on-indigo); position: relative; z-index: 1; }
+.r-stone.easy .r-no { background: var(--indigo-soft); color: var(--indigo); border: 1.5px solid var(--indigo); }
+.r-sbody { display: grid; gap: 4px; padding: 4px 0 0; min-width: 0; }
+.r-q { font-size: 16px; line-height: 1.7; }
+.r-links { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; font-size: 14.5px; }
+.r-links a { font-weight: 650; overflow-wrap: anywhere; }
+.r-kind { font-size: 12px; font-weight: 650; padding: 2px 8px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.r-kind.easy { border-color: var(--indigo); color: var(--indigo); }
+.r-tip { font-size: 13.5px; color: var(--muted); line-height: 1.65; }
+.r-state { justify-self: start; font-size: 12.5px; font-weight: 650; padding: 2px 10px; border-radius: 999px; background: var(--bg); color: var(--muted); border: 1px dashed var(--line); transition: background .3s, color .3s; }
+.r-state.on { background: var(--green-soft); color: var(--green); border: 1px solid var(--green); }
+
+/* 筛选条 */
+.r-bar {
+  position: sticky; top: 53px; z-index: 20; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center;
+  padding: 10px 0; background: color-mix(in srgb, var(--bg) 94%, transparent); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--line);
+}
+.r-filter { padding: 2px; }
+.r-filter::-webkit-scrollbar { display: none; }
+.r-filter button { flex: none; white-space: nowrap; }
+.r-filter button i { font-style: normal; font-family: var(--font-mono); font-size: 11.5px; opacity: .75; margin-left: 4px; }
+#r-hide[aria-pressed="true"] { background: var(--green); border-color: var(--green); color: var(--surface); }
+@media (max-width: 560px) {
+  .r-bar { gap: 8px; padding: 8px 0; }
+  .r-filter { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  #r-hide { padding: 7px 10px; font-size: 13px; }
+}
+.r-shown { font-size: 13.5px; color: var(--muted); }
+
+/* 每一组 */
+.r-groups { display: grid; gap: 18px; }
+.r-group { display: grid; gap: 10px; padding: 16px; border-radius: 18px; background: color-mix(in srgb, var(--surface) 55%, var(--bg)); border: 1px solid var(--line); scroll-margin-top: 130px; }
+.r-group.all-read { border-color: color-mix(in srgb, var(--green) 55%, var(--line)); }
+.r-ghead { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; align-items: start; }
+.r-ghead h3 { margin: 0; font-family: var(--font-display); font-size: 21px; }
+.r-gq { grid-column: 1 / -1; font-size: 15px; line-height: 1.7; }
+.r-gto { grid-column: 1 / -1; font-size: 13.5px; color: var(--muted); }
+.r-gprog { display: grid; gap: 4px; justify-items: end; font-size: 12.5px; color: var(--muted); white-space: nowrap; }
+.r-gprog .meter { width: 90px; height: 6px; }
+.r-gdone { font-size: 13.5px; color: var(--green); font-weight: 650; }
+@media (max-width: 480px) { .r-group { padding: 12px; } .r-ghead h3 { font-size: 19px; } }
+</style>
+</head>
+<body data-page="read">
+<header id="topbar"></header>
+
+<div class="ph"><div class="wrap">
+  <span class="eyebrow">新手阅读路线 · 照着顺序读</span>
+  <h1>哥飞的文章，先读哪篇、后读哪篇</h1>
+  <p class="lead">哥飞的教程很多，不知道从哪看起很正常。这里把它们排好了队：<b>照着顺序读，读完一篇打一个勾。</b></p>
+  <div class="r-prog" id="r-prog">
+    <div class="r-prog-top"><span class="r-count">已读 <b id="r-done">0</b> / <span id="r-total">0</span> 篇</span><span class="r-left" id="r-left"></span></div>
+    <span class="meter"><i id="r-meter"></i></span>
+    <div class="r-next" id="r-next"></div>
+  </div>
+  <div class="box analogy r-how"><span class="lab">点链接之前先知道</span><ul>
+    <li>web.cafe 的链接，要先登录「哥飞的朋友们」社群才能看。</li>
+    <li>公众号（微信）的文章，谁都能看。</li>
+    <li>标了「会员帖」的，要社群会员才能看。</li>
+    <li>每篇后面的「约多少分钟」是估的（认真读加看截图），不是原文写的。</li>
+  </ul></div>
+</div></div>
+
+<main class="wrap">
+
+  <section class="kp" id="r-short">
+    <div class="kp-head"><span class="kp-no">时间紧先读这些</span><h2>只想先读 7 篇：大约 3～4 小时</h2></div>
+    <p class="kp-say">顺序是：先摆正心态 → 学会判断一个词能不能做 → 从小词做起 → 一页放几个词 → 页面怎么做 → 上线后做什么 → 怎么看后台。</p>
+    <div class="r-mini"><span>7 篇里读了 <b id="r-s-done">0</b> 篇</span><span class="meter ours"><i id="r-s-meter"></i></span></div>
+    <ol class="readlist" id="r-short-list"></ol>
+    <p class="r-sum" id="r-short-sum"></p>
+  </section>
+
+  <section class="kp" id="r-gefei">
+    <div class="kp-head"><span class="kp-no">原版路线</span><h2>哥飞自己排的入门顺序</h2></div>
+    <p class="kp-say">哥飞在《新人入门学习指南》里亲手排了 11 步，下面照抄他的说明。<span class="st hf">哥飞原话</span> 浅色圆圈的两步，他说「不需要读懂」；有几步是一整个合集，不是一篇文章。</p>
+    <ol class="r-path" id="r-path"></ol>
+    <div class="src"><span class="src-lab">看原文</span><ul>
+      <li><a href="https://new.web.cafe/topic/dpf5lhdcp2">《新人入门学习指南[持续更新中]》</a><span class="meta">哥飞 · 2025-04-22</span></li>
+    </ul></div>
+  </section>
+
+  <section class="kp" id="r-full">
+    <div class="kp-head"><span class="kp-no">完整版</span><h2>按 8 步排好的完整清单</h2></div>
+    <p class="kp-say">按网站从 0 到上线的顺序分成 10 组。每组顶上一句话说这组解决什么，还配了一个讲解页：<b>先看讲解页的白话，再读原文</b>，会轻松很多。各讲解页末尾的清单和这里是同一份，在哪儿打勾都算。</p>
+    <div class="r-bar" id="r-bar">
+      <div class="seg r-filter" id="r-filter" role="group" aria-label="按步骤筛选"></div>
+      <button type="button" class="btn" id="r-hide" aria-pressed="false">隐藏读过的</button>
+    </div>
+    <p class="r-shown" id="r-shown" aria-live="polite"></p>
+    <div class="r-groups" id="r-groups"></div>
+  </section>
+
+  <section class="kp" id="r-note">
+    <div class="kp-head"><span class="kp-no">说明</span><h2>这份路线怎么来的</h2></div>
+    <div class="box case"><span class="lab">来源</span><p>「只想先读 7 篇」和完整版的分组，来自我们整理的资料合集（第三部分）。「哥飞自己排的入门顺序」照抄自哥飞的《新人入门学习指南》。每篇的一句话说明，取自帮手精读原文的笔记。<span class="st tl">推出来的</span> 是指：时长都是估的。</p></div>
+    <div class="box warn"><span class="lab">读的时候注意</span><p>老文章（2023、2024 年）里的工具界面、按钮名字可能已经变了；web.cafe「归档」栏目的日期是归档那天，不是第一次发的日子。哥飞自己也改过口，比如 2024 年说过一个月收录十几万页，2025 年明确说「新站搞海量页面必死」。看到前后说法不一样，以新的为准，或者回到对应讲解页看两边怎么说。</p></div>
+  </section>
+
+</main>
+
+<nav id="pager"></nav>
+<footer id="foot"></footer>
+<script src="assets/kit.js"></script>
+<script>
+(() => {
+  const { $, $$, el, bindSeg, replay, countUp, reduce, store, confetti } = KIT;
+
+  const WC = 'https://new.web.cafe/', TD = WC + 'tutorial/detail/', TP = WC + 'topic/', EX = WC + 'experience/', MP = 'https://mp.weixin.qq.com/s/';
+  // 每篇：h 网址、t 标题、why 读完能学会什么、by 作者和日期、m 估计分钟、vip 会员帖
+  const GROUPS = [
+    { id: 'g0', short: '0 入门', name: '0 入门：先摆正心态', page: ['index.html', '总览'], q: '先知道整条路长什么样：哥飞希望你先粗看、再细学、最后动手，别指望第一个站就爆。', items: [
+      { h: TP + 'dpf5lhdcp2', t: '新人入门学习指南', why: '哥飞亲手排的学习顺序，当目录用：先粗看概念，再学找词、判断词、上站，最后跟着做一遍。', by: '哥飞 · 2025-04-22', m: 10 },
+      { h: TD + '0muzz8169o', t: '初学者的入门', why: '不会写网页也能最快上线：页面按 h1/h2/h3 搭，第一版什么登录、支付、互动都不要。', by: '哥飞 · 归档于 2025-01-13', m: 15 },
+      { h: MP + 'L9BOyFrisy-xsw-NPWlPJQ', t: '放弃一站发思维，先从练手站做起', why: '别指望第一个站就爆，按「三个练手站」一步步走出新手村。', by: '哥飞 · 2024-12-02', m: 10 },
+    ] },
+    { id: 'g1', short: '1 找词', name: '1 找新词', page: ['s1-find.html', '第 1 步 找新词'], q: '新词去哪找、用什么工具看、怎么判断值不值得做。', items: [
+      { h: TD + 'lxdptf3zn4', t: '谷歌趋势 6 大核心用法', why: '用谷歌趋势估热度、判断是不是新词、顺着「相关查询」挖出新词。', by: '哥飞 · 2025-04-03', m: 20 },
+      { h: TD + 'k2z73gxq2h', t: '新词老词都可以做，老词可以用长尾表达反向吃主词', why: '判断竞争不看 KD，看搜索结果里有没有小站首页、对手花多少外链换来多少流量。', by: '哥飞 · 2026-04-16', m: 20 },
+      { h: TD + '7v7tfjneg9', t: '再次系统的聊聊如何判断一个关键词是否能做', why: '看五样东西判断一个词能不能做，用「流量 ÷ 外链数」算投入产出。', by: '哥飞 · 2025-01-22', m: 35 },
+      { h: TD + '5xyct0iie6', t: '新词挖掘实操指南', why: '看哥飞现场演示：从一个大站顺藤摸瓜，挖出一个新词，当晚上站。', by: '哥飞 · 小课堂 2025-01-04', m: 20 },
+      { h: TD + 'mrozYpTgfu6MGXggeX2Kzr', t: '再聊挖掘需求的方法', why: '6 种挖需求的方法（词根、大站、下拉、循环、广告、变现反推），每种都配了工具和筛选数字。', by: '哥飞 · 2024-08-13', m: 40 },
+      { h: TP + '60wmnukjzg', t: '哥飞找词思路汇总（截止20250625）', why: '28 种找词方法的索引。当工具书查，哪个渠道不会用再翻，不用一口气读完。', by: '梦梦.Gu 整理 · 2025-06-25', m: 30 },
+    ] },
+    { id: 'g2', short: '2 收词', name: '2 收词、扩词', page: ['s2-collect.html', '第 2 步 收词、扩词'], q: '核心词定了，相关的词去哪收、怎么查量、怎么从小词扩到大词。', items: [
+      { h: TD + 'lmlpg7ae96', t: '从需求调研到网站规划', why: '从一个种子词出发跨平台收全关键词，用谷歌 Ads 的数据排搜索量，再让 AI 规划网站结构。', by: '哥飞 · 2024-11-25', m: 25 },
+      { h: TD + 'y347cg5g3f', t: '聊聊如何跨平台对比关键词，如何收集整理关键词', why: '8 个以上的渠道扒词、去重，统一丢进谷歌 Ads 查量，再用谷歌趋势分大小。', by: '哥飞 · 2025-01-15', m: 20 },
+      { h: TD + '3nfxk91lnj', t: '【案例拆解】paypal fee calculator', why: '拿到一个词，学会往上收找更大的词、往下扩找细分词，用细分词撑起整个站。', by: '哥飞 · 2025-12-09', m: 15 },
+      { h: TD + 'feoogz15ou', t: '保小图大', why: '新手先用一个小词做稳，再扩到兄弟词，最后图谋更大的父词。', by: '哥飞 · 公众号文章，2023 年 9 月', m: 20 },
+      { h: MP + 'YAynUxSWnBYFdkFeT5vA7w', t: '从一本书名到发现一批大流量工具站和内容站全流程揭秘', why: '别被小搜索量吓退：顺着小词找兄弟词、父词，看能不能聚起来做一个站。', by: '哥飞 · 2023-09-21', m: 15 },
+    ] },
+    { id: 'g3', short: '3 一页几词', name: '3 一页放几个词', page: ['s3-onepage.html', '第 3 步 一页放几个词'], q: '单复数、同义词、换个说法，放同一页还是拆开做。', items: [
+      { h: TD + 'b65kyom8b2', t: '两大SEO原则：分门别类罗列、一个关键词一个页面', why: '拿 Ahrefs 的页面当样板，看懂哥飞的「六字真言」。', by: '哥飞 · 2025-01-14', m: 25 },
+      { h: TD + 'c8z1ixs1md', t: '关于关键词蚕食，关于页面结构，关于如何举全站之力优化关键词', why: '一个词不是只能做一页：细分说法各做一页，再用内链汇成一棵树。评论区有内链规则。', by: '哥飞 · 2025-01-14', m: 15 },
+      { h: TD + 'd2bbhguqe8', t: '精品工具页面的思路', why: '精品工具页面的三个公式：工具、图文、结果放进同一个页面。', by: '哥飞 · 2025-01-16', m: 15 },
+      { h: TD + 'qw95txij7a', t: '模板化页面算法更新引热议（精品页 2.0 争论）', why: '谷歌打击套模板以后，哥飞说问题出在「懒且贪」，每页内容要真的不一样。', by: '哥飞.ai 群聊日报 · 2026-04-30', m: 10 },
+    ] },
+    { id: 'g4', short: '4 结构', name: '4 定结构、定页面', page: ['s4-structure.html', '第 4 步 定结构、定页面'], q: '一个站不止一页：页面从哪来、怎么分层，为什么新站别一口气上一堆页面。', items: [
+      { h: TD + 'o3RNNMKZAMtBADNFswicqE', t: '【5800字长文】从网站站内优化到部署上线再到推广运营', why: '页面怎么写、首页怎么排、内链怎么连、怎么部署、上线后去哪推广的一条龙清单。', by: '哥飞 · 2024-08-12', m: 35 },
+      { h: MP + 'X4lIBRE_tjjLNMhU1jfQdA', t: '新站批量化上页面，必死', why: '新站别用程序批量发页面；老站也要从 10 个页面开始，看 GSC 再放量。', by: '哥飞 · 2025-03-20', m: 10 },
+      { h: MP + 'F4Z3HmA25GJvUPeqUW3zXw', t: '新站不批量上页面，那要怎么做页面呢？从对SEO祛魅开始', why: '新站就手工一个一个做精品页，先挑竞争特别低的词。', by: '哥飞 · 2025-03-21', m: 10 },
+    ] },
+    { id: 'g5', short: '5 做页面', name: '5 做页面', page: ['s5-page.html', '第 5 步 做页面'], q: '首页从上到下放什么、关键词放哪、什么叫精品页。', items: [
+      { h: TD + 'za408lc1q9', t: '再聊基于精品工具页面思路，如何做精品工具站', why: '精品工具页面的五个公式：一个页面同时是工具、说明和结果展示。', by: '哥飞 · 2025-03-07', m: 35 },
+      { h: TD + '5yyr7zjxk7', t: '详解落地页的V1.0到V1.5版本，再到V2.0版本', why: '落地页的三代做法，学会第一屏放什么、为什么这么放。', by: '哥飞 · 2025-04-08', m: 30 },
+      { h: MP + '41O1gg8bfU5MdmKkann8Aw', t: '从 TDK 到 TDH', why: '页面三要素改成标题、描述、H1；keywords 标签早就不用写了。', by: '哥飞 · 2024-04-06', m: 5 },
+      { h: MP + 'Dgf_3fJmNrBWj6u76essUw', t: '如何制作出SEO友好的网页？先从学习谷歌是如何理解我们网页开始', why: '谷歌怎么读网页，所以工具站必须写文字、文字要在服务器上写好、多语言别用脚本切换。', by: '哥飞 · 2024-04-19', m: 20 },
+      { h: TD + '7hlogby3sa', t: 'FAQPage 下线后我们怎么应对？', why: '谷歌不再显示 FAQ 富结果了，但页面底部的 FAQ 还要留着，给用户看。', by: '哥飞 · 2026-05-09', m: 15 },
+    ] },
+    { id: 'g6', short: '6 内外链', name: '6 内链、外链', page: ['s6-links.html', '第 6 步 内链、外链'], q: '页面之间怎么连，外链去哪发。', items: [
+      { h: EX + 'hq96hlfs02', t: '图解内链、外链、反链、正向链接', why: '同一条链接，站在不同网站的角度叫法不一样，一张图分清楚。', by: '哥飞 · 2025-08-15', m: 10 },
+      { h: TD + 'lqxrxz4wux', t: '再聊内链和内页，以及如何做好一个内容型工具站', why: '什么叫精品网页、网站及格线怎么算，「举全站之力优化一个词」怎么靠内链做到。', by: '哥飞 · 2025-01-15', m: 30, vip: true },
+      { h: MP + 'X95UZmPEKHZZ4rNoBcaoJg', t: '养网站防老第5步：内页和内链建设', why: '用一个小工具站示范：首页怎么给内页放链接，内页怎么写，首页和内页怎么互相链。', by: '哥飞 · 2023-10-19', m: 20 },
+      { h: EX + 'ao30ki8tzk', t: '什么是博客评论外链，怎么找，怎么做', why: '从同行的外链里找能留评论的博客。哥飞的学习指南说博客评论外链「依然还有用」。', by: '哥飞推荐 · 日期未标', m: 15 },
+      { h: TD + 'pvkumobpkh', t: '再聊反链：一个很有趣的外链小技巧', why: '什么是反链、怎么查别人的反链发现生意，自己网站上的外部链接为什么要加 nofollow。', by: '哥飞 · 2025-01-12', m: 10 },
+    ] },
+    { id: 'g7', short: '7 工具收款', name: '7 做工具、收订阅', page: ['s7-tool.html', '第 7 步 做工具、收订阅'], q: '不会写代码怎么做、价格怎么定、用什么收钱。', items: [
+      { h: MP + 'Qn7IWcv6W9CAFsyIzA-Etw', t: '产品经理再也没有借口不会写代码了', why: '不会编程也能让 Cursor 写代码，用 Next.js 做、放到 Vercel 上线；打消「我不会写代码」的顾虑。', by: '哥飞 · 2024-08-17', m: 5 },
+      { h: EX + 'as5dfnrox2', t: '先做出单页核心功能就推出去，登录注册支付统统后置', why: '第一版只做一个页面的核心功能，登录支付后置，但也别拖着不收费。', by: '哥飞 · 2026-08-22', m: 5, vip: true },
+      { h: MP + 'whiVv3maJV1nJ_2aX0enGg', t: '哥飞关于订阅App的套餐定价的一点思考', why: '按「用户平均付几个月」倒推月费，再加一档约 5 个月价钱的年付。', by: '哥飞 · 2023-12-12', m: 10 },
+      { h: EX + 'vkyy809cag', t: '出海网站支付收款用哪个平台？', why: '按有没有公司、香港卡、护照，一级级选出你能用的收款平台。', by: '哥飞 · 2025-11-03', m: 5 },
+      { h: TP + '3xvtpo244a', t: '手把手 Creem 从注册到收款全流程教程', why: 'Creem 注册、建商品、过审核、测试付款、提现的全流程，评论区补了费率和一堆踩坑。', by: '帆 · 2025-07-21', m: 30 },
+      { h: TP + '4lal23d9c3', t: '一次Stripe争议成功反击的经验', why: '用户拒付时要准备哪些证据，以及什么时候反击不划算。', by: 'Cy · 2025-09-05', m: 10 },
+    ] },
+    { id: 'g8', short: '8 上线', name: '8 上线验收和优化', page: ['s8-launch.html', '第 8 步 上线验收和优化'], q: '上线后先做什么、后台怎么看、多久该有效果。', items: [
+      { h: TD + '9sox64g7o9', t: 'Google Search Console 使用入门讲解', why: 'GSC 怎么验证网站、提交站点地图、看点击曝光排名，为什么每天要看通知。', by: '哥飞 · 归档于 2025-01-16', m: 30 },
+      { h: TD + 'sk5je1bj0f', t: '上站之后要做什么；再次详解谷歌搜索排名', why: '上线后只干两件事：加精品页、加外链。24 小时内收录、48 小时左右出词。', by: '哥飞 · 2025-01-20', m: 35 },
+      { h: MP + 'oAmrfRXrIWAMBVS0uB6C8Q', t: '老手可以去做难而正确的事情，新手只需要去追热点追新词就行', why: '新手要「短视」：三五天该有动静，三五周该有排名；热点过后流量也不会归零。', by: '哥飞 · 2025-02-28', m: 15 },
+      { h: TD + '285cmpjx1m', t: '重新梳理排名三要素，以及外链到底在排名中起到了什么作用', why: '排名看三样：自夸、试用、他夸；讲清外链到底起什么作用。', by: '哥飞 · 2026-10-25', m: 20, vip: true },
+    ] },
+    { id: 'g9', short: '案例', name: '案例：看真人怎么做', page: ['index.html', '总览里的「一个新词站的一生」'], q: '看真人怎么做成、怎么踩坑。数字都是他们自己公开的。', items: [
+      { h: TP + 'yq85uisvim', t: '5天170万访问量，新词新站大赛第一名 Lafe 的经验分享', why: '先弄懂搜的人想要什么，先上「一个落地页 + 一个功能页」的最小版本。', by: 'Lafe · 2025-05-17', m: 15 },
+      { h: TP + 'xmsohbemzf', t: '海外 AI 产品新手复盘：4 个月赚到 1 刀，15 天破 1000 刀', why: '用新词站给自己的品牌订阅站导流；按成本定价，年订阅放第一眼。', by: '王马扎 · 2025-09-26', m: 30 },
+      { h: TP + 'rpg62z89h8', t: '新词 7 天冲到谷歌前五的完整实战复盘', why: '每天手动发外链冲排名；修好付费引导，当晚出了第一单。', by: 'Niko · 2025-10-08', m: 15 },
+      { h: TP + 'qroffybyzo', t: '我单方面宣布在 genie3 抢新词大战中获胜，复盘一下', why: '买完域名 2 小时上线、马上提交 GSC，先抢排名再补功能。', by: 'Ben · 2025-08-10', m: 10 },
+      { h: TP + 'bh3di61bwx', t: '复盘：第一个 AI 出海站，我做错了哪些事？', why: '反面教材：选词只看趋势线，流量几乎全来自巴西，多语言做太早。', by: '孟健 · 2025-10-03', m: 15 },
+      { h: TP + '2mz756r3yb', t: '我的4000人出海创业社群里，靠SEO赚到钱的人都做对了什么？', why: '8 个群友从零到赚钱的真实时间线，多数人都做过很多失败的站。', by: '哥飞 · 2025-12-21', m: 20 },
+    ] },
+  ];
+  const SHORT = [
+    [MP + 'oAmrfRXrIWAMBVS0uB6C8Q', '先把心态摆正'],
+    [TD + '7v7tfjneg9', '学会判断一个词能不能做'],
+    [TD + 'feoogz15ou', '从小词做起'],
+    [TD + 'b65kyom8b2', '一页放几个词'],
+    [TD + 'za408lc1q9', '页面怎么做'],
+    [TD + 'sk5je1bj0f', '上线后做什么'],
+    [TD + '9sox64g7o9', '怎么看后台'],
+  ];
+  // 哥飞《新人入门学习指南》原样的 11 步（H5 笔记照抄）
+  const GEFEI = [
+    { q: '「新手入门，先把这个 Ahrefs 的公开课程过一遍」「不需要读懂，大概读一遍，了解一下SEO的概念就行。」', links: [['https://ahrefs.com/zh/seo', 'Ahrefs SEO 公开课']], kind: '外站 · 不需要读懂', easy: true, tip: '中文目录页已经打不开了。评论区有人转述哥飞的话：具体文章有些还有中文，比如 <a href="https://ahrefs.com/blog/zh/seo-basics/">《SEO基础：新手SEO成功指南》</a>。' },
+    { q: '「然后看这个进阶教程，这个阶段也不需要仔细研究，就是看，就是了解。」', links: [[WC + 'tutorial/0c91c83924e9495aa75384becf6304ff', '进阶教程']], kind: '合集 10 篇 · 不需要读懂', easy: true, tip: '里面有上面清单里的《5800 字长文》和《再聊挖掘需求的方法》。' },
+    { q: '「再回过头来看我写的新手入门」', links: [[WC + 'tutorial/7c36c9a7c6e34d21b8f3efd857d980aa', '新手入门']], kind: '合集 17 篇' },
+    { q: '「之后再看挖掘需求相关的教程」', links: [[WC + 'tutorial/89afd4d0414d41e6b5f9304ee42df055', '挖掘需求']], kind: '合集 18 篇' },
+    { q: '「再看如何判断关键词是否可做」', links: [[TD + '7v7tfjneg9', '再次系统的聊聊如何判断一个关键词是否能做']], kind: '单篇' },
+    { q: '「再看上站之后要做什么；再次详解谷歌搜索排名；以月收入$50k的网站为例说明」', links: [[TD + 'sk5je1bj0f', '上站之后要做什么']], kind: '单篇' },
+    { q: '「再看工具落地页要如何设计」', links: [[TD + '5yyr7zjxk7', '详解落地页的V1.0到V1.5版本，再到V2.0版本']], kind: '单篇' },
+    { q: '「再聊基于精品工具页面思路，如何做精品工具站」', links: [[TD + 'za408lc1q9', '再聊基于精品工具页面思路，如何做精品工具站']], kind: '单篇' },
+    { q: '「最后跟着养网站防老系列走一遍全流程，也可以先看教程，看完一遍之后再跟着一步一步走」', links: [[WC + 'tutorial/7PG1iQzr3sXx1tyKmf9ZYd', '养网站防老']], kind: '合集 · 从 0 到上线的连载' },
+    { q: '「加外链，博客评论外链依然还有用」', links: [[EX + 'ao30ki8tzk', '什么是博客评论外链，怎么找，怎么做'], [TP + 'xoi32sha0d', '基于博客评论外链想到的挖掘需求新思路']], kind: '两篇' },
+    { q: '「教程栏目，都值得学习」', links: [[WC + 'tutorials', '教程栏目总入口']], kind: '栏目' },
+  ];
+
+  // ---------- 画出来（打开就是完整清单） ----------
+  const byHref = new Map();
+  GROUPS.forEach(g => g.items.forEach(it => { it.g = g; byHref.set(it.h, it); }));
+  const isRead = h => !!store.get('read.' + h, false);
+  const tags = it => [
+    it.h.startsWith(MP) ? '<span class="r-tag mp">公众号</span>' : '<span class="r-tag wc">web.cafe</span>',
+    it.vip ? '<span class="r-tag vip">会员帖</span>' : '',
+  ].join('');
+  const liHtml = (it, n, why) => `<li data-n="${n}" data-h="${it.h}"${isRead(it.h) ? ' class="read"' : ''}><a href="${it.h}">《${it.t}》</a><label><input type="checkbox"${isRead(it.h) ? ' checked' : ''}>读过了</label><span class="why">${why || it.why}</span><span class="meta">${it.by} · 约 ${it.m} 分钟${tags(it)}</span></li>`;
+
+  $('#r-short-list').innerHTML = SHORT.map(([h, role], i) => {
+    const it = byHref.get(h);
+    if (!it) throw new Error('精简清单里的文章不在完整清单里：' + h);
+    return liHtml(it, i + 1, `<b>${role}：</b>${it.why}`);
+  }).join('');
+  const shortMin = SHORT.reduce((s, [h]) => s + byHref.get(h).m, 0);
+  $('#r-short-sum').textContent = `这 7 篇加起来约 ${shortMin} 分钟（估计）。它们也都在下面的完整清单里，在哪儿勾都算。`;
+
+  const groupsBox = $('#r-groups');
+  groupsBox.innerHTML = GROUPS.map(g => `<section class="r-group" id="r-${g.id}" data-g="${g.id}">
+    <div class="r-ghead"><h3>${g.name}</h3><span class="r-gprog"><span class="r-gcount"></span><span class="meter"><i></i></span></span>
+      <p class="r-gq">${g.q}</p>
+      <span class="r-gto">先看讲解：<a href="${g.page[0]}">${g.page[1]}</a> · 这组 ${g.items.length} 篇，约 ${g.items.reduce((s, it) => s + it.m, 0)} 分钟</span></div>
+    <ol class="readlist">${g.items.map((it, i) => liHtml(it, i + 1)).join('')}</ol>
+    <p class="r-gdone" hidden>这一组都读过了。</p>
+  </section>`).join('');
+
+  const pathBox = $('#r-path');
+  pathBox.innerHTML = GEFEI.map((s, i) => {
+    const inList = s.links.filter(([h]) => byHref.has(h)).map(([h]) => h);
+    return `<li class="r-stone${s.easy ? ' easy' : ''}"><span class="r-no">${i + 1}</span><div class="r-sbody">
+      <p class="r-q">${s.q}</p>
+      <div class="r-links">${s.links.map(([h, t]) => `<a href="${h}">《${t}》</a>`).join('')}<span class="r-kind${s.easy ? ' easy' : ''}">${s.kind}</span></div>
+      ${s.tip ? `<p class="r-tip">${s.tip}</p>` : ''}
+      ${inList.length ? `<span class="r-state" data-hs="${inList.join(' ')}"></span>` : ''}
+    </div></li>`;
+  }).join('');
+
+  // ---------- 进度 ----------
+  const ALL = [...byHref.keys()];
+  const TOTAL_MIN = ALL.reduce((s, h) => s + byHref.get(h).m, 0);
+  $('#r-total').textContent = ALL.length;
+  const doneNum = $('#r-done'), meter = $('#r-meter'), leftTxt = $('#r-left'), nextBox = $('#r-next');
+  const hours = m => m >= 60 ? `${(m / 60).toFixed(1)} 小时` : `${m} 分钟`;
+  let celebrated = null;
+  function nextUnread() {
+    const s = SHORT.find(([h]) => !isRead(h));
+    if (s) return { h: s[0], where: 'short' };
+    const h = ALL.find(x => !isRead(x));
+    return h ? { h, where: 'full' } : null;
+  }
+  function paintProgress(animate) {
+    const done = ALL.filter(isRead).length;
+    const leftMin = ALL.filter(h => !isRead(h)).reduce((s, h) => s + byHref.get(h).m, 0);
+    if (animate) countUp(doneNum, done, 500); else { doneNum.textContent = done; doneNum.dataset.val = done; }
+    meter.style.width = (done / ALL.length * 100) + '%';
+    leftTxt.textContent = done === ALL.length ? '全部读完了' : done ? `剩下的约 ${hours(leftMin)}` : `全部读完约 ${hours(TOTAL_MIN)}`;
+    const nx = nextUnread();
+    if (nx) {
+      const it = byHref.get(nx.h);
+      nextBox.innerHTML = `<span class="lab">下一篇读这个</span><a href="${it.h}" target="_blank" rel="noopener">《${it.t}》</a><span class="muted" style="font-size:13.5px">${nx.where === 'short' ? '精简 7 篇里的' : it.g.name}</span><button type="button" class="btn soft" id="r-go">在清单里找到它</button>`;
+      $('#r-go').addEventListener('click', () => goTo(nx));
+    } else {
+      nextBox.innerHTML = '<span class="lab">全部读完了</span><span>可以回头去模拟器里，把 8 步亲手做一遍。</span>';
+    }
+    if (animate) replay(nextBox, 'r-in');
+    // 精简 7 篇
+    const sDone = SHORT.filter(([h]) => isRead(h)).length;
+    $('#r-s-done').textContent = sDone;
+    $('#r-s-meter').style.width = (sDone / SHORT.length * 100) + '%';
+    if (animate && sDone === SHORT.length && celebrated !== 'short') { celebrated = 'short'; confetti($('#r-short')); }
+    if (animate && done === ALL.length) confetti($('#r-prog'));
+    // 每组
+    $$('.r-group', groupsBox).forEach(sec => {
+      const g = GROUPS.find(x => x.id === sec.dataset.g);
+      const n = g.items.filter(it => isRead(it.h)).length;
+      $('.r-gcount', sec).textContent = `读了 ${n} / ${g.items.length}`;
+      $('.r-gprog .meter i', sec).style.width = (n / g.items.length * 100) + '%';
+      sec.classList.toggle('all-read', n === g.items.length);
+    });
+    // 哥飞路线上的已读标记
+    $$('.r-state', pathBox).forEach(s => {
+      const hs = s.dataset.hs.split(' ');
+      const n = hs.filter(isRead).length;
+      s.classList.toggle('on', n === hs.length);
+      s.textContent = n === hs.length ? '下面清单里已勾过' : '在下面清单里，还没勾';
+    });
+  }
+
+  // 同一篇在两个地方出现：勾一个，另一个跟着变
+  document.addEventListener('change', e => {
+    const box = e.target;
+    const li = box.closest && box.closest('.readlist li[data-h]');
+    if (!li) return;
+    const h = li.dataset.h;
+    store.set('read.' + h, box.checked);
+    $$(`.readlist li[data-h="${h}"]`).forEach(x => {
+      x.classList.toggle('read', box.checked);
+      $('input', x).checked = box.checked;
+    });
+    paintProgress(true);
+    if (hideRead && box.checked && li.closest('#r-groups')) setTimeout(() => relayout(applyView), reduce ? 0 : 450);
+  });
+
+  // ---------- 筛选 + 隐藏读过的（列表滑动重排） ----------
+  const filterBox = $('#r-filter');
+  filterBox.innerHTML = `<button type="button" data-v="all" aria-pressed="true">全部<i>${ALL.length}</i></button>` +
+    GROUPS.map(g => `<button type="button" data-v="${g.id}" aria-pressed="false">${g.short}<i>${g.items.length}</i></button>`).join('');
+  let filter = 'all', hideRead = false;
+  const groupEls = $$('.r-group', groupsBox);
+  const shownTxt = $('#r-shown');
+  function applyView() {
+    let shown = 0;
+    groupEls.forEach(sec => {
+      const on = filter === 'all' || sec.dataset.g === filter;
+      sec.hidden = !on;
+      let visible = 0;
+      $$('.readlist li', sec).forEach(li => {
+        li.hidden = hideRead && li.classList.contains('read');
+        if (!li.hidden) visible++;
+      });
+      $('.r-gdone', sec).hidden = !(hideRead && visible === 0);
+      if (on) shown += visible;
+    });
+    const name = filter === 'all' ? '全部' : GROUPS.find(g => g.id === filter).name;
+    shownTxt.textContent = `正在看：${name} · ${shown} 篇${hideRead ? '（读过的已藏起来）' : ''}`;
+  }
+  // 先记下每一块的位置，改完再让它们从旧位置滑到新位置；新冒出来的淡入
+  function relayout(mutate) {
+    const nodes = [...groupEls, ...$$('.readlist li', groupsBox)];
+    const box = n => n.offsetParent === null ? null : n.getBoundingClientRect();
+    const before = new Map(nodes.map(n => [n, box(n)]));
+    mutate();
+    if (reduce) return;
+    nodes.forEach(n => {
+      const b = box(n);
+      if (!b) return;
+      const a = before.get(n);
+      if (!a) {
+        // 整组刚冒出来时，组自己淡入就够了，里面每一篇不再各动一次
+        if (n.tagName !== 'LI' || before.get(n.closest('.r-group'))) replay(n, 'r-in');
+        return;
+      }
+      let dx = a.left - b.left, dy = a.top - b.top;
+      if (n.tagName === 'LI') {
+        // 组本身也在滑，li 只算相对组的那一段，免得滑两遍
+        const sec = n.closest('.r-group'), sa = before.get(sec), sb = box(sec);
+        if (sa && sb) { dx -= sa.left - sb.left; dy -= sa.top - sb.top; }
+      }
+      if (!dx && !dy) return;
+      n.style.transition = 'none';
+      n.style.transform = `translate(${dx}px, ${dy}px)`;
+      n.getBoundingClientRect();
+      n.style.transition = 'transform 550ms cubic-bezier(.3, .7, .3, 1)';
+      n.style.transform = '';
+    });
+  }
+  const bar = $('#r-bar');
+  function scrollToList() {
+    const top = groupsBox.getBoundingClientRect().top + scrollY - bar.offsetHeight - 70;
+    if (scrollY > top) scrollTo(0, top);
+  }
+  // 手机上筛选条左右滑：让选中的按钮露在中间
+  function showPressed() {
+    const b = $('button[aria-pressed="true"]', filterBox);
+    filterBox.scrollLeft = b.offsetLeft - filterBox.offsetLeft - filterBox.clientWidth / 2 + b.offsetWidth / 2;
+  }
+  bindSeg(filterBox, v => {
+    scrollToList();
+    filter = v;
+    relayout(applyView);
+    showPressed();
+  });
+  $('#r-hide').addEventListener('click', e => {
+    hideRead = !hideRead;
+    e.currentTarget.setAttribute('aria-pressed', String(hideRead));
+    relayout(applyView);
+  });
+  function goTo(nx) {
+    let li;
+    if (nx.where === 'short') li = $(`#r-short-list li[data-h="${nx.h}"]`);
+    else {
+      const it = byHref.get(nx.h);
+      if (filter !== 'all' && filter !== it.g.id) {
+        filter = it.g.id;
+        $$('button', filterBox).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === filter)));
+        applyView();
+        showPressed();
+      }
+      li = $(`#r-groups li[data-h="${nx.h}"]`);
+    }
+    li.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
+    li.classList.remove('r-flash');
+    void li.offsetWidth;
+    li.classList.add('r-flash');
+  }
+
+  applyView();
+  paintProgress(false);
+})();
+</script>
+</body>
+</html>
